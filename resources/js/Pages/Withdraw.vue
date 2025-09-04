@@ -52,36 +52,59 @@ const modalError = ref('');
 
 const validateThenSubmit = async () => {
   modalError.value = '';
-  try {
-    const res = await fetch(route('withdraw.store'), {
-      method: 'POST',
-      headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
-      body: JSON.stringify({ validate_only: true, withdraw_password: withdrawPassword.value }),
-    });
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({}));
-      modalError.value = body.error || 'Invalid withdraw password';
-      return;
-    }
+  // Use Inertia POST so CSRF/session are handled by Inertia and Laravel
+  const payload = {
+    amount_withdraw: amount.value,
+    crypto_wallet: cryptoWallet.value,
+    withdraw_password: withdrawPassword.value,
+    // mark this as coming from the modal so controller can treat errors accordingly if needed
+    from_modal: true,
+  };
 
-    // on success, submit the full request via Inertia
-    const payload = {
-      amount_withdraw: amount.value,
-      crypto_wallet: cryptoWallet.value,
-      withdraw_password: withdrawPassword.value,
-    };
-    router.post(route('withdraw.store'), payload, { preserveState: true });
-    showModal.value = false;
-    withdrawPassword.value = '';
-  } catch (err) {
-    modalError.value = 'Unable to validate password';
-  }
+  router.post(route('withdraw.store'), payload, {
+    preserveState: true,
+    onError: (errors) => {
+      // keep the modal open and show withdraw_password error if present
+      // Inertia validation errors appear as { errors: { field: ['msg'] } } or as a flat errors object
+      let msg = 'Validation failed';
+      if (errors && typeof errors === 'object') {
+        if (errors.withdraw_password) {
+          msg = Array.isArray(errors.withdraw_password) ? errors.withdraw_password[0] : errors.withdraw_password;
+        } else if (errors.errors && errors.errors.withdraw_password) {
+          msg = Array.isArray(errors.errors.withdraw_password) ? errors.errors.withdraw_password[0] : errors.errors.withdraw_password;
+        } else if (errors.error) {
+          msg = errors.error;
+        } else {
+          // take first error message available
+          const firstKey = Object.keys(errors)[0];
+          const val = errors[firstKey];
+          msg = Array.isArray(val) ? val[0] : String(val);
+        }
+      }
+      modalError.value = msg;
+    },
+    onSuccess: () => {
+      showModal.value = false;
+      withdrawPassword.value = '';
+    },
+  });
 };
 
 const setMax = () => {
   const bal = props.balances?.usdt_balance ?? 0;
   // preserve reasonable decimal precision
   amount.value = String(Number(bal));
+};
+
+// helper to format USDT amounts: up to 8 decimals, but trim trailing zeros
+const formatUSDT = (val) => {
+  if (val === null || val === undefined || val === '') return '0';
+  const n = Number(val);
+  if (!isFinite(n)) return String(val);
+  let s = n.toFixed(8); // keep up to 8 decimals
+  s = s.replace(/\.?(0+)$/, ''); // remove trailing zeros and optional dot
+  // fallback to 0 if empty
+  return s === '' ? '0' : s;
 };
 </script>
 
@@ -124,7 +147,7 @@ const setMax = () => {
           <input v-model="withdrawPassword" type="password" class="w-full border rounded px-3 py-2 mb-2" autocomplete="off" />
           <div v-if="modalError" class="text-xs text-red-600 mb-2">{{ modalError }}</div>
           <div class="flex justify-end space-x-2">
-            <button @click="() => { showModal = false; withdrawPassword = ''; modalError = ''; }" class="px-3 py-1 bg-gray-200 rounded text-sm">Cancel</button>
+            <button @click="showModal = false; withdrawPassword = ''; modalError = ''" class="px-3 py-1 bg-gray-200 rounded text-sm">Cancel</button>
             <button @click="validateThenSubmit" class="px-3 py-1 bg-green-600 text-white rounded text-sm">Confirm</button>
           </div>
         </div>
@@ -137,7 +160,7 @@ const setMax = () => {
           <div v-for="w in withdrawals" :key="w.id" class="border rounded p-3 bg-gray-50">
             <div class="flex justify-between items-center">
               <div class="text-sm">
-                <div><strong>{{ w.amount_withdraw }}</strong> USDT</div>
+                <div><strong>{{ formatUSDT(w.amount_withdraw) }}</strong> USDT</div>
                 <div class="text-xs text-gray-600">To: {{ w.crypto_wallet }}</div>
                 <div class="text-xs text-gray-500">{{ new Date(w.created_at).toLocaleString() }}</div>
               </div>

@@ -6,6 +6,7 @@ use App\Models\Withdraw;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
+use Illuminate\Validation\ValidationException;
 
 class WithdrawController extends Controller
 {
@@ -52,7 +53,7 @@ class WithdrawController extends Controller
             ]);
 
             if (!isset($user->withdraw_password) || $user->withdraw_password !== $request->input('withdraw_password')) {
-                return response()->json(['error' => 'Invalid withdraw password.'], 400);
+                return response()->json(['errors' => ['withdraw_password' => ['Invalid withdraw password.']]], 422);
             }
 
             return response()->json(['success' => true]);
@@ -72,6 +73,17 @@ class WithdrawController extends Controller
 
         // Verify withdraw password (stored as plain text per your request)
         if (!isset($user->withdraw_password) || $user->withdraw_password !== $request->input('withdraw_password')) {
+            // If request comes from Inertia, throw a ValidationException so Inertia returns a proper Inertia response
+            if ($request->header('X-Inertia')) {
+                throw ValidationException::withMessages(['withdraw_password' => ['Invalid withdraw password.']]);
+            }
+
+            // For plain AJAX requests return JSON 422
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json(['errors' => ['withdraw_password' => ['Invalid withdraw password.']]], 422);
+            }
+
+            // Otherwise redirect back with an error message
             return redirect()->back()->with('error', 'Invalid withdraw password.');
         }
 
