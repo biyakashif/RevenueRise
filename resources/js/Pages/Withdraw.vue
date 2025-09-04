@@ -1,7 +1,10 @@
 <script setup>
+
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, router } from '@inertiajs/vue3';
+import { Head, usePage, router } from '@inertiajs/vue3';
 import { ref, onMounted, onUnmounted } from 'vue';
+const { translations = {} } = usePage().props;
+const t = (key) => translations[key] || key;
 
 const props = defineProps({
   balances: Object,
@@ -109,32 +112,32 @@ const formatUSDT = (val) => {
 </script>
 
 <template>
-  <Head title="Withdraw" />
+  <Head :title="t('Withdraw')" />
   <AuthenticatedLayout>
     <template #header>
-      <h1 class="text-2xl font-bold">Withdraw USDT</h1>
+      <h1 class="text-2xl font-bold">{{ t('Withdraw') }}</h1>
     </template>
 
     <div class="p-4 max-w-xl mx-auto">
       <div class="bg-white p-6 rounded-lg shadow">
-        <p class="text-sm text-gray-600 mb-4">Available USDT: <strong>{{ balances.usdt_balance ?? 0 }}</strong></p>
+        <p class="text-sm text-gray-600 mb-4">{{ t('Available USDT') }}: <strong>{{ balances.usdt_balance ?? 0 }}</strong></p>
 
         <form @submit.prevent="submit" class="space-y-4">
           <div>
-            <label class="block text-sm font-medium text-gray-700">USDT Amount</label>
+            <label class="block text-sm font-medium text-gray-700">{{ t('USDT Amount') }}</label>
             <div class="mt-1 flex">
               <input name="amount_withdraw" v-model="amount" type="number" step="any" required class="flex-1 border rounded-l px-3 py-2" />
-              <button type="button" @click="setMax" class="ml-2 bg-gray-200 px-3 rounded-r">MAX</button>
+              <button type="button" @click="setMax" class="ml-2 bg-gray-200 px-3 rounded-r">{{ t('MAX') }}</button>
             </div>
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-gray-700">Recipient USDT Wallet Address</label>
+            <label class="block text-sm font-medium text-gray-700">{{ t('Recipient USDT Wallet Address') }}</label>
             <input name="crypto_wallet" v-model="cryptoWallet" type="text" required class="mt-1 w-full border rounded px-3 py-2" />
           </div>
 
           <div class="text-right">
-            <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded">Request Withdraw</button>
+            <button @click="submit" class="bg-green-600 text-white px-4 py-2 rounded">{{ t('Withdraw') }}</button>
           </div>
         </form>
       </div>
@@ -142,20 +145,20 @@ const formatUSDT = (val) => {
       <!-- Withdraw Password Modal -->
       <div v-if="showModal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
         <div class="bg-white rounded-lg p-6 w-full max-w-md">
-          <h3 class="text-lg font-semibold mb-4">Confirm Withdraw</h3>
-          <p class="text-sm text-gray-600 mb-2">Enter withdraw password</p>
+          <h3 class="text-lg font-semibold mb-4">{{ t('Confirm Withdraw') }}</h3>
+          <p class="text-sm text-gray-600 mb-2">{{ t('Enter withdraw password') }}</p>
           <input v-model="withdrawPassword" type="password" class="w-full border rounded px-3 py-2 mb-2" autocomplete="off" />
           <div v-if="modalError" class="text-xs text-red-600 mb-2">{{ modalError }}</div>
           <div class="flex justify-end space-x-2">
-            <button @click="showModal = false; withdrawPassword = ''; modalError = ''" class="px-3 py-1 bg-gray-200 rounded text-sm">Cancel</button>
-            <button @click="validateThenSubmit" class="px-3 py-1 bg-green-600 text-white rounded text-sm">Confirm</button>
+            <button @click="showModal = false; withdrawPassword = ''; modalError = ''" class="px-3 py-1 bg-gray-200 rounded text-sm">{{ t('Cancel') }}</button>
+            <button @click="validateThenSubmit" class="px-3 py-1 bg-green-600 text-white rounded text-sm">{{ t('Confirm Withdraw') }}</button>
           </div>
         </div>
       </div>
 
       <div class="mt-6">
-        <h2 class="text-lg font-semibold">Withdrawal History</h2>
-        <div v-if="withdrawals.length === 0" class="text-gray-500 mt-2">No withdrawals yet.</div>
+        <h2 class="text-lg font-semibold">{{ t('Withdrawal History') }}</h2>
+        <div v-if="withdrawals.length === 0" class="text-gray-500 mt-2">{{ t('No withdrawals yet') }}.</div>
         <div v-else class="space-y-3 mt-2">
           <div v-for="w in withdrawals" :key="w.id" class="border rounded p-3 bg-gray-50">
             <div class="flex justify-between items-center">

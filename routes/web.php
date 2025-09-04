@@ -98,6 +98,30 @@ Route::middleware('auth')->group(function () {
     Route::get('/my-orders', [DashboardController::class, 'orders'])->name('orders.index'); 
     Route::post('/orders/store', [DashboardController::class, 'storeOrder'])->name('orders.store');
     Route::post('/orders/check-balance', [DashboardController::class, 'checkBalance'])->name('orders.check-balance');
+
+    Route::get('/service', function () {
+        return Inertia::render('Service');
+    })->name('service');
+
+    Route::get('/event', function () {
+        return Inertia::render('Event');
+    })->name('event');
+
+    Route::get('/terms', function () {
+        return Inertia::render('Terms');
+    })->name('terms');
+
+    Route::get('/certificate', function () {
+        return Inertia::render('Certificate');
+    })->name('certificate');
+
+    Route::get('/faqs', function () {
+        return Inertia::render('Faqs');
+    })->name('faqs');
+
+    Route::get('/about', function () {
+        return Inertia::render('About');
+    })->name('about');
 });
 
 // ================= LOCALE CHANGE =================
@@ -109,6 +133,12 @@ Route::post('/locale/change', function (Request $request) {
     }
     return back();
 })->name('locale.change');
+
+Route::post('/locale', function (Illuminate\Http\Request $request) {
+    $request->validate(['locale' => 'required|string|in:en,es,de,ru,bn,hi,it,ro']);
+    session(['locale' => $request->locale]);
+    return back();
+})->name('locale.set');
 
 require __DIR__ . '/auth.php';
 

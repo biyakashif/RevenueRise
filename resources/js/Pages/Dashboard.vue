@@ -4,6 +4,8 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, usePage } from '@inertiajs/vue3';
 import VIP1Icon from '@/assets/VIP1.png';
 
+const { translations = {} } = usePage().props;
+const t = (key) => translations[key] || key;
 const page = usePage();
 const user = page.props.auth.user || {};
 
@@ -62,56 +64,56 @@ function fmt(n) {
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
           </svg>
-          <Link href="/service" class="mt-2 block text-purple-600 text-sm font-medium">Service</Link>
+                    <Link href="/service" class="mt-2 block text-purple-600 text-sm font-medium">{{ t('Service') }}</Link>
         </div>
         <div class="bg-white p-4 rounded-lg shadow-sm text-center">
           <svg class="w-8 h-8 mx-auto text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
-          <Link href="/event" class="mt-2 block text-purple-600 text-sm font-medium">Event</Link>
+                    <Link href="/event" class="mt-2 block text-purple-600 text-sm font-medium">{{ t('Event') }}</Link>
         </div>
         <div class="bg-white p-4 rounded-lg shadow-sm text-center">
           <svg class="w-8 h-8 mx-auto text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
           </svg>
-                  <Link :href="route('withdraw')" class="mt-2 block text-purple-600 text-sm font-medium">Withdraw</Link>
+                    <Link :href="route('withdraw')" class="mt-2 block text-purple-600 text-sm font-medium">{{ t('Withdraw') }}</Link>
         </div>
         <div class="bg-white p-4 rounded-lg shadow-sm text-center">
           <svg class="w-8 h-8 mx-auto text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
           </svg>
-          <Link href="/deposit" class="mt-2 block text-purple-600 text-sm font-medium">Deposit</Link>
+                    <Link href="/deposit" class="mt-2 block text-purple-600 text-sm font-medium">{{ t('Deposit') }}</Link>
         </div>
         <div class="bg-white p-4 rounded-lg shadow-sm text-center">
           <svg class="w-8 h-8 mx-auto text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h10a2 2 0 012 2v12a2 2 0 01-2 2z" />
           </svg>
-          <Link href="/terms" class="mt-2 block text-purple-600 text-sm font-medium">T&C</Link>
+                    <Link href="/terms" class="mt-2 block text-purple-600 text-sm font-medium">{{ t('T&C') }}</Link>
         </div>
         <div class="bg-white p-4 rounded-lg shadow-sm text-center">
           <svg class="w-8 h-8 mx-auto text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
           </svg>
-          <Link href="/certificate" class="mt-2 block text-purple-600 text-sm font-medium">Certificate</Link>
+                    <Link href="/certificate" class="mt-2 block text-purple-600 text-sm font-medium">{{ t('Certificate') }}</Link>
         </div>
         <div class="bg-white p-4 rounded-lg shadow-sm text-center">
           <svg class="w-8 h-8 mx-auto text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-          <Link href="/faqs" class="mt-2 block text-purple-600 text-sm font-medium">FAQs</Link>
+                    <Link href="/faqs" class="mt-2 block text-purple-600 text-sm font-medium">{{ t('FAQs') }}</Link>
         </div>
         <div class="bg-white p-4 rounded-lg shadow-sm text-center">
           <svg class="w-8 h-8 mx-auto text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
           </svg>
-          <Link href="/about" class="mt-2 block text-purple-600 text-sm font-medium">About</Link>
+                    <Link href="/about" class="mt-2 block text-purple-600 text-sm font-medium">{{ t('About') }}</Link>
         </div>
       </div>
 

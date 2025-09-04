@@ -1,6 +1,6 @@
 <template>
   <AuthenticatedLayout>
-    <Head title="My Orders" />
+    <Head :title="t('My Orders')" />
 
     <div class="py-4 sm:py-6">
       <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
@@ -8,7 +8,7 @@
         <div class="bg-white shadow-sm sm:rounded-lg p-4 mb-6">
           <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4">
             <div>
-              <h1 class="text-xl font-bold text-gray-800">Hi, {{ user.name || 'User' }}</h1>
+              <h1 class="text-xl font-bold text-gray-800">{{ t('Hi') }}, {{ user.name || t('User') }}</h1>
               <p class="inline-block mt-1 px-3 py-1 rounded-md bg-black text-white text-xs font-semibold">
                 {{ user.vip_level }}
               </p>
@@ -23,7 +23,7 @@
                   {{ balanceErrorMessage }}
                 </p>
                 <div v-else key="balance" class="flex justify-between w-full items-center">
-                  <p class="text-xs text-purple-600 font-medium">Total Balance</p>
+                  <p class="text-xs text-purple-600 font-medium">{{ t('Total Balance') }}</p>
                   <p class="text-lg font-bold text-gray-800 flex items-center gap-1">
                     {{ (user.balance || 0).toFixed(2) }}
                     <span class="text-xs text-gray-500">USDT</span>
@@ -32,14 +32,14 @@
               </transition>
             </div>
             <div class="bg-purple-50 p-4 rounded-lg border border-purple-100 flex-1 flex justify-between items-center">
-              <p class="text-xs text-purple-600 font-medium">Frozen Balance</p>
+              <p class="text-xs text-purple-600 font-medium">{{ t('Frozen Balance') }}</p>
               <p class="text-lg font-bold text-gray-800 flex items-center gap-1">
                 {{ Number(user.frozen_balance ?? 0).toFixed(2) }}
                 <span class="text-xs text-gray-500">USDT</span>
               </p>
             </div>
             <div class="bg-purple-50 p-4 rounded-lg border border-purple-100 flex-1 flex justify-between items-center">
-              <p class="text-xs text-purple-600 font-medium">Today's Profit</p>
+              <p class="text-xs text-purple-600 font-medium">{{ t("Today's Profit") }}</p>
               <p class="text-lg font-bold text-gray-800 flex items-center gap-1">
                 {{ (user.todays_profit || 0).toFixed(2) }}
                 <span class="text-xs text-gray-500">USDT</span>
@@ -51,7 +51,7 @@
         <!-- Today's Progress Section -->
         <div class="bg-white shadow-sm sm:rounded-lg px-4 py-3 mb-6">
           <div class="flex justify-between items-center mb-2">
-            <h3 class="text-sm font-semibold text-gray-800">Today's Progress</h3>
+            <h3 class="text-sm font-semibold text-gray-800">{{ t("Today's Progress") }}</h3>
             <span class="text-sm font-bold text-purple-600">{{ taskProgress }}/{{ taskItemsCount }}</span>
           </div>
           <div class="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
@@ -64,7 +64,7 @@
 
         <!-- Completion Message -->
         <div v-if="completionMessage" class="bg-green-50 border border-green-200 text-green-700 p-4 rounded-lg mb-6">
-          <p class="text-sm font-medium text-center">{{ completionMessage }}</p>
+          <p class="text-sm font-medium text-center">{{ t(completionMessage) }}</p>
         </div>
 
         <!-- Task Container -->
@@ -73,12 +73,12 @@
           class="bg-white shadow-sm sm:rounded-lg p-6 text-center relative overflow-hidden"
         >
           <div class="relative z-10">
-            <h2 class="text-xl font-bold mb-2">Order Task Set</h2>
+            <h2 class="text-xl font-bold mb-2">{{ t('Order Task Set') }}</h2>
             <p class="text-sm text-gray-600 mb-4">{{ activeTask.name }}</p>
 
             <div class="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
               <div class="text-left">
-                <p class="text-xs text-gray-500">Progress</p>
+                <p class="text-xs text-gray-500">{{ t('Progress') }}</p>
                 <p class="text-lg font-bold">{{ taskProgress }}/{{ taskItemsCount }}</p>
               </div>
 
@@ -93,11 +93,11 @@
                   <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                   <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
                 </svg>
-                <span>{{ isGrabbing ? 'Reserving...' : 'Grab Orders' }}</span>
+                <span>{{ isGrabbing ? t('Reserving...') : t('Grab Orders') }}</span>
               </button>
 
               <div class="text-right">
-                <p class="text-xs text-gray-500">Reward</p>
+                <p class="text-xs text-gray-500">{{ t('Reward') }}</p>
                 <p class="text-lg font-bold">{{ (user.todays_profit || 0).toFixed(2) }} USDT</p>
               </div>
             </div>
@@ -106,7 +106,7 @@
 
         <!-- No tasks available -->
         <div v-else-if="!hasCompletedAllTasks" class="bg-white shadow-sm sm:rounded-lg p-6 text-center">
-          <p class="text-gray-500">No tasks available for your VIP level ({{ user.vip_level || 'VIP1' }})</p>
+          <p class="text-gray-500">{{ t('No tasks available for your VIP level') }} ({{ user.vip_level || t('VIP1') }})</p>
         </div>
       </div>
     </div>
@@ -116,23 +116,21 @@
       <div v-if="showModal && currentTaskProduct" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2">
         <div class="bg-white rounded-lg shadow-xl max-w-sm w-full max-h-[90vh] overflow-y-auto animate-scale">
           <div class="bg-purple-600 text-white p-3 rounded-t-lg">
-            <h3 class="text-sm font-semibold text-center">Ebay - Order ({{ currentTaskProduct.commission_percentage }}%)</h3>
-            <p v-if="currentTaskProduct?.type === 'Lucky Order'" class="mt-1 text-yellow-400 font-bold text-xs text-center">
-              🎉 Congratulations! You got a Lucky Order
-            </p>
+            <h3 class="text-sm font-semibold text-center">{{ t('Ebay - Order') }} ({{ currentTaskProduct.commission_percentage }}%)</h3>
+            <p v-if="currentTaskProduct?.type === 'Lucky Order'" class="mt-1 text-yellow-400 font-bold text-xs text-center">🎉 {{ t('Congratulations! You got a Lucky Order') }}</p>
           </div>
           <div class="p-3">
             <div class="mb-3 text-xs">
               <div class="flex justify-between mb-1">
-                <span class="text-gray-500">Order number:</span>
+                <span class="text-gray-500">{{ t('Order number:') }}</span>
                 <span class="font-semibold"># {{ taskProgress + 1 }}</span>
               </div>
               <div class="flex justify-between mb-1">
-                <span class="text-gray-500">Received Date:</span>
+                <span class="text-gray-500">{{ t('Received Date:') }}</span>
                 <span class="font-semibold">{{ new Date().toISOString().split('T')[0] }}</span>
               </div>
               <div class="flex justify-between">
-                <span class="text-gray-500">Balance:</span>
+                <span class="text-gray-500">{{ t('Balance:') }}</span>
                 <span class="font-semibold text-green-600">{{ (user.balance || 0).toFixed(2) }} USDT</span>
               </div>
             </div>
@@ -160,15 +158,15 @@
             <div class="border-t border-gray-200 my-2"></div>
             <div class="text-xs">
               <div class="flex justify-between mb-1">
-                <span class="text-gray-600">Purchase Price</span>
+                <span class="text-gray-600">{{ t('Purchase Price') }}</span>
                 <span class="font-semibold">{{ currentTaskProduct.selling_price }} USDT</span>
               </div>
               <div class="flex justify-between mb-1">
-                <span class="text-gray-600">Selling Price</span>
+                <span class="text-gray-600">{{ t('Selling Price') }}</span>
                 <span class="font-semibold">{{ (parseFloat(currentTaskProduct.selling_price) + 0.112).toFixed(3) }} USDT</span>
               </div>
               <div class="flex justify-between">
-                <span class="text-gray-600">Commission ({{ currentTaskProduct.commission_percentage }}%)</span>
+                <span class="text-gray-600">{{ t('Commission') }} ({{ currentTaskProduct.commission_percentage }}%)</span>
                 <span class="font-semibold text-green-600">{{ currentTaskProduct.commission_reward }} USDT</span>
               </div>
             </div>
@@ -179,7 +177,7 @@
               class="px-4 py-2 text-xs bg-purple-600 text-white rounded hover:bg-purple-700 font-medium transition"
               :disabled="isSubmitting"
             >
-              Confirm
+              {{ t('Confirm') }}
             </button>
           </div>
         </div>
@@ -190,8 +188,8 @@
     <transition name="fade" mode="out-in">
       <div v-if="notEnoughTasks" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
         <div class="bg-white rounded-lg shadow-lg p-6 max-w-sm w-full text-center">
-          <p class="text-gray-700 font-medium mb-2">Fetching orders...</p>
-          <p class="text-xs text-gray-500">There are not enough products available right now. Please wait.</p>
+          <p class="text-gray-700 font-medium mb-2">{{ t('Fetching orders...') }}</p>
+          <p class="text-xs text-gray-500">{{ t('There are not enough products available right now. Please wait.') }}</p>
           <div class="mt-4">
             <svg class="animate-spin h-6 w-6 text-purple-600 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -208,7 +206,7 @@
 
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, router } from '@inertiajs/vue3';
+import { Head, router, usePage } from '@inertiajs/vue3';
 import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
 import { debounce } from 'lodash';
 
@@ -221,6 +219,9 @@ const props = defineProps({
   confirmedCount: { type: Number, default: 0 },
   flash: { type: Object, default: () => ({}) },
 });
+
+const { translations = {} } = usePage().props;
+const t = (key) => translations[key] || key;
 
 const balanceErrorMessage = ref('');
 const completionMessage = ref('');

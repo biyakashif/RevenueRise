@@ -6,6 +6,8 @@ import { ClipboardDocumentListIcon } from '@heroicons/vue/24/solid';
 import TetherIcon from '@/assets/tether.svg'; // Import the SVG
 
 const page = usePage();
+const { translations = {} } = page.props;
+const t = (key) => translations[key] || key;
 
 const props = defineProps({
     depositDetails: { type: Object, required: true },
@@ -95,7 +97,7 @@ const submitDeposit = () => {
 </script>
 
 <template>
-    <Head title="Deposit" />
+    <Head :title="t('Deposit')" />
     <AuthenticatedLayout>
         <!--
           Responsive improvements:
@@ -112,14 +114,14 @@ const submitDeposit = () => {
                     <div class="flex justify-between items-center mb-3 md:mb-6">
                         <div class="flex items-center">
                             <img :src="TetherIcon" alt="USDT Logo" class="w-7 h-7 md:w-8 md:h-8 mr-2 md:mr-3" />
-                            <h1 class="text-lg md:text-2xl font-semibold text-gray-800">USDT Deposit</h1>
+                            <h1 class="text-2xl font-bold">{{ t('Deposit') }}</h1>
                         </div>
                         <button
                             @click="fetchHistory"
                             class="flex items-center text-purple-600 font-medium text-xs md:text-sm hover:text-purple-700 transition-all duration-200"
                         >
                             <ClipboardDocumentListIcon class="w-4 h-4 md:w-5 md:h-5 mr-1" />
-                            History
+                            {{ t('History') }}
                         </button>
                     </div>
 
@@ -128,48 +130,49 @@ const submitDeposit = () => {
                     </div>
 
                     <div class="mb-3 md:mb-6">
-                        <label class="block text-xs md:text-sm font-medium text-gray-600 mb-1">Network</label>
+                        <label class="block text-xs md:text-sm font-medium text-gray-600 mb-1">{{ t('Network') }}</label>
                         <input disabled type="text" :value="depositDetails.network || 'TBD'" class="mt-1 block w-full rounded-full border-none bg-gray-50 text-gray-900 cursor-not-allowed text-sm md:text-base" />
                     </div>
 
                     <div class="mb-3 md:mb-6 flex justify-center">
                         <img
-                            :src="depositDetails.qr_code ? '/storage/' + depositDetails.qr_code : 'https://via.placeholder.com/150?text=No+QR+Code'"
+                            :src="depositDetails.qr_code ?
+                             '/storage/' + depositDetails.qr_code : 'https://via.placeholder.com/150?text=No+QR+Code'"
                             alt="QR Code"
                             class="w-28 h-28 sm:w-32 sm:h-32 md:w-40 md:h-40"
                         />
                     </div>
 
                     <div class="mb-3 md:mb-6">
-                        <label class="block text-xs md:text-sm font-medium text-gray-600 mb-1">Address</label>
+                        <label class="block text-xs md:text-sm font-medium text-gray-600 mb-1">{{ t('Address') }}</label>
                         <div class="flex items-center border border-gray-200 p-2 rounded-lg">
                             <span class="text-xs md:text-sm text-gray-800 flex-1 break-all">{{ depositDetails.address }}</span>
                             <button
                                 @click="copyAddress"
-                                :class="['ml-2 px-2 py-1 rounded-lg text-white text-xs md:text-sm', isCopied ? 'bg-green-500' : 'bg-purple-600 hover:bg-purple-700']"
+                                class="ml-2 px-2 py-1 rounded-lg text-white text-xs md:text-sm"
                             >
-                                {{ isCopied ? 'Copied!' : 'Copy' }}
+                                {{ t('Copy Address') }}
                             </button>
                         </div>
                         <div v-if="copyError" class="mt-1 text-xs text-red-500">{{ copyError }}</div>
                     </div>
 
                     <div class="mb-3 md:mb-6">
-                        <label class="block text-xs md:text-sm font-medium text-gray-600 mb-1">Amount</label>
+                        <label class="block text-xs md:text-sm font-medium text-gray-600 mb-1">{{ t('Amount') }}</label>
                         <!-- If this is a VIP purchase, lock the amount field and show VIP note -->
                         <input
                             v-model="form.amount"
                             :disabled="!!form.vip"
                             type="number"
                             step="any"
-                            placeholder="Enter amount"
+                            :placeholder="t('Enter amount')"
                             class="mt-1 block w-full rounded-full border-none focus:ring-2 focus:ring-purple-300 text-gray-900 text-sm md:text-base py-2"
                         />
-                        <div v-if="form.vip" class="mt-1 text-xs md:text-sm text-purple-700">This deposit is for <strong>{{ form.vip }}</strong>. Amount is fixed for this VIP purchase.</div>
+                        <div v-if="form.vip" class="mt-1 text-xs md:text-sm text-purple-700">{{ t('This deposit is for') }} <strong>{{ form.vip }}</strong>. {{ t('Amount is fixed for this VIP purchase.') }}</div>
                     </div>
 
                     <div class="mb-3 md:mb-6">
-                        <label class="block text-xs md:text-sm font-medium text-gray-600 mb-1">Upload Screenshot</label>
+                        <label class="block text-xs md:text-sm font-medium text-gray-600 mb-1">{{ t('Upload Screenshot') }}</label>
                         <input
                             type="file"
                             @change="form.slip = $event.target.files[0]"
@@ -183,7 +186,7 @@ const submitDeposit = () => {
                         :disabled="!form.amount || !form.slip"
                         class="w-full px-3 md:px-4 py-2 md:py-3 bg-purple-600 text-white font-semibold text-sm md:text-lg rounded-full hover:bg-purple-700 transition-all duration-200"
                     >
-                        Deposit
+                        {{ t('Submit Deposit') }}
                     </button>
                 </div>
             </div>
@@ -192,7 +195,7 @@ const submitDeposit = () => {
             <div v-if="showHistory" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                 <div class="bg-white p-3 md:p-6 rounded-lg w-11/12 max-w-md max-h-[80vh] overflow-y-auto">
                     <div class="flex justify-between items-center mb-3">
-                        <h2 class="text-base md:text-xl font-semibold text-gray-800">Deposit History</h2>
+                        <h2 class="text-base md:text-xl font-semibold text-gray-800">{{ t('Deposit History') }}</h2>
                         <button @click="showHistory = false" class="text-purple-600 hover:text-purple-700">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L5 6M6 6l12 12" />
@@ -200,7 +203,7 @@ const submitDeposit = () => {
                         </button>
                     </div>
                     <div v-if="historyError" class="text-red-500 text-xs md:text-sm mb-2">{{ historyError }}</div>
-                    <div v-else-if="history.length === 0" class="text-gray-500 text-xs md:text-sm">No deposit history available.</div>
+                    <div v-else-if="history.length === 0" class="text-gray-500 text-xs md:text-sm">{{ t('No deposit history available.') }}</div>
                     <div v-else class="space-y-2">
                         <div v-for="deposit in history" :key="deposit.id" class="p-2 md:p-3 border border-gray-200 rounded-lg">
                             <div class="flex justify-between">

@@ -1,7 +1,10 @@
 <script setup>
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, usePage } from '@inertiajs/vue3';
 import Header from '@/Components/Header.vue';
 import ApplicationLogo from '@/Components/ApplicationLogo.vue';
+
+const { translations } = usePage().props;
+const t = (key) => translations[key] || key;
 
 defineProps({
     canLogin: Boolean,
@@ -10,7 +13,7 @@ defineProps({
 </script>
 
 <template>
-    <Head title="Welcome" />
+    <Head :title="t('Welcome')" />
     <div class="bg-gray-100 min-h-screen flex flex-col items-center justify-center text-gray-800 px-6">
         <div class="bg-white p-6 rounded-lg shadow-sm w-full max-w-md text-center">
             <div class="flex justify-center mb-6">
@@ -19,9 +22,9 @@ defineProps({
                 </Link>
             </div>
 
-            <h1 class="text-2xl font-bold mb-2">Task-App</h1>
+            <h1 class="text-2xl font-bold mb-2">{{ t('Task-App') }}</h1>
             <p class="text-sm text-gray-500 mb-8">
-                Earn effortlessly from anywhere — no skills, no experience, just your time.
+                {{ t('Earn effortlessly from anywhere — no skills, no experience, just your time.') }}
             </p>
 
             <nav v-if="canLogin" class="flex flex-col gap-4">
@@ -30,21 +33,21 @@ defineProps({
                     :href="route('dashboard')"
                     class="w-full text-center rounded-full px-4 py-3 bg-purple-600 font-semibold text-lg transition-all duration-300 hover:bg-purple-700 hover:scale-105 shadow-lg"
                 >
-                    Dashboard
+                    {{ t('Dashboard') }}
                 </Link>
                 <template v-else>
                     <Link
                         :href="route('login')"
                         class="w-full text-center rounded-full px-4 py-3 bg-purple-600 font-semibold text-white transition-all duration-300 hover:bg-purple-700 hover:scale-105 shadow-lg"
                     >
-                        Log in
+                        {{ t('Log in') }}
                     </Link>
                     <Link
                         v-if="canRegister"
                         :href="route('register')"
                         class="w-full text-center rounded-full px-4 py-3 bg-gray-200 font-semibold text-lg transition-all duration-300 hover:bg-gray-300 hover:scale-105 shadow-lg"
                     >
-                        Register
+                        {{ t('Register') }}
                     </Link>
                 </template>
             </nav>
