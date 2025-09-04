@@ -1,0 +1,373 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\User;
+use App\Models\Product;
+use App\Models\Task;
+use App\Models\UserOrder;
+use Inertia\Response;
+use Illuminate\Http\Request;
+use Inertia\Inertia;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
+
+class DashboardController extends Controller
+{
+    public function index(): Response
+    {
+        $user = auth()->user();
+        if ($user) {
+            $user->resetTodaysProfitIfNeeded();
+        }
+
+        return Inertia::render('Dashboard', [
+            'user' => $user ? $user->only(['id', 'mobile_number', 'invitation_code', 'balance', 'vip_level', 'frozen_balance', 'todays_profit']) : null,
+        ]);
+    }
+
+    public function orders(Request $request): Response
+    {
+        try {
+            $user = $request->user();
+            if (!$user) {
+                return redirect()->route('login')->with('error', 'Please log in to view orders.');
+            }
+
+            $user->resetTodaysProfitIfNeeded();
+
+            $vipLevel = $user->vip_level ?? 'VIP1';
+
+            $confirmedProductIds = UserOrder::where('user_id', $user->id)
+                ->where('status', 'confirmed')
+                ->where('task_name', $vipLevel)
+                ->pluck('product_id');
+
+            $taskTotalCount = Task::where('name', $vipLevel)->count();
+
+            $confirmedCount = UserOrder::where('user_id', $user->id)
+                ->where('status', 'confirmed')
+                ->where('task_name', $vipLevel)
+                ->count();
+
+            $taskModels = Task::with('product')
+                ->where('name', $vipLevel)
+                ->orderBy('position')
+                ->orderBy('id')
+                ->get();
+
+            $tasksForResponse = $taskModels->map(function ($task) use ($user) {
+                $order = UserOrder::where('user_id', $user->id)
+                    ->where('product_id', $task->product_id)
+                    ->first();
+                return [
+                    'id' => $task['id'] ?? null,
+                    'name' => $task['name'],
+                    'product_id' => $task['product_id'],
+                    'product_type' => $task['product_type'],
+                    'position' => $task['position'] ?? 0,
+                    'status' => $order ? $order->status : 'confirmed',
+                    'product' => $task['product'] ? [
+                        'id' => $task['product']['id'],
+                        'product_id' => $task['product']['product_id'],
+                        'title' => $task['product']['title'],
+                        'description' => $task['product']['description'],
+                        'purchase_price' => $task['product']['purchase_price'],
+                        'selling_price' => $task['product']['selling_price'],
+                        'commission_reward' => $task['product']['commission_reward'],
+                        'commission_percentage' => $task['product']['commission_percentage'],
+                        'image_path' => $task['product']['image_path'],
+                        'type' => $task['product']['type'],
+                    ] : null,
+                ];
+            })->toArray();
+
+            if ($user->force_lucky_order) {
+                $luckyProduct = Product::where('type', 'Lucky Order')
+                    ->whereNotIn('id', $confirmedProductIds)
+                    ->inRandomOrder()
+                    ->first();
+
+                if ($luckyProduct) {
+                    $forcedTask = [
+                        'id' => null,
+                        'name' => $vipLevel,
+                        'product_id' => $luckyProduct->id,
+                        'product_type' => 'Lucky Order',
+                        'position' => null,
+                        'status' => 'confirmed',
+                        'product' => [
+                            'id' => $luckyProduct->id,
+                            'product_id' => $luckyProduct->product_id,
+                            'title' => $luckyProduct->title,
+                            'description' => $luckyProduct->description,
+                            'purchase_price' => $luckyProduct->purchase_price,
+                            'selling_price' => $luckyProduct->selling_price,
+                            'commission_reward' => $luckyProduct->commission_reward,
+                            'commission_percentage' => $luckyProduct->commission_percentage,
+                            'image_path' => $luckyProduct->image_path,
+                            'type' => $luckyProduct->type,
+                        ],
+                        'forced_lucky' => true,
+                    ];
+
+                    $insertIndex = (int) max(0, min($confirmedCount, count($tasksForResponse)));
+                    array_splice($tasksForResponse, $insertIndex, 0, [$forcedTask]);
+                    $taskTotalCount = $taskTotalCount + 1;
+                } else {
+                    return Inertia::render('Orders', [
+                        'products' => [],
+                        'currentProductIndex' => 0,
+                        'user' => $user->only(['id', 'name', 'balance', 'frozen_balance', 'vip_level', 'mobile_number', 'todays_profit']),
+                        'tasks' => [],
+                        'taskTotalCount' => $taskTotalCount,
+                        'confirmedCount' => $confirmedCount,
+                        'flash' => ['error' => 'No Lucky Order products available.'],
+                    ]);
+                }
+            }
+
+            $products = Product::whereNotIn('id', function ($query) use ($user) {
+                    $query->select('product_id')
+                          ->from('user_orders')
+                          ->where('user_id', $user->id)
+                          ->where('status', 'confirmed');
+                })
+                ->latest()
+                ->get();
+
+            $currentIndex = (int) $request->input('current_product_index', 0);
+
+            return Inertia::render('Orders', [
+                'products' => $products,
+                'currentProductIndex' => $currentIndex,
+                'user' => $user->only(['id', 'name', 'balance', 'frozen_balance', 'vip_level', 'mobile_number', 'todays_profit']),
+                'tasks' => collect($tasksForResponse),
+                'taskTotalCount' => $taskTotalCount > 40 ? 40 : $taskTotalCount,
+                'confirmedCount' => $confirmedCount,
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error loading orders: ' . $e->getMessage(), ['exception' => $e]);
+            return Inertia::render('Orders', [
+                'products' => [],
+                'currentProductIndex' => 0,
+                'user' => [],
+                'tasks' => [],
+                'taskTotalCount' => 0,
+                'confirmedCount' => 0,
+                'flash' => ['error' => 'An error occurred while loading orders. Please try again.'],
+            ]);
+        }
+    }
+
+    public function storeOrder(Request $request)
+    {
+        $request->validate([
+            'product_id' => 'required|exists:products,id',
+            'task_name' => 'required|string',
+        ]);
+
+        return DB::transaction(function () use ($request) {
+            $user = Auth::user();
+            $product = Product::findOrFail($request->product_id);
+
+            $existingOrder = UserOrder::where('user_id', $user->id)
+                ->where('product_id', $request->product_id)
+                ->whereIn('status', ['pending', 'confirmed'])
+                ->first();
+
+            if ($existingOrder && $existingOrder->status === 'confirmed') {
+                \Log::warning('Duplicate order attempt', [
+                    'user_id' => $user->id,
+                    'product_id' => $request->product_id,
+                ]);
+                return back()->with('error', 'This product has already been ordered.');
+            }
+
+            $today = now()->toDateString();
+            $nextOrderNumber = (int) (
+                UserOrder::where('user_id', $user->id)
+                    ->where('task_name', $request->task_name)
+                    ->whereDate('created_at', $today)
+                    ->max('order_number') ?? 0
+            ) + 1;
+
+            if ($product->type === 'Lucky Order') {
+                $user->refresh();
+                if ($user->balance < 0) {
+                    return back()->with('error', 'Order cannot be confirmed until your balance is positive.');
+                }
+                if ($existingOrder && $existingOrder->status === 'pending') {
+                    // Update existing pending order to confirmed
+                    $existingOrder->status = 'confirmed';
+                    $existingOrder->order_number = $nextOrderNumber;
+                    $existingOrder->save();
+                    // Add back selling_price + commission_reward for Lucky Order
+                    $user->balance += ($product->selling_price + $product->commission_reward);
+                    $user->save();
+                    \Log::info('Lucky Order confirmed, balance restored', [
+                        'user_id' => $user->id,
+                        'product_id' => $product->id,
+                        'new_balance' => $user->balance,
+                    ]);
+                } else {
+                    // Create new order
+                    $this->handleLuckyOrderBalance($user, $product);
+                    UserOrder::create([
+                        'user_id' => $user->id,
+                        'user_name' => $user->name,
+                        'mobile_number' => $user->mobile_number,
+                        'vip_level' => $user->vip_level,
+                        'product_id' => $request->product_id,
+                        'task_name' => $request->task_name,
+                        'status' => 'confirmed',
+                        'order_number' => $nextOrderNumber,
+                        'initial_balance' => $user->getOriginal('balance'),
+                        'purchase_price' => $product->selling_price,
+                        'commission_reward' => $product->commission_reward,
+                    ]);
+                    // Add back selling_price + commission_reward for Lucky Order
+                    $user->balance += ($product->selling_price + $product->commission_reward);
+                    $user->save();
+                    \Log::info('Lucky Order confirmed, balance restored', [
+                        'user_id' => $user->id,
+                        'product_id' => $product->id,
+                        'new_balance' => $user->balance,
+                    ]);
+                }
+            } else {
+                $user->balance += ($product->commission_reward + $product->commission_reward);
+                $user->todays_profit += $product->commission_reward;
+                $user->save();
+                UserOrder::create([
+                    'user_id' => $user->id,
+                    'user_name' => $user->name,
+                    'mobile_number' => $user->mobile_number,
+                    'vip_level' => $user->vip_level,
+                    'product_id' => $request->product_id,
+                    'task_name' => $request->task_name,
+                    'status' => 'confirmed',
+                    'order_number' => $nextOrderNumber,
+                    'initial_balance' => $user->getOriginal('balance'),
+                    'purchase_price' => $product->selling_price,
+                    'commission_reward' => $product->commission_reward,
+                ]);
+            }
+
+            \Log::info('Order saved successfully', [
+                'user_id' => $user->id,
+                'product_id' => $request->product_id,
+                'order_number' => $nextOrderNumber,
+            ]);
+
+            return back()->with('success', 'Order saved successfully.');
+        }, 5);
+    }
+
+    public function checkBalance(Request $request)
+    {
+        $request->validate([
+            'product_id' => 'required|exists:products,id',
+        ]);
+
+        $user = Auth::user();
+        $product = Product::findOrFail($request->product_id);
+
+        return DB::transaction(function () use ($user, $product, $request) {
+            $user->refresh();
+
+            \Log::info('Balance check', [
+                'user_id' => $user->id,
+                'balance' => $user->balance,
+                'commission_reward' => $product->commission_reward,
+                'product_id' => $product->id,
+                'product_type' => $product->type,
+                'selling_price' => $product->selling_price,
+            ]);
+
+            $existingOrder = UserOrder::where('user_id', $user->id)
+                ->where('product_id', $product->id)
+                ->whereIn('status', ['pending', 'confirmed'])
+                ->first();
+
+            if ($existingOrder && $existingOrder->status === 'confirmed') {
+                \Log::warning('Product already ordered', [
+                    'user_id' => $user->id,
+                    'product_id' => $product->id,
+                ]);
+                return back()->with('error', 'This product has already been ordered.');
+            }
+
+            if ($product->type === 'Lucky Order') {
+                if (!$existingOrder) {
+                    // Create a pending order for Lucky Order
+                    $today = now()->toDateString();
+                    $nextOrderNumber = (int) (
+                        UserOrder::where('user_id', $user->id)
+                            ->where('task_name', $request->task_name ?? 'VIP1')
+                            ->whereDate('created_at', $today)
+                            ->max('order_number') ?? 0
+                    ) + 1;
+
+                    UserOrder::create([
+                        'user_id' => $user->id,
+                        'user_name' => $user->name,
+                        'mobile_number' => $user->mobile_number,
+                        'vip_level' => $user->vip_level,
+                        'product_id' => $product->id,
+                        'task_name' => $request->task_name ?? 'VIP1',
+                        'status' => 'pending',
+                        'order_number' => $nextOrderNumber,
+                        'initial_balance' => $user->balance,
+                        'purchase_price' => $product->selling_price,
+                        'commission_reward' => $product->commission_reward,
+                    ]);
+
+                    $user->balance -= $product->selling_price; // Deduct only selling_price
+                    $user->save();
+
+                    \Log::info('Lucky Order grabbed, pending status', [
+                        'user_id' => $user->id,
+                        'product_id' => $product->id,
+                        'new_balance' => $user->balance,
+                    ]);
+                }
+            } else {
+                if ($user->balance < $product->commission_reward) {
+                    \Log::warning('Insufficient balance for Regular Order', [
+                        'user_id' => $user->id,
+                        'balance' => $user->balance,
+                        'commission_reward' => $product->commission_reward,
+                    ]);
+                    return back()->with('error', 'Insufficient balance to grab this Regular Order. Current balance: ' . number_format($user->balance, 2) . ' USDT');
+                }
+                $user->balance -= $product->commission_reward;
+                $user->save();
+            }
+
+            \Log::info('Balance deducted successfully', [
+                'user_id' => $user->id,
+                'new_balance' => $user->balance,
+                'product_id' => $product->id,
+            ]);
+
+            return back()->with('success', 'Balance sufficient, commission deducted.');
+        }, 5);
+    }
+
+    protected function handleLuckyOrderBalance(User $user, Product $product)
+    {
+        $newBalance = $user->balance - $product->selling_price; // Deduct only selling_price
+        $user->balance = $newBalance;
+        $user->save();
+
+        \Log::info('Lucky Order balance updated', [
+            'user_id' => $user->id,
+            'product_id' => $product->id,
+            'original_balance' => $user->balance,
+            'selling_price' => $product->selling_price,
+            'new_balance' => $newBalance,
+        ]);
+    }
+}
