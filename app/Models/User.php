@@ -98,8 +98,13 @@ class User extends Authenticatable
         \App\Models\Task::where('user_id', $this->id)->delete();
 
         if ($this->vip_level === 'VIP1') {
-            // Assign 40 random VIP1 products
+            // Assign VIP1 products (up to 40)
             $products = \App\Models\Product::where('type', 'VIP1')->inRandomOrder()->limit(40)->get();
+            if ($products->isEmpty()) {
+                // No VIP1 products available, skip task assignment
+                return;
+            }
+            
             foreach ($products as $index => $product) {
                 \App\Models\Task::create([
                     'user_id' => $this->id,
@@ -114,39 +119,51 @@ class User extends Authenticatable
             $vips = \App\Models\Product::where('type', 'VIPs')->inRandomOrder()->limit(36)->get();
             $lucky = \App\Models\Product::where('type', 'Lucky Order')->inRandomOrder()->limit(4)->get();
 
+            if ($vips->isEmpty() && $lucky->isEmpty()) {
+                // No products available, skip task assignment
+                return;
+            }
+
             $tasks = [];
             $vipsIndex = 0;
             $luckyIndex = 0;
             for ($i = 1; $i <= 40; $i++) {
-                if ($i % 10 === 0 && $luckyIndex < 4) {
+                if ($i % 10 === 0 && $luckyIndex < $lucky->count()) {
                     $tasks[] = [
                         'user_id' => $this->id,
                         'name' => $this->vip_level,
                         'product_id' => $lucky[$luckyIndex]->id,
                         'product_type' => 'Lucky Order',
                         'position' => $i,
+                        'created_at' => now(),
+                        'updated_at' => now(),
                     ];
                     $luckyIndex++;
-                } else if ($vipsIndex < 36) {
+                } else if ($vipsIndex < $vips->count()) {
                     $tasks[] = [
                         'user_id' => $this->id,
                         'name' => $this->vip_level,
                         'product_id' => $vips[$vipsIndex]->id,
                         'product_type' => 'VIPs',
                         'position' => $i,
+                        'created_at' => now(),
+                        'updated_at' => now(),
                     ];
                     $vipsIndex++;
                 }
             }
-            \App\Models\Task::insert($tasks);
+            
+            if (!empty($tasks)) {
+                \App\Models\Task::insert($tasks);
+            }
         }
     }
 
     protected static function booted()
     {
         static::created(function ($user) {
-            // Disable automatic task assignment for seeding
-            // $user->assignTasks();
+            // Re-enable automatic task assignment
+            $user->assignTasks();
         });
     }
 }
