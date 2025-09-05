@@ -108,7 +108,7 @@ const fetchBalance = async () => {
       avatarUrl.value = data.avatar_url;
     }
   } catch (err) {
-    console.error('Error fetching balance:', err);
+    // suppressed: error fetching balance
   }
 };
 

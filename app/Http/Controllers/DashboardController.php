@@ -108,6 +108,7 @@ class DashboardController extends Controller
                             'commission_percentage' => $luckyProduct->commission_percentage,
                             'image_path' => $luckyProduct->image_path,
                             'type' => $luckyProduct->type,
+                            'is_forced' => true,
                         ],
                         'forced_lucky' => true,
                     ];
@@ -166,11 +167,13 @@ class DashboardController extends Controller
         $request->validate([
             'product_id' => 'required|exists:products,id',
             'task_name' => 'required|string',
+            'is_forced' => 'sometimes|boolean',
         ]);
 
         return DB::transaction(function () use ($request) {
             $user = Auth::user();
             $product = Product::findOrFail($request->product_id);
+            $isForced = $request->input('is_forced', false);
 
             $existingOrder = UserOrder::where('user_id', $user->id)
                 ->where('product_id', $request->product_id)
@@ -193,7 +196,8 @@ class DashboardController extends Controller
                     ->max('order_number') ?? 0
             ) + 1;
 
-            if ($product->type === 'Lucky Order') {
+            // Genuine Lucky Order Logic: ONLY if the type is 'Lucky Order' AND it's NOT forced.
+            if ($product->type === 'Lucky Order' && !$isForced) {
                 $user->refresh();
                 if ($user->balance < 0) {
                     return back()->with('error', 'Order cannot be confirmed until your balance is positive.');
@@ -203,55 +207,36 @@ class DashboardController extends Controller
                     $existingOrder->status = 'confirmed';
                     $existingOrder->order_number = $nextOrderNumber;
                     $existingOrder->save();
-                    // Add back selling_price + commission_reward for Lucky Order
-                    $user->balance += ($product->selling_price + $product->commission_reward);
-                    $user->save();
-                    \Log::info('Lucky Order confirmed, balance restored', [
-                        'user_id' => $user->id,
-                        'product_id' => $product->id,
-                        'new_balance' => $user->balance,
-                    ]);
                 } else {
-                    // Create new order
-                    $this->handleLuckyOrderBalance($user, $product);
+                    // This case should ideally not happen if checkBalance is always called first
+                    // But as a fallback, create the order record.
                     UserOrder::create([
-                        'user_id' => $user->id,
-                        'user_name' => $user->name,
-                        'mobile_number' => $user->mobile_number,
-                        'vip_level' => $user->vip_level,
-                        'product_id' => $request->product_id,
-                        'task_name' => $request->task_name,
-                        'status' => 'confirmed',
-                        'order_number' => $nextOrderNumber,
-                        'initial_balance' => $user->getOriginal('balance'),
-                        'purchase_price' => $product->selling_price,
-                        'commission_reward' => $product->commission_reward,
-                    ]);
-                    // Add back selling_price + commission_reward for Lucky Order
-                    $user->balance += ($product->selling_price + $product->commission_reward);
-                    $user->save();
-                    \Log::info('Lucky Order confirmed, balance restored', [
-                        'user_id' => $user->id,
-                        'product_id' => $product->id,
-                        'new_balance' => $user->balance,
+                        'user_id' => $user->id, 'user_name' => $user->name, 'mobile_number' => $user->mobile_number,
+                        'vip_level' => $user->vip_level, 'product_id' => $request->product_id, 'task_name' => $request->task_name,
+                        'status' => 'confirmed', 'order_number' => $nextOrderNumber, 'initial_balance' => $user->getOriginal('balance'),
+                        'purchase_price' => $product->selling_price, 'commission_reward' => $product->commission_reward,
                     ]);
                 }
+                // Add back selling_price + commission_reward for the genuine Lucky Order
+                $user->balance += ($product->selling_price + $product->commission_reward);
+                $user->todays_profit += $product->commission_reward; // Commission is also profit
+                $user->save();
+                \Log::info('Genuine Lucky Order confirmed, balance restored', [
+                    'user_id' => $user->id, 'product_id' => $product->id, 'new_balance' => $user->balance,
+                ]);
             } else {
+                // Regular Order and Forced Lucky Order Logic
                 $user->balance += ($product->commission_reward + $product->commission_reward);
                 $user->todays_profit += $product->commission_reward;
                 $user->save();
                 UserOrder::create([
-                    'user_id' => $user->id,
-                    'user_name' => $user->name,
-                    'mobile_number' => $user->mobile_number,
-                    'vip_level' => $user->vip_level,
-                    'product_id' => $request->product_id,
-                    'task_name' => $request->task_name,
-                    'status' => 'confirmed',
-                    'order_number' => $nextOrderNumber,
-                    'initial_balance' => $user->getOriginal('balance'),
-                    'purchase_price' => $product->selling_price,
-                    'commission_reward' => $product->commission_reward,
+                    'user_id' => $user->id, 'user_name' => $user->name, 'mobile_number' => $user->mobile_number,
+                    'vip_level' => $user->vip_level, 'product_id' => $request->product_id, 'task_name' => $request->task_name,
+                    'status' => 'confirmed', 'order_number' => $nextOrderNumber, 'initial_balance' => $user->getOriginal('balance'),
+                    'purchase_price' => $product->selling_price, 'commission_reward' => $product->commission_reward,
+                ]);
+                 \Log::info('Regular/Forced Order confirmed, commission rewarded.', [
+                    'user_id' => $user->id, 'product_id' => $product->id, 'new_balance' => $user->balance,
                 ]);
             }
 
@@ -269,12 +254,14 @@ class DashboardController extends Controller
     {
         $request->validate([
             'product_id' => 'required|exists:products,id',
+            'is_forced' => 'sometimes|boolean',
         ]);
 
         $user = Auth::user();
         $product = Product::findOrFail($request->product_id);
+        $isForced = $request->input('is_forced', false);
 
-        return DB::transaction(function () use ($user, $product, $request) {
+        return DB::transaction(function () use ($user, $product, $request, $isForced) {
             $user->refresh();
 
             \Log::info('Balance check', [
@@ -284,6 +271,7 @@ class DashboardController extends Controller
                 'product_id' => $product->id,
                 'product_type' => $product->type,
                 'selling_price' => $product->selling_price,
+                'is_forced' => $isForced,
             ]);
 
             $existingOrder = UserOrder::where('user_id', $user->id)
@@ -299,9 +287,10 @@ class DashboardController extends Controller
                 return back()->with('error', 'This product has already been ordered.');
             }
 
-            if ($product->type === 'Lucky Order') {
+            // Genuine Lucky Order Logic: ONLY if the type is 'Lucky Order' AND it's NOT forced.
+            if ($product->type === 'Lucky Order' && !$isForced) {
                 if (!$existingOrder) {
-                    // Create a pending order for Lucky Order
+                    // Create a pending order for the genuine Lucky Order
                     $today = now()->toDateString();
                     $nextOrderNumber = (int) (
                         UserOrder::where('user_id', $user->id)
@@ -324,26 +313,34 @@ class DashboardController extends Controller
                         'commission_reward' => $product->commission_reward,
                     ]);
 
-                    $user->balance -= $product->selling_price; // Deduct only selling_price
+                    $user->balance -= $product->selling_price; // Deduct full selling_price for genuine lucky order
                     $user->save();
 
-                    \Log::info('Lucky Order grabbed, pending status', [
+                    \Log::info('Genuine Lucky Order grabbed, pending status, selling_price deducted.', [
                         'user_id' => $user->id,
                         'product_id' => $product->id,
                         'new_balance' => $user->balance,
                     ]);
                 }
             } else {
+                // Regular Order and Forced Lucky Order Logic
                 if ($user->balance < $product->commission_reward) {
-                    \Log::warning('Insufficient balance for Regular Order', [
+                    \Log::warning('Insufficient balance for Order (Regular or Forced)', [
                         'user_id' => $user->id,
                         'balance' => $user->balance,
                         'commission_reward' => $product->commission_reward,
+                        'product_type' => $product->type,
+                        'is_forced' => $isForced,
                     ]);
-                    return back()->with('error', 'Insufficient balance to grab this Regular Order. Current balance: ' . number_format($user->balance, 2) . ' USDT');
+                    return back()->with('error', 'Insufficient balance to grab this order. Current balance: ' . number_format($user->balance, 2) . ' USDT');
                 }
-                $user->balance -= $product->commission_reward;
+                $user->balance -= $product->commission_reward; // Deduct only commission_reward
                 $user->save();
+                 \Log::info('Regular/Forced Order grabbed, commission_reward deducted.', [
+                    'user_id' => $user->id,
+                    'product_id' => $product->id,
+                    'new_balance' => $user->balance,
+                ]);
             }
 
             \Log::info('Balance deducted successfully', [

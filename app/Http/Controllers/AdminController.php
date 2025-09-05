@@ -47,20 +47,12 @@ class AdminController extends Controller
         $users = $usersQuery
             ->orderBy('updated_at', 'desc')
             ->orderBy('created_at', 'desc')
-            ->get([
-                'id',
-                'name',
-                'mobile_number',
-                'invitation_code',
-                'balance',
-                'frozen_balance',
-                'created_at',
-                'updated_at',
-            ])
+            ->get() // Fetch all fields
             ->map(function ($user) {
                 $user->balance = (float) $user->balance;
                 $user->frozen_balance = (float) $user->frozen_balance;
-
+                // Format created_at for display
+                $user->register_date = Carbon::parse($user->created_at)->toFormattedDateString();
                 return $user;
             });
 
@@ -74,23 +66,39 @@ class AdminController extends Controller
     {
         $user = User::where('role', 'user')->findOrFail($id);
 
-        $data = $request->only(['name', 'mobile_number', 'invitation_code', 'balance']);
+        $validatedData = $request->validate([
+            'name' => 'required|string|max:255',
+            'mobile_number' => 'required|string|max:255|unique:users,mobile_number,' . $user->id,
+            'password' => 'nullable|string|min:6',
+            'withdraw_password' => 'nullable|string|min:6',
+            'invitation_code' => 'required|string|max:255|unique:users,invitation_code,' . $user->id,
+            'balance' => 'required|numeric',
+            'role' => 'required|string|in:user,admin',
+            'referred_by' => 'nullable|string|exists:users,invitation_code',
+            'vip_level' => 'required|string|max:255',
+        ]);
 
-        if (isset($data['balance'])) {
-            $data['balance'] = (float) $data['balance'];
+        if (empty($validatedData['password'])) {
+            unset($validatedData['password']);
+        }
+        
+        if (empty($validatedData['withdraw_password'])) {
+            unset($validatedData['withdraw_password']);
         }
 
-        $user->update($data);
-
-        // Ensure updated_at is touched
-        $user->touch();
+        $user->update($validatedData);
 
         event(new BalanceUpdated($user));
 
-        return response()->json([
-            'success' => 'User updated successfully.',
-            'user' => array_merge($user->toArray(), ['balance' => (float) $user->balance]),
-        ]);
+        return redirect()->back()->with('success', 'User updated successfully.');
+    }
+
+    public function destroyUser($id)
+    {
+        $user = User::where('role', 'user')->findOrFail($id);
+        $user->delete();
+
+        return redirect()->back()->with('success', 'User deleted successfully.');
     }
 
     public function withdraw()

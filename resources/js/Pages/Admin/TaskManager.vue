@@ -1,6 +1,6 @@
 <script setup>
 import AdminLayout from "@/Layouts/AdminLayout.vue";
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 import { usePage } from "@inertiajs/vue3";
 
 const page = usePage();
@@ -10,6 +10,21 @@ const showModal = ref(false);
 const modalUser = ref(null);
 const resetSuccess = ref(""); // Success message
 let pollInterval = null;
+
+const searchQuery = ref('');
+
+const filteredUsers = computed(() => {
+  if (!users) return [];
+  if (!searchQuery.value) {
+    return users;
+  }
+  const query = searchQuery.value.toLowerCase();
+  return users.filter(user => 
+    (user.name && user.name.toLowerCase().includes(query)) ||
+    (user.vip_level && user.vip_level.toLowerCase().includes(query)) ||
+    (user.mobile_number && user.mobile_number.includes(query))
+  );
+});
 
 function startPolling(userId) {
   stopPolling();
@@ -146,6 +161,16 @@ onMounted(() => {
 <template>
   <AdminLayout>
     <h1 class="text-2xl font-bold mb-4">User Task Assignment</h1>
+
+    <!-- Search Bar -->
+    <div class="mb-4">
+      <input
+        v-model="searchQuery"
+        type="text"
+        placeholder="Search by name, mobile, or VIP level..."
+        class="w-full p-2 border rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+      />
+    </div>
         <!-- Success message -->
     <div v-if="resetSuccess" class="mb-2 text-green-600 font-semibold text-center">
       {{ resetSuccess }}
@@ -154,13 +179,15 @@ onMounted(() => {
       <thead>
         <tr>
           <th class="p-2 border">Name</th>
+          <th class="p-2 border">Mobile Number</th>
           <th class="p-2 border">VIP Level</th>
           <th class="p-2 border">Actions</th>
         </tr>
       </thead>
       <tbody>
-        <tr v-for="user in users" :key="user.id">
+        <tr v-for="user in filteredUsers" :key="user.id">
           <td class="p-2 border">{{ user.name }}</td>
+          <td class="p-2 border">{{ user.mobile_number }}</td>
           <td class="p-2 border">{{ user.vip_level }}</td>
           <td class="p-2 border">
             <button @click="viewTasks(user.id)" class="bg-blue-600 text-white px-3 py-1 rounded">Tasks Details</button>

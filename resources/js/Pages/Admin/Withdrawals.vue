@@ -25,7 +25,7 @@ const fetchUsers = async (page = 1, search = '') => {
     currentPage.value = data.current_page || 1;
     lastPage.value = data.last_page || 1;
   } catch (err) {
-    console.error('Failed to load withdrawals', err);
+  // suppressed: failed to load withdrawals
   }
 };
 
@@ -54,7 +54,7 @@ const approve = async (id) => {
     if (!res.ok) throw new Error('Approve failed');
     await fetchUsers(currentPage.value, searchQuery.value);
   } catch (err) {
-    console.error(err);
+  // suppressed: approve failed
   }
 };
 
@@ -64,7 +64,7 @@ const rejectW = async (id) => {
     if (!res.ok) throw new Error('Reject failed');
     await fetchUsers(currentPage.value, searchQuery.value);
   } catch (err) {
-    console.error(err);
+  // suppressed: reject failed
   }
 };
 

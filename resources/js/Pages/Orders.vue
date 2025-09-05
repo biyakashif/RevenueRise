@@ -69,7 +69,7 @@
 
         <!-- Task Container -->
         <div
-          v-if="activeTask && activeTask.products && activeTask.products.length"
+          v-if="activeTask && activeTask.products && activeTask.products.length && !hasCompletedAllTasks"
           class="bg-white shadow-sm sm:rounded-lg p-6 text-center relative overflow-hidden"
         >
           <div class="relative z-10">
@@ -252,6 +252,7 @@ const buildActiveTaskFrom = (tasksArr) => {
         image_path: p.image_path ?? '',
         type: p.type ?? t.product_type ?? '',
         status: t.status ?? 'confirmed',
+        is_forced: p.is_forced ?? false,
       };
     }
     return {
@@ -266,6 +267,7 @@ const buildActiveTaskFrom = (tasksArr) => {
       image_path: t.image_path ?? '',
       type: t.product_type ?? '',
       status: t.status ?? 'confirmed',
+      is_forced: t.is_forced ?? false,
     };
   }).filter(p => p && p.id != null);
 
@@ -301,8 +303,9 @@ const currentTaskProduct = computed(() => {
   return null;
 });
 
+const MAX_ORDERS = 40;
 const hasCompletedAllTasks = computed(() => {
-  return taskProgress.value >= taskItemsCount.value && taskItemsCount.value > 0;
+  return taskProgress.value >= 40;
 });
 
 const loadPersistedModalState = () => {
@@ -350,49 +353,81 @@ const grabOrders = debounce(() => {
     return;
   }
 
-  const currentProduct = activeTask.value.products[currentTaskProductIndex.value];
-  if (currentProduct.status === 'pending') {
-    modalProduct.value = currentProduct;
-    saveModalState(modalProduct.value);
-    showModal.value = true;
-    isGrabbing.value = false;
-    return;
-  }
-
   isGrabbing.value = true;
-  const productId = currentProduct.id;
 
-  router.post(route('orders.check-balance'), { product_id: productId, task_name: activeTask.value.name }, {
+  // Pre-flight check to sync state with the backend and get the correct next task
+  router.reload({
+    only: ['tasks', 'taskTotalCount', 'confirmedCount', 'user', 'flash'],
     preserveState: true,
     preserveScroll: true,
     onSuccess: (page) => {
-      if (page.props?.flash?.success) {
-        router.reload({
-          only: ['user', 'tasks', 'taskTotalCount', 'confirmedCount', 'flash'],
-          preserveState: true,
-          onSuccess: () => {
-            updateFromProps();
-            modalProduct.value = activeTask.value.products[currentTaskProductIndex.value];
-            saveModalState(modalProduct.value);
-            showModal.value = true;
-            isGrabbing.value = false;
-          },
-          onError: () => {
-            balanceErrorMessage.value = 'Failed to refresh data after reservation.';
+      // Update state with fresh data from the server
+      updateFromProps();
+
+      // Now that state is synced, get the truly current product
+      const currentProduct = activeTask.value.products[currentTaskProductIndex.value];
+      if (!currentProduct) {
+        balanceErrorMessage.value = 'Failed to sync the current task. Please try again.';
+        setTimeout(() => (balanceErrorMessage.value = ''), 4000);
+        isGrabbing.value = false;
+        return;
+      }
+
+      // If the current task is already pending (e.g., a genuine lucky order), show the modal directly
+      if (currentProduct.status === 'pending') {
+        modalProduct.value = currentProduct;
+        saveModalState(modalProduct.value);
+        showModal.value = true;
+        isGrabbing.value = false;
+        return;
+      }
+
+      // Proceed with the balance check using the correct product info
+      const productId = currentProduct.id;
+      router.post(route('orders.check-balance'), {
+        product_id: productId,
+        task_name: activeTask.value.name,
+        is_forced: currentProduct.is_forced,
+      }, {
+        preserveState: true,
+        preserveScroll: true,
+        onSuccess: (page) => {
+          if (page.props?.flash?.success) {
+            // The balance check was successful, show the modal.
+            // We need to reload again to get the 'pending' status for the lucky order.
+            router.reload({
+              only: ['user', 'tasks', 'taskTotalCount', 'confirmedCount', 'flash'],
+              preserveState: true,
+              onSuccess: () => {
+                updateFromProps();
+                modalProduct.value = activeTask.value.products[currentTaskProductIndex.value];
+                saveModalState(modalProduct.value);
+                showModal.value = true;
+                isGrabbing.value = false;
+              },
+              onError: () => {
+                balanceErrorMessage.value = 'Failed to refresh data after reservation.';
+                setTimeout(() => (balanceErrorMessage.value = ''), 4000);
+                isGrabbing.value = false;
+              }
+            });
+          } else {
+            const err = page.props?.flash?.error || 'Failed to reserve order.';
+            balanceErrorMessage.value = err;
             setTimeout(() => (balanceErrorMessage.value = ''), 4000);
             isGrabbing.value = false;
           }
-        });
-      } else {
-        const err = page.props?.flash?.error || 'Failed to reserve order.';
-        balanceErrorMessage.value = err;
-        setTimeout(() => (balanceErrorMessage.value = ''), 4000);
-        isGrabbing.value = false;
-      }
+        },
+        onError: (errors) => {
+          const msg = errors?.message || 'Failed to grab order';
+          balanceErrorMessage.value = msg;
+          setTimeout(() => (balanceErrorMessage.value = ''), 4000);
+          isGrabbing.value = false;
+        }
+      });
     },
-    onError: (errors) => {
-      const msg = errors?.message || 'Failed to grab order';
-      balanceErrorMessage.value = msg;
+    onError: () => {
+      balanceErrorMessage.value = 'Failed to sync with server. Please try again.';
       setTimeout(() => (balanceErrorMessage.value = ''), 4000);
       isGrabbing.value = false;
     }
@@ -407,6 +442,7 @@ const confirmProduct = () => {
   router.post(route('orders.store'), {
     product_id: currentTaskProduct.value.id ?? currentTaskProduct.value.product_id,
     task_name: activeTask.value.name,
+    is_forced: currentTaskProduct.value.is_forced,
   }, {
     preserveScroll: true,
     onSuccess: () => {
@@ -416,7 +452,7 @@ const confirmProduct = () => {
       currentTaskProductIndex.value = taskProgress.value;
       modalProduct.value = null;
 
-      if (taskProgress.value >= taskItemsCount.value) {
+      if (taskProgress.value >= 40) {
         completionMessage.value = "Congratulations you have done your today's task, your next task will be updated after midnight";
       }
 

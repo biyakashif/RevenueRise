@@ -28,6 +28,7 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
     Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
     Route::get('/users', [AdminController::class, 'users'])->name('admin.users');
     Route::patch('/users/{id}', [AdminController::class, 'updateUser'])->name('admin.users.update');
+    Route::delete('/users/{id}', [AdminController::class, 'destroyUser'])->name('admin.users.destroy');
     Route::get('/deposit-clients', [AdminController::class, 'depositClients'])->name('admin.deposit-clients');
     Route::get('/qr-address-upload', [AdminController::class, 'showQrUploadForm'])->name('admin.qr-address-upload');
     Route::post('/qr-address-upload', [AdminController::class, 'uploadQrAndAddress'])->name('admin.qr-address-upload.store');

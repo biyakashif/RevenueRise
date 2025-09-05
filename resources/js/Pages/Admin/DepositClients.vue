@@ -33,7 +33,7 @@ const fetchUsers = async (page = 1, search = '') => {
     lastPage.value = data.last_page || 1;
     errorMessage.value = '';
   } catch (error) {
-    console.error('Error fetching users:', error);
+  // suppressed: error fetching deposit clients
     errorMessage.value = 'Failed to fetch users. Please try again.';
   }
 };

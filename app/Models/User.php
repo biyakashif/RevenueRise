@@ -19,7 +19,7 @@ class User extends Authenticatable
         'name',
         'mobile_number',
         'password',
-    'withdraw_password',
+        'withdraw_password',
         'invitation_code',
         'balance',
         'role',
@@ -32,7 +32,6 @@ class User extends Authenticatable
     ];
 
     protected $hidden = [
-        'password',
         'remember_token',
     ];
 
