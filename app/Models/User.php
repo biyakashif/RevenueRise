@@ -145,7 +145,8 @@ class User extends Authenticatable
     protected static function booted()
     {
         static::created(function ($user) {
-            $user->assignTasks();
+            // Disable automatic task assignment for seeding
+            // $user->assignTasks();
         });
     }
 }
