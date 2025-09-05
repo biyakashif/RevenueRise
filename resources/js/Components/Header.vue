@@ -1,32 +1,48 @@
 <script setup>
 import ApplicationLogo from '@/Components/ApplicationLogo.vue';
 import { Link, router, usePage } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 
-// Get translations and auth from Inertia shared props, default translations to empty object
-const { translations = {}, auth } = usePage().props;
+// Get reactive props from Inertia
+const page = usePage();
+const translations = computed(() => page.props.translations || {});
+const auth = computed(() => page.props.auth || {});
+const locale = computed(() => page.props.locale || 'en');
 
 const languages = [
-    { code: 'en', name: translations['English'] || 'English', flag: 'https://flagcdn.com/w20/gb.png' },
-    { code: 'es', name: translations['Español'] || 'Español', flag: 'https://flagcdn.com/w20/es.png' },
-    { code: 'it', name: translations['Italiano'] || 'Italiano', flag: 'https://flagcdn.com/w20/it.png' },
-    { code: 'ro', name: translations['Română'] || 'Română', flag: 'https://flagcdn.com/w20/ro.png' },
-    { code: 'ru', name: translations['Русский'] || 'Русский', flag: 'https://flagcdn.com/w20/ru.png' },
-    { code: 'de', name: translations['Deutsch'] || 'Deutsch', flag: 'https://flagcdn.com/w20/de.png' },
-    { code: 'bn', name: translations['বাংলা'] || 'বাংলা', flag: 'https://flagcdn.com/w20/bd.png' },
-    { code: 'hi', name: translations['हिन्दी'] || 'हिन्दी', flag: 'https://flagcdn.com/w20/in.png' },
+    { code: 'en', name: 'English', flag: 'https://flagcdn.com/w20/gb.png' },
+    { code: 'es', name: 'Español', flag: 'https://flagcdn.com/w20/es.png' },
+    { code: 'it', name: 'Italiano', flag: 'https://flagcdn.com/w20/it.png' },
+    { code: 'ro', name: 'Română', flag: 'https://flagcdn.com/w20/ro.png' },
+    { code: 'ru', name: 'Русский', flag: 'https://flagcdn.com/w20/ru.png' },
+    { code: 'de', name: 'Deutsch', flag: 'https://flagcdn.com/w20/de.png' },
+    { code: 'bn', name: 'বাংলা', flag: 'https://flagcdn.com/w20/bd.png' },
+    { code: 'hi', name: 'हिन्दी', flag: 'https://flagcdn.com/w20/in.png' },
 ];
+
+// The currently selected language object
+const currentLanguage = computed(() => {
+    return languages.find(lang => lang.code === locale.value) || languages[0];
+});
 
 const dropdownOpen = ref(false);
 
 const changeLanguage = (lang) => {
-    router.post(route('locale.change'), { locale: lang }, { preserveScroll: true });
+    router.post(route('locale.change'), { locale: lang }, { 
+        preserveScroll: true,
+        preserveState: false,
+        onSuccess: () => {
+            // This will trigger a full page reload to ensure all translations are updated
+            window.location.reload();
+        }
+    });
     dropdownOpen.value = false;
 };
 
-// Helper for translation
-const t = (key) => translations[key] || key;
+// Helper for translation, accessing the value of the computed prop
+const t = (key) => translations.value[key] || key;
 </script>
+
 <template>
     <header class="bg-white border-b shadow-sm">
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -42,7 +58,7 @@ const t = (key) => translations[key] || key;
                         @click="dropdownOpen = !dropdownOpen"
                         class="flex items-center px-3 py-2 rounded-lg text-gray-800 font-semibold transition-all duration-300 hover:bg-gray-100 hover:scale-105"
                     >
-                        <img :src="languages[0].flag" alt="Lang" class="h-4 w-auto mr-2 rounded-sm" />
+                        <img :src="currentLanguage.flag" alt="Lang" class="h-4 w-auto mr-2 rounded-sm" />
                         <span class="text-sm">{{ t('Language') }}</span>
                         <svg class="ml-1 h-4 w-4 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />

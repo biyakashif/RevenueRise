@@ -1,13 +1,13 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, router, usePage } from '@inertiajs/vue3';
-import { ref, watch } from 'vue';
+import { ref, watch, computed } from 'vue';
 import { ClipboardDocumentListIcon } from '@heroicons/vue/24/solid';
 import TetherIcon from '@/assets/tether.svg'; // Import the SVG
 
 const page = usePage();
-const { translations = {} } = page.props;
-const t = (key) => translations[key] || key;
+const translations = computed(() => page.props.translations || {});
+const t = (key) => translations.value[key] || key;
 
 const props = defineProps({
     depositDetails: { type: Object, required: true },

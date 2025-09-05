@@ -24,7 +24,22 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        Inertia::share('currentLocale', App::getLocale());
+        // Share locale information and translations
+        Inertia::share([
+            'locale' => fn () => App::getLocale(),
+            'translations' => function () {
+                $locale = App::getLocale();
+                $path = resource_path("lang/{$locale}.json");
+                if (!file_exists($path)) {
+                    $path = resource_path("lang/en.json"); // Fallback to English
+                }
+                return json_decode(file_get_contents($path), true) ?: [];
+            },
+            'available_locales' => fn () => [
+                'en', 'es', 'it', 'ro', 'ru', 'de', 'bn', 'hi'
+            ]
+        ]);
+
         Vite::prefetch(concurrency: 3);
 
         User::observe(UserObserver::class);

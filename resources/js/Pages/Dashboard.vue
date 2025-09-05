@@ -4,9 +4,9 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, usePage } from '@inertiajs/vue3';
 import VIP1Icon from '@/assets/VIP1.png';
 
-const { translations = {} } = usePage().props;
-const t = (key) => translations[key] || key;
 const page = usePage();
+const translations = computed(() => page.props.translations || {});
+const t = (key) => translations.value[key] || key;
 const user = page.props.auth.user || {};
 
 // VIP levels with costs and icons
@@ -120,15 +120,15 @@ function fmt(n) {
       <!-- VIP Levels -->
       <div class="bg-white p-4 rounded-lg shadow-sm">
         <div class="flex items-center justify-between mb-4">
-          <h2 class="text-lg font-semibold text-gray-800">VIP Levels</h2>
+          <h2 class="text-lg font-semibold text-gray-800">{{ t('VIP Levels') }}</h2>
 
           <button
             type="button"
             @click="showAll = !showAll"
             class="text-purple-600 inline-flex items-center gap-2 text-sm font-medium"
           >
-            <span v-if="!showAll">View More</span>
-            <span v-else>View Less</span>
+            <span v-if="!showAll">{{ t('View More') }}</span>
+            <span v-else>{{ t('View Less') }}</span>
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path v-if="!showAll" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
               <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
@@ -150,19 +150,19 @@ function fmt(n) {
                        - Show "Upgrade now" for levels > 1 when they are NOT the current level
                        - VIP1 is free and should never show "Upgrade now"; it only shows "Current" if the user actually has VIP1
                   -->
-                  <span v-if="level.id === currentLevel" class="px-2 py-0.5 text-xs bg-purple-100 text-purple-700 rounded-full">Current</span>
+                  <span v-if="level.id === currentLevel" class="px-2 py-0.5 text-xs bg-purple-100 text-purple-700 rounded-full">{{ t('Current') }}</span>
 
                   <Link
                     v-else-if="level.id !== 1"
                     :href="route('vip.purchase', { level: level.name })"
                     class="text-sm text-purple-600 underline ml-2"
                   >
-                    Upgrade now
+                    {{ t('Upgrade now') }}
                   </Link>
                 </div>
 
                 <div class="mt-2 text-purple-600 font-medium">
-                  <span v-if="level.id === 1">Free</span>
+                  <span v-if="level.id === 1">{{ t('Free') }}</span>
                   <span v-else>{{ fmt(level.cost) }} USDT</span>
                 </div>
               </div>

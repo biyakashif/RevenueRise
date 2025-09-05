@@ -4,11 +4,13 @@ import { Head, Link, usePage, router } from '@inertiajs/vue3';
 import { ref, onMounted, onUnmounted, reactive, computed } from 'vue';
 
 const page = usePage();
+const translations = computed(() => page.props.translations || {});
+const t = (key) => translations.value[key] || key;
 const user = reactive(page.props.user || {
   id: null,
   vip_level: 'VIP1',
-  mobile_number: 'Not set',
-  invitation_code: 'Not set',
+  mobile_number: t('Not set'),
+  invitation_code: t('Not set'),
   frozen_balance: 0,
   avatar_url: null,
 });
@@ -79,12 +81,12 @@ async function saveAvatar(seed) {
       },
       onError: (errors) => {
         saving.value = false;
-        errorMessage.value = errors?.avatar_url || 'Failed to save avatar. Please try again.';
+        errorMessage.value = errors?.avatar_url || t('Failed to save avatar. Please try again.');
       },
     });
   } catch (e) {
     saving.value = false;
-    errorMessage.value = 'Failed to save avatar: ' + e.message;
+    errorMessage.value = t('Failed to save avatar:') + ' ' + e.message;
   }
 }
 
@@ -141,7 +143,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <Head title="Profile" />
+  <Head :title="t('Profile')" />
 
   <AuthenticatedLayout>
     <div class="py-6 px-4 bg-gray-100">
@@ -151,13 +153,13 @@ onUnmounted(() => {
           <div class="relative">
             <img
               :src="computedAvatar"
-              alt="Avatar"
+              :alt="t('Avatar')"
               class="w-16 h-16 rounded-full object-cover border"
             />
             <button
               @click="openAvatarPicker"
               class="absolute -bottom-1 -right-1 bg-white border rounded-full p-1 shadow hover:bg-gray-50"
-              title="Change avatar"
+              :title="t('Change avatar')"
             >
               <svg class="w-4 h-4 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536M9 11l6-6 3 3L12 14l-3 1 1-3z"/>
@@ -168,27 +170,27 @@ onUnmounted(() => {
           <div class="flex-1">
             <div class="flex items-center">
               <h3 class="text-lg font-semibold text-gray-800 leading-none">
-                {{ user?.mobile_number || 'Not set' }}
+                {{ user?.mobile_number || t('Not set') }}
               </h3>
               <span class="ml-3 inline-flex items-center justify-center bg-black text-white text-xs font-semibold rounded px-2 py-0.5">
                 {{ user.vip_level || 'VIP1' }}
               </span>
             </div>
             <p class="text-xs text-gray-500 mt-1">
-              Invitation ID: {{ user?.invitation_code || 'Not set' }}
+              {{ t('Invitation ID') }}: {{ user?.invitation_code || t('Not set') }}
             </p>
           </div>
         </div>
 
         <div class="flex justify-between space-x-2 bg-white p-4 rounded-lg shadow-sm">
           <div class="text-center">
-            <p class="text-xs font-medium text-gray-600">Available Balance</p>
+            <p class="text-xs font-medium text-gray-600">{{ t('Available Balance') }}</p>
             <p class="text-sm font-semibold text-gray-800">
               {{ balance.toFixed(2) }} USDT
             </p>
           </div>
           <div class="text-center">
-            <p class="text-xs font-medium text-gray-600">Frozen Balance</p>
+            <p class="text-xs font-medium text-gray-600">{{ t('Frozen Balance') }}</p>
             <p class="text-sm font-semibold text-gray-800">
               {{ frozenBalance.toFixed(2) }} USDT
             </p>
@@ -198,28 +200,28 @@ onUnmounted(() => {
         <!-- ✅ Navigation Links -->
         <nav class="mt-6 space-y-2">
           <Link :href="route('profile.edit')" class="flex items-center justify-between w-full py-2 px-4 text-purple-600 text-sm font-medium bg-gray-50 rounded-lg hover:bg-gray-100 transition-all duration-300">
-            Edit Profile
+            {{ t('Edit Profile') }}
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
             </svg>
           </Link>
 
           <Link :href="route('withdraw')" class="flex items-center justify-between w-full py-2 px-4 text-purple-600 text-sm font-medium bg-gray-50 rounded-lg hover:bg-gray-100 transition-all duration-300">
-            Withdraw
+            {{ t('Withdraw') }}
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
             </svg>
           </Link>
 
           <Link :href="route('withdraw.history')" class="flex items-center justify-between w-full py-2 px-4 text-purple-600 text-sm font-medium bg-gray-50 rounded-lg hover:bg-gray-100 transition-all duration-300">
-            Withdraw History
+            {{ t('Withdraw History') }}
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
             </svg>
           </Link>
 
           <Link :href="route('password.change')" class="flex items-center justify-between w-full py-2 px-4 text-purple-600 text-sm font-medium bg-gray-50 rounded-lg hover:bg-gray-100 transition-all duration-300">
-            Change Password
+            {{ t('Change Password') }}
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
             </svg>
@@ -231,7 +233,7 @@ onUnmounted(() => {
             as="button"
             class="w-full rounded-full px-4 py-3 bg-red-600 text-white font-semibold text-lg text-center transition-all duration-300 hover:bg-red-700 hover:scale-105 shadow-lg"
           >
-            Log Out
+            {{ t('Log Out') }}
           </Link>
         </nav>
       </section>
@@ -240,7 +242,7 @@ onUnmounted(() => {
       <div v-if="showAvatarPicker" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
         <div class="bg-white rounded-lg w-full max-w-3xl p-4">
           <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-semibold">Choose an Avatar</h3>
+            <h3 class="text-lg font-semibold">{{ t('Choose an Avatar') }}</h3>
             <button @click="closeAvatarPicker" class="text-gray-500 hover:text-gray-700">
               <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
@@ -263,7 +265,7 @@ onUnmounted(() => {
           </div>
 
           <div class="mt-4 flex justify-end">
-            <button @click="closeAvatarPicker" class="px-3 py-1 border rounded">Cancel</button>
+            <button @click="closeAvatarPicker" class="px-3 py-1 border rounded">{{ t('Cancel') }}</button>
           </div>
         </div>
       </div>

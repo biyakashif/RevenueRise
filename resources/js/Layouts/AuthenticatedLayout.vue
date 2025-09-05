@@ -1,9 +1,11 @@
 <script setup>
 import { Link, usePage } from '@inertiajs/vue3';
 import Header from '@/Components/Header.vue';
+import { computed } from 'vue';
 
-const { translations = {} } = usePage().props;
-const t = (key) => translations[key] || key;
+const page = usePage();
+const translations = computed(() => page.props.translations || {});
+const t = (key) => translations.value[key] || key;
 </script>
 
 <template>

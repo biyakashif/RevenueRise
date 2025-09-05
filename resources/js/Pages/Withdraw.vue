@@ -2,9 +2,10 @@
 
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, usePage, router } from '@inertiajs/vue3';
-import { ref, onMounted, onUnmounted } from 'vue';
-const { translations = {} } = usePage().props;
-const t = (key) => translations[key] || key;
+import { ref, onMounted, onUnmounted, computed } from 'vue';
+const page = usePage();
+const translations = computed(() => page.props.translations || {});
+const t = (key) => translations.value[key] || key;
 
 const props = defineProps({
   balances: Object,

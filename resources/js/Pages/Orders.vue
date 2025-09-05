@@ -220,8 +220,9 @@ const props = defineProps({
   flash: { type: Object, default: () => ({}) },
 });
 
-const { translations = {} } = usePage().props;
-const t = (key) => translations[key] || key;
+const page = usePage();
+const translations = computed(() => page.props.translations || {});
+const t = (key) => translations.value[key] || key;
 
 const balanceErrorMessage = ref('');
 const completionMessage = ref('');

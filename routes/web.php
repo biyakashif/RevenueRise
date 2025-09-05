@@ -127,18 +127,16 @@ Route::middleware('auth')->group(function () {
 // ================= LOCALE CHANGE =================
 Route::post('/locale/change', function (Request $request) {
     $locale = $request->input('locale');
-    if (in_array($locale, ['en', 'es', 'it', 'ro', 'ru', 'de', 'bn', 'hi'])) {
-        Session::put('locale', $locale);
-        App::setLocale($locale);
+    if (!in_array($locale, ['en', 'es', 'it', 'ro', 'ru', 'de', 'bn', 'hi'])) {
+        $locale = 'en';
     }
-    return back();
+    
+    Session::put('locale', $locale);
+    Session::save(); // Force the session to be saved
+    App::setLocale($locale);
+    
+    return back()->with('locale_changed', true);
 })->name('locale.change');
-
-Route::post('/locale', function (Illuminate\Http\Request $request) {
-    $request->validate(['locale' => 'required|string|in:en,es,de,ru,bn,hi,it,ro']);
-    session(['locale' => $request->locale]);
-    return back();
-})->name('locale.set');
 
 require __DIR__ . '/auth.php';
 

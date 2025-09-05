@@ -4,9 +4,13 @@ import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
 import { useForm, usePage, Head, Link } from '@inertiajs/vue3';
+import { computed } from 'vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 
-const user = usePage().props.auth.user;
+const page = usePage();
+const translations = computed(() => page.props.translations || {});
+const t = (key) => translations.value[key] || key;
+const user = page.props.auth.user;
 
 const form = useForm({
     name: user.name || '',
@@ -29,17 +33,17 @@ const form = useForm({
                         <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
                         </svg>
-                        Back
+                        {{ t('Back') }}
                     </Link>
                 </header>
-                <h2 class="text-2xl font-bold text-gray-800">Profile Information</h2>
+                <h2 class="text-2xl font-bold text-gray-800">{{ t('Profile Information') }}</h2>
                 <p class="mb-4 text-sm font-medium text-gray-500 text-center">
-                    Update your account's profile information.
+                    {{ t('Update your account\'s profile information') }}
                 </p>
 
                 <form @submit.prevent="form.patch(route('profile.update'))" class="space-y-5 bg-white p-6 rounded-lg shadow-sm">
                     <div>
-                        <InputLabel for="name" value="Name" class="text-gray-700" />
+                        <InputLabel for="name" :value="t('Name')" class="text-gray-700" />
                         <TextInput
                             id="name"
                             type="text"
@@ -53,7 +57,7 @@ const form = useForm({
                     </div>
 
                     <div>
-                        <InputLabel for="mobile_number" value="Mobile Number" class="text-gray-700" />
+                        <InputLabel for="mobile_number" :value="t('Mobile Number')" class="text-gray-700" />
                         <TextInput
                             id="mobile_number"
                             type="text"
@@ -64,7 +68,7 @@ const form = useForm({
                     </div>
 
                     <div>
-                        <InputLabel for="invitation_code" value="Invitation Code" class="text-gray-700" />
+                        <InputLabel for="invitation_code" :value="t('Invitation Code')" class="text-gray-700" />
                         <TextInput
                             id="invitation_code"
                             type="text"
@@ -80,8 +84,7 @@ const form = useForm({
                             :class="{ 'opacity-25': form.processing }"
                             :disabled="form.processing"
                         >
-                            Save
-                        </PrimaryButton>
+                            {{ t('Save') }}</PrimaryButton>
 
                         <Transition
                             enter-active-class="transition ease-in-out duration-300"
@@ -90,7 +93,7 @@ const form = useForm({
                             leave-to-class="opacity-0"
                         >
                             <p v-if="form.recentlySuccessful" class="text-sm text-green-600">
-                                Saved.
+                                {{ t('Saved') }}
                             </p>
                         </Transition>
                     </div>
