@@ -31,6 +31,10 @@
     "Help": "Aiuto",
     "Language": "Lingua",
     "USDT": "USDT",
+    "Purchase VIP": "Acquista VIP",
+    "Upgrade to": "Aggiorna a",
+    "Price": "Prezzo",
+    "Click the button below to proceed to deposit. The amount will be prefilled and locked on the deposit page.": "Clicca sul pulsante qui sotto per procedere al deposito. L'importo sarà precompilato e bloccato nella pagina del deposito.",
     "Agency & Promotion Service": "Servizio di Agenzia e Promozione",
     "Agency Certificate": "Certificato di Agenzia",
     "Earn with Us": "Guadagna con Noi",
@@ -104,6 +108,7 @@
     "results": "risultati",
     "Save": "Salva",
     "Saved.": "Salvato.",
+    "Saved": "Salvato",
     "Server Error": "Errore server",
     "Service Unavailable": "Servizio non disponibile",
     "Showing": "Mostra",
@@ -173,5 +178,6 @@
     "No withdrawals yet": "Nessun prelievo ancora",
     "Pending": "In attesa",
     "Approved": "Approvato",
-    "Rejected": "Respinto"
+    "Rejected": "Respinto",
+    "Withdraw History": "Cronologia prelievi"
 }

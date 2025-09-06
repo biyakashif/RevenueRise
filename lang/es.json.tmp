@@ -1,0 +1,19 @@
+{
+    "Avatar": "Avatar",
+    "Available Balance": "Saldo disponible",
+    "Cancel": "Cancelar",
+    "Change Password": "Cambiar contraseña",
+    "Change avatar": "Cambiar avatar",
+    "Choose an Avatar": "Elegir un avatar",
+    "Edit Profile": "Editar perfil",
+    "Failed to save avatar: ": "Error al guardar el avatar: ",
+    "Failed to save avatar. Please try again.": "Error al guardar el avatar. Por favor, inténtalo de nuevo.",
+    "Frozen Balance": "Saldo congelado",
+    "Invitation ID": "ID de invitación",
+    "Log Out": "Cerrar sesión",
+    "Not set": "No establecido",
+    "Profile": "Perfil",
+    "USDT": "USDT",
+    "Withdraw": "Retirar",
+    "Withdraw History": "Historial de retiros"
+}

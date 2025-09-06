@@ -1,0 +1,19 @@
+{
+    "Avatar": "Avatar",
+    "Available Balance": "Verfügbares Guthaben",
+    "Cancel": "Abbrechen",
+    "Change Password": "Passwort ändern",
+    "Change avatar": "Avatar ändern",
+    "Choose an Avatar": "Avatar auswählen",
+    "Edit Profile": "Profil bearbeiten",
+    "Failed to save avatar: ": "Avatar konnte nicht gespeichert werden: ",
+    "Failed to save avatar. Please try again.": "Avatar konnte nicht gespeichert werden. Bitte versuchen Sie es erneut.",
+    "Frozen Balance": "Gesperrtes Guthaben",
+    "Invitation ID": "Einladungs-ID",
+    "Log Out": "Abmelden",
+    "Not set": "Nicht festgelegt",
+    "Profile": "Profil",
+    "USDT": "USDT",
+    "Withdraw": "Auszahlen",
+    "Withdraw History": "Auszahlungsverlauf"
+}

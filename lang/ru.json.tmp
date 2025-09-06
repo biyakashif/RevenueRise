@@ -1,0 +1,19 @@
+{
+    "Avatar": "Аватар",
+    "Available Balance": "Доступный баланс",
+    "Cancel": "Отмена",
+    "Change Password": "Изменить пароль",
+    "Change avatar": "Изменить аватар",
+    "Choose an Avatar": "Выберите аватар",
+    "Edit Profile": "Редактировать профиль",
+    "Failed to save avatar: ": "Не удалось сохранить аватар: ",
+    "Failed to save avatar. Please try again.": "Не удалось сохранить аватар. Пожалуйста, попробуйте снова.",
+    "Frozen Balance": "Замороженный баланс",
+    "Invitation ID": "ID приглашения",
+    "Log Out": "Выйти",
+    "Not set": "Не установлено",
+    "Profile": "Профиль",
+    "USDT": "USDT",
+    "Withdraw": "Вывести",
+    "Withdraw History": "История выводов"
+}
