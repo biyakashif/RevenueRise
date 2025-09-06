@@ -5,14 +5,26 @@ import { ref, onMounted, onUnmounted, reactive, computed } from 'vue';
 
 const page = usePage();
 const translations = computed(() => page.props.translations || {});
-const t = (key) => translations.value[key] || key;
-const user = reactive(page.props.user || {
+const locale = computed(() => page.props.locale || 'en');
+const t = (key) => {
+    const translation = translations.value[key];
+    if (!translation && key && process.env.NODE_ENV === 'development') {
+        console.warn(`Missing translation for key: ${key} in locale: ${locale.value}`);
+    }
+    return translation || key;
+};
+const getDefaultUser = () => ({
   id: null,
   vip_level: 'VIP1',
   mobile_number: t('Not set'),
   invitation_code: t('Not set'),
   frozen_balance: 0,
   avatar_url: null,
+});
+
+const user = reactive({
+  ...getDefaultUser(),
+  ...page.props.user
 });
 
 const balance = ref(0);
@@ -86,7 +98,7 @@ async function saveAvatar(seed) {
     });
   } catch (e) {
     saving.value = false;
-    errorMessage.value = t('Failed to save avatar:') + ' ' + e.message;
+    errorMessage.value = `${t('Failed to save avatar:')} ${e.message}`;
   }
 }
 

@@ -9,21 +9,36 @@ use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 class SetLocale
 {
+    protected $locales = ['en', 'es', 'it', 'ro', 'ru', 'de', 'bn', 'hi'];
+
     public function handle($request, Closure $next)
     {
-        // Get locale from session or fallback to browser's preferred language or default to 'en'
-        $locale = Session::get('locale', 
-            $request->getPreferredLanguage(['en', 'es', 'it', 'ro', 'ru', 'de', 'bn', 'hi']) ?? 'en'
-        );
+        // First check URL parameter if it exists
+        $locale = $request->input('locale');
         
-        // Ensure the locale is valid, fallback to 'en' if not
-        if (!in_array($locale, ['en', 'es', 'it', 'ro', 'ru', 'de', 'bn', 'hi'])) {
+        // If no URL parameter, check session
+        if (!$locale || !in_array($locale, $this->locales)) {
+            $locale = Session::get('locale');
+        }
+        
+        // If no session, check browser preference
+        if (!$locale || !in_array($locale, $this->locales)) {
+            $locale = $request->getPreferredLanguage($this->locales);
+        }
+        
+        // Final fallback to English
+        if (!$locale || !in_array($locale, $this->locales)) {
             $locale = 'en';
         }
 
-        // Set the locale
+        // Set the application locale
         App::setLocale($locale);
-        Session::put('locale', $locale);
+        
+        // Always update session with current locale
+        if (Session::get('locale') !== $locale) {
+            Session::put('locale', $locale);
+            Session::save();
+        }
 
         return $next($request);
     }

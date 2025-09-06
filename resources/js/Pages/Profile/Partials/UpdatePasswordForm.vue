@@ -3,11 +3,22 @@ import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
-import { useForm } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { useForm, usePage } from '@inertiajs/vue3';
+import { ref, computed } from 'vue';
 
 const passwordInput = ref(null);
 const currentPasswordInput = ref(null);
+
+const page = usePage();
+const translations = computed(() => page.props.translations || {});
+const locale = computed(() => page.props.locale || 'en');
+const t = (key) => {
+    const translation = translations.value[key];
+    if (!translation && key && process.env.NODE_ENV === 'development') {
+        console.warn(`Missing translation for key: ${key} in locale: ${locale.value}`);
+    }
+    return translation || key;
+};
 
 const form = useForm({
     current_password: '',
@@ -37,16 +48,16 @@ const updatePassword = () => {
     <section>
         <header>
             <h2 class="text-2xl font-bold text-center text-gray-800 mb-6">
-                Update Password
+                {{ t('Update Password') }}
             </h2>
             <p class="mb-4 text-sm font-medium text-gray-500 text-center">
-                Update your account's password to keep it secure.
+                {{ t("Update your account's password to keep it secure") }}
             </p>
         </header>
 
         <form @submit.prevent="updatePassword" class="space-y-5">
             <div>
-                <InputLabel for="current_password" value="Current Password" class="text-gray-700" />
+                <InputLabel for="current_password" :value="t('Current Password')" class="text-gray-700" />
                 <TextInput
                     id="current_password"
                     ref="currentPasswordInput"
@@ -59,7 +70,7 @@ const updatePassword = () => {
             </div>
 
             <div>
-                <InputLabel for="password" value="New Password" class="text-gray-700" />
+                <InputLabel for="password" :value="t('New Password')" class="text-gray-700" />
                 <TextInput
                     id="password"
                     ref="passwordInput"
@@ -72,7 +83,7 @@ const updatePassword = () => {
             </div>
 
             <div>
-                <InputLabel for="password_confirmation" value="Confirm Password" class="text-gray-700" />
+                <InputLabel for="password_confirmation" :value="t('Confirm Password')" class="text-gray-700" />
                 <TextInput
                     id="password_confirmation"
                     v-model="form.password_confirmation"
@@ -89,7 +100,7 @@ const updatePassword = () => {
                     :class="{ 'opacity-25': form.processing }"
                     :disabled="form.processing"
                 >
-                    Save
+                    {{ t('Save') }}
                 </PrimaryButton>
 
                 <Transition
@@ -99,7 +110,7 @@ const updatePassword = () => {
                     leave-to-class="opacity-0"
                 >
                     <p v-if="form.recentlySuccessful" class="text-sm text-green-600">
-                        Saved.
+                        {{ t('Saved.') }}
                     </p>
                 </Transition>
             </div>

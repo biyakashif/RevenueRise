@@ -9,18 +9,25 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 
 const page = usePage();
 const translations = computed(() => page.props.translations || {});
-const t = (key) => translations.value[key] || key;
+const locale = computed(() => page.props.locale || 'en');
+const t = (key) => {
+    const translation = translations.value[key];
+    if (!translation && key && process.env.NODE_ENV === 'development') {
+        console.warn(`Missing translation for key: ${key} in locale: ${locale.value}`);
+    }
+    return translation || key;
+};
 const user = page.props.auth.user;
 
 const form = useForm({
-    name: user.name || '',
-    mobile_number: user.mobile_number || '',
-    invitation_code: user.invitation_code || '',
+    name: user.name || t('Not set'),
+    mobile_number: user.mobile_number || t('Not set'),
+    invitation_code: user.invitation_code || t('Not set'),
 });
 </script>
 
 <template>
-    <Head title="Edit Profile" />
+    <Head :title="t('Edit Profile')" />
 
     <AuthenticatedLayout>
         <div class="py-6 px-4 bg-gray-100">
@@ -38,7 +45,7 @@ const form = useForm({
                 </header>
                 <h2 class="text-2xl font-bold text-gray-800">{{ t('Profile Information') }}</h2>
                 <p class="mb-4 text-sm font-medium text-gray-500 text-center">
-                    {{ t('Update your account\'s profile information') }}
+                    {{ t('Update your account profile information') }}
                 </p>
 
                 <form @submit.prevent="form.patch(route('profile.update'))" class="space-y-5 bg-white p-6 rounded-lg shadow-sm">

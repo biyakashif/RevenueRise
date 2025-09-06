@@ -28,15 +28,19 @@ const currentLanguage = computed(() => {
 const dropdownOpen = ref(false);
 
 const changeLanguage = (lang) => {
-    router.post(route('locale.change'), { locale: lang }, { 
+    router.post(route('locale.change'), { locale: lang }, {
         preserveScroll: true,
-        preserveState: false,
         onSuccess: () => {
-            // This will trigger a full page reload to ensure all translations are updated
-            window.location.reload();
+            // Close the dropdown
+            dropdownOpen.value = false;
+            
+            // Reload the page to get new translations
+            router.reload({ only: ['translations', 'locale'] });
+        },
+        onError: () => {
+            console.error('Failed to change language');
         }
     });
-    dropdownOpen.value = false;
 };
 
 // Helper for translation, accessing the value of the computed prop

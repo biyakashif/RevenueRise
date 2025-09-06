@@ -1,11 +1,23 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import UpdatePasswordForm from '@/Pages/Profile/Partials/UpdatePasswordForm.vue';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, usePage } from '@inertiajs/vue3';
+import { computed } from 'vue';
+
+const page = usePage();
+const translations = computed(() => page.props.translations || {});
+const locale = computed(() => page.props.locale || 'en');
+const t = (key) => {
+    const translation = translations.value[key];
+    if (!translation && key && process.env.NODE_ENV === 'development') {
+        console.warn(`Missing translation for key: ${key} in locale: ${locale.value}`);
+    }
+    return translation || key;
+};
 </script>
 
 <template>
-    <Head title="Change Password" />
+    <Head :title="t('Change Password')" />
     <AuthenticatedLayout>
         <div class="py-6 px-4">
             <section>
@@ -17,7 +29,7 @@ import { Head, Link } from '@inertiajs/vue3';
                         <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
                         </svg>
-                        Back
+                        {{ t('Back') }}
                     </Link>
                 </header>
 

@@ -29,9 +29,9 @@ class AppServiceProvider extends ServiceProvider
             'locale' => fn () => App::getLocale(),
             'translations' => function () {
                 $locale = App::getLocale();
-                $path = resource_path("lang/{$locale}.json");
+                $path = lang_path("{$locale}.json");
                 if (!file_exists($path)) {
-                    $path = resource_path("lang/en.json"); // Fallback to English
+                    $path = lang_path("en.json"); // Fallback to English
                 }
                 return json_decode(file_get_contents($path), true) ?: [];
             },
