@@ -5,7 +5,8 @@ import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
-import { Head, useForm } from '@inertiajs/vue3';
+import { Head, useForm, usePage } from '@inertiajs/vue3';
+import { computed } from 'vue';
 
 defineProps({
     status: String,
@@ -17,6 +18,18 @@ const form = useForm({
     remember: false,
 });
 
+// i18n
+const page = usePage();
+const translations = computed(() => page.props.translations || {});
+const locale = computed(() => page.props.locale || 'en');
+const t = (key) => {
+    const translation = translations.value[key];
+    if (!translation && key && process.env.NODE_ENV === 'development') {
+        console.warn(`Missing translation for key: ${key} in locale: ${locale.value}`);
+    }
+    return translation || key;
+};
+
 const submit = () => {
     form.post(route('login'), {
         onFinish: () => form.reset('password'),
@@ -26,10 +39,10 @@ const submit = () => {
 
 <template>
     <GuestLayout>
-        <Head title="Log in" />
+        <Head :title="t('Log in')" />
 
         <div class="bg-white p-8 rounded-lg shadow-sm max-w-md w-full text-gray-800">
-            <h1 class="text-2xl font-bold text-center mb-6">Log in</h1>
+            <h1 class="text-2xl font-bold text-center mb-6">{{ t('Log in') }}</h1>
 
             <div v-if="status" class="mb-4 text-sm font-medium text-green-600 text-center">
                 {{ status }}
@@ -38,7 +51,7 @@ const submit = () => {
             <form @submit.prevent="submit" class="space-y-5">
                 <!-- Mobile Number -->
                 <div>
-                    <InputLabel for="mobile_number" value="Mobile Number" class="text-gray-700" />
+                    <InputLabel for="mobile_number" :value="t('Mobile Number')" class="text-gray-700" />
                     <TextInput
                         id="mobile_number"
                         type="text"
@@ -54,7 +67,7 @@ const submit = () => {
 
                 <!-- Password -->
                 <div>
-                    <InputLabel for="password" value="Password" class="text-gray-700" />
+                    <InputLabel for="password" :value="t('Password')" class="text-gray-700" />
                     <TextInput
                         id="password"
                         type="password"
@@ -69,7 +82,7 @@ const submit = () => {
                 <!-- Remember Me -->
                 <div class="flex items-center">
                     <Checkbox name="remember" v-model:checked="form.remember" />
-                    <span class="ms-2 text-sm text-gray-500">Remember me</span>
+                    <span class="ms-2 text-sm text-gray-500">{{ t('Remember me') }}</span>
                 </div>
 
                 <!-- Submit Button -->
@@ -79,7 +92,7 @@ const submit = () => {
                         :class="{ 'opacity-25': form.processing }"
                         :disabled="form.processing"
                     >
-                        Log in
+                        {{ t('Log in') }}
                     </PrimaryButton>
                 </div>
             </form>

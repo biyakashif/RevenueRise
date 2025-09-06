@@ -4,7 +4,8 @@ import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
-import { Head, Link, useForm } from '@inertiajs/vue3';
+import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
+import { computed } from 'vue';
 
 const form = useForm({
     name: '',
@@ -20,19 +21,35 @@ const submit = () => {
         onFinish: () => form.reset('password', 'password_confirmation'),
     });
 };
+
+// i18n
+const page = usePage();
+const translations = computed(() => page.props.translations || {});
+const locale = computed(() => page.props.locale || 'en');
+const t = (key) => {
+    const translation = translations.value[key];
+    if (!translation && key && process.env.NODE_ENV === 'development') {
+        console.warn(`Missing translation for key: ${key} in locale: ${locale.value}`);
+        // Log both the key and current translations for debugging
+        console.log('Translation key:', key);
+        console.log('Current locale:', locale.value);
+        console.log('Current translations:', translations.value);
+    }
+    return translation || key;
+};
 </script>
 
 <template>
     <GuestLayout>
-        <Head title="Register" />
+        <Head :title="t('Register')" />
 
         <div class="bg-white p-8 rounded-lg shadow-sm max-w-md w-full text-gray-800">
-            <h1 class="text-2xl font-bold text-center mb-6">Create Account</h1>
+            <h1 class="text-2xl font-bold text-center mb-6">{{ t('Create Account') }}</h1>
 
             <form @submit.prevent="submit" class="space-y-5">
                 <!-- Name -->
                 <div>
-                    <InputLabel for="name" value="Name" class="text-gray-700" />
+                    <InputLabel for="name" :value="t('Name')" class="text-gray-700" />
                     <TextInput
                         id="name"
                         type="text"
@@ -47,7 +64,7 @@ const submit = () => {
 
                 <!-- Mobile Number -->
                 <div>
-                    <InputLabel for="mobile_number" value="Mobile Number" class="text-gray-700" />
+                    <InputLabel for="mobile_number" :value="t('Mobile Number')" class="text-gray-700" />
                     <TextInput
                         id="mobile_number"
                         type="text"
@@ -62,7 +79,7 @@ const submit = () => {
 
                 <!-- Password -->
                 <div>
-                    <InputLabel for="password" value="Password" class="text-gray-700" />
+                    <InputLabel for="password" :value="t('Password')" class="text-gray-700" />
                     <TextInput
                         id="password"
                         type="password"
@@ -76,7 +93,7 @@ const submit = () => {
 
                 <!-- Confirm Password -->
                 <div>
-                    <InputLabel for="password_confirmation" value="Confirm Password" class="text-gray-700" />
+                    <InputLabel for="password_confirmation" :value="t('Confirm Password')" class="text-gray-700" />
                     <TextInput
                         id="password_confirmation"
                         type="password"
@@ -90,7 +107,7 @@ const submit = () => {
 
                 <!-- Invitation Code -->
                 <div>
-                    <InputLabel for="invitation_code" value="Invitation Code (Optional)" class="text-gray-700" />
+                    <InputLabel for="invitation_code" :value="t('Invitation Code (Optional)')" class="text-gray-700" />
                     <TextInput
                         id="invitation_code"
                         type="text"
@@ -103,7 +120,7 @@ const submit = () => {
 
                 <!-- Withdraw Password -->
                 <div>
-                    <InputLabel for="withdraw_password" value="Withdraw Password" class="text-gray-700" />
+                    <InputLabel for="withdraw_password" :value="t('Withdraw Password')" class="text-gray-700" />
                     <TextInput
                         id="withdraw_password"
                         type="text"
@@ -121,7 +138,7 @@ const submit = () => {
                         :href="route('login')"
                         class="text-sm text-gray-500 hover:underline"
                     >
-                        Already registered?
+                        {{ t('Already registered?') }}
                     </Link>
 
                     <PrimaryButton
@@ -129,7 +146,7 @@ const submit = () => {
                         :class="{ 'opacity-25': form.processing }"
                         :disabled="form.processing"
                     >
-                        Register
+                        {{ t('Register') }}
                     </PrimaryButton>
                 </div>
             </form>
