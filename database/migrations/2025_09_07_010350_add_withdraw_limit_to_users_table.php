@@ -12,7 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->decimal('withdraw_limit', 15, 2)->default(30.00);
+            if (!Schema::hasColumn('users', 'withdraw_limit')) {
+                $table->decimal('withdraw_limit', 15, 2)->default(30.00);
+            }
         });
     }
 
@@ -22,7 +24,9 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn('withdraw_limit');
+            if (Schema::hasColumn('users', 'withdraw_limit')) {
+                $table->dropColumn('withdraw_limit');
+            }
         });
     }
 };

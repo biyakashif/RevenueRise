@@ -24,6 +24,66 @@ use Inertia\Inertia;
  */
 class AdminController extends Controller
 {
+    public function support()
+    {
+        return Inertia::render('Admin/Support');
+    }
+
+    public function chatWithUser($userId)
+    {
+        $user = User::findOrFail($userId);
+        return Inertia::render('Admin/Chat', [
+            'targetUser' => $user
+        ]);
+    }
+
+    public function sendMessage(Request $request, $userId)
+    {
+        $request->validate([
+            'message' => 'required_without:image|string',
+            'image' => 'nullable|image|max:2048',
+        ]);
+
+        $imagePath = null;
+        if ($request->hasFile('image')) {
+            $imagePath = $request->file('image')->store('chat-images', 'public');
+        }
+
+        $chat = Chat::create([
+            'sender_id' => Auth::id(),
+            'receiver_id' => $userId,
+            'message' => $request->message ?? '',
+            'image_path' => $imagePath,
+        ]);
+
+        broadcast(new \App\Events\NewChatMessage($chat))->toOthers();
+
+        return response()->json(['success' => true]);
+    }
+
+    public function getMessages($userId)
+    {
+        $messages = Chat::where(function($query) use ($userId) {
+            $query->where('sender_id', Auth::id())
+                ->where('receiver_id', $userId);
+        })
+        ->orWhere(function($query) use ($userId) {
+            $query->where('sender_id', $userId)
+                ->where('receiver_id', Auth::id());
+        })
+        ->with(['sender:id,name,avatar_url', 'receiver:id,name,avatar_url'])
+        ->latest()
+        ->get();
+
+        // Mark messages as read
+        Chat::where('sender_id', $userId)
+            ->where('receiver_id', Auth::id())
+            ->where('is_read', false)
+            ->update(['is_read' => true]);
+
+        return response()->json($messages);
+    }
+
     public function dashboard()
     {
         return Inertia::render('Admin/Dashboard');

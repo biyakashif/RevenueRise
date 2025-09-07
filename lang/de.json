@@ -170,5 +170,8 @@
     "Upload Screenshot": "Screenshot hochladen",
     "Submit Deposit": "Einzahlung absenden",
     "Deposit History": "Einzahlungsverlauf",
-    "No deposit history available": "Kein Einzahlungsverlauf verfügbar"
+    "No deposit history available": "Kein Einzahlungsverlauf verfügbar",
+    "Avatar preview": "Avatar-Vorschau",
+    "PNG, JPG, or WEBP up to 5MB. You can take a photo on mobile.": "PNG, JPG oder WEBP bis 5MB. Auf dem Handy kann ein Foto aufgenommen werden.",
+    "Saving...": "Speichern..."
 }

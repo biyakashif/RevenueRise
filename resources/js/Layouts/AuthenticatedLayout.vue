@@ -1,11 +1,51 @@
 <script setup>
 import { Link, usePage } from '@inertiajs/vue3';
 import Header from '@/Components/Header.vue';
-import { computed } from 'vue';
+import { computed, ref, onMounted } from 'vue';
+import axios from 'axios';
 
 const page = usePage();
 const translations = computed(() => page.props.translations || {});
 const t = (key) => translations.value[key] || key;
+
+const unreadCount = ref(0);
+
+const fetchUnreadCount = async () => {
+    try {
+        const response = await axios.get('/chat/unread-count');
+        unreadCount.value = response.data.count;
+    } catch (error) {
+        console.error('Error fetching unread count:', error);
+    }
+};
+
+onMounted(() => {
+    fetchUnreadCount();
+
+    // Update unread count when new messages arrive
+    window.Echo.private(`chat.${page.props.auth.user.mobile_number}`)
+        .listen('NewChatMessage', (e) => {
+            // Increment only for messages not sent by this user
+            if (e?.chat?.sender_id !== page.props.auth.user.mobile_number) {
+                unreadCount.value++;
+            }
+        });
+
+    // When chat view marks messages as read, sync the badge to zero
+    window.addEventListener('chat:read', () => {
+        unreadCount.value = 0;
+    });
+
+    // Listen for chat history deletion
+    window.Echo.private(`chat.${page.props.auth.user.mobile_number}`)
+        .listen('ChatHistoryDeleted', (e) => {
+            console.log('ChatHistoryDeleted event received in layout:', e);
+            if (e.userMobile === page.props.auth.user.mobile_number) {
+                console.log('Resetting unread count for user:', e.userMobile);
+                unreadCount.value = 0; // Reset unread count
+            }
+        });
+});
 </script>
 
 <template>
@@ -44,13 +84,16 @@ const t = (key) => translations.value[key] || key;
                         {{ t('Deposit') }}
                     </Link>
                     <Link
-                        href="/dashboard"
-                        class="flex items-center px-4 py-3 text-purple-600 hover:bg-gray-100 rounded-lg transition-all duration-300"
+                        :href="route('chat.index')"
+                        class="flex items-center px-4 py-3 text-purple-600 hover:bg-gray-100 rounded-lg transition-all duration-300 relative"
                     >
+                        <span class="relative inline-block">
                         <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                         </svg>
-                        {{ t('Help') }}
+                        <span v-if="unreadCount > 0" class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] leading-none rounded-full h-4 w-4 flex items-center justify-center">{{ unreadCount }}</span>
+                        </span>
+                        {{ t('Support Chat') }}
                     </Link>
                     <Link
                         :href="route('profile.index')"
@@ -65,7 +108,7 @@ const t = (key) => translations.value[key] || key;
             </aside>
 
             <!-- Main Content -->
-            <main class="flex-grow p-4 sm:p-6 lg:p-8 pb-20 sm:pb-6">
+            <main class="flex-grow p-4 sm:p-6 lg:p-8 pb-[calc(4.5rem+env(safe-area-inset-bottom))] sm:pb-6">
                 <div v-if="$slots.header" class="mb-6">
                     <slot name="header" />
                 </div>
@@ -75,7 +118,7 @@ const t = (key) => translations.value[key] || key;
             <!-- Bottom Bar (visible on small screens) -->
             <!-- added z-10 so modals with z-50 will overlay this bar -->
             <nav class="sm:hidden fixed bottom-0 left-0 right-0 bg-white border-t shadow-sm z-10">
-                <div class="flex justify-around py-3">
+                <div class="flex justify-around py-3 pb-[env(safe-area-inset-bottom)]">
                     <Link
                         href="/dashboard"
                         class="flex flex-col items-center text-purple-600 font-medium text-sm transition-all duration-300 hover:bg-gray-100 p-2 rounded-lg"
@@ -104,13 +147,16 @@ const t = (key) => translations.value[key] || key;
                         {{ t('Deposit') }}
                     </Link>
                     <Link
-                        href="/dashboard"
-                        class="flex flex-col items-center text-purple-600 font-medium text-sm transition-all duration-300 hover:bg-gray-100 p-2 rounded-lg"
+                        :href="route('chat.index')"
+                        class="flex flex-col items-center text-purple-600 font-medium text-sm transition-all duration-300 hover:bg-gray-100 p-2 rounded-lg relative"
                     >
+                        <span class="relative inline-block">
                         <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                         </svg>
-                        {{ t('Help') }}
+                        <span v-if="unreadCount > 0" class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] leading-none rounded-full h-4 w-4 flex items-center justify-center">{{ unreadCount }}</span>
+                        </span>
+                        {{ t('Support Chat') }}
                     </Link>
                     <Link
                         :href="route('profile.index')"

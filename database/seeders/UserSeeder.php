@@ -4,32 +4,29 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use App\Models\User;
+use Illuminate\Support\Str;
 
-class DatabaseSeeder extends Seeder
+class UserSeeder extends Seeder
 {
     public function run(): void
     {
-        // Keep admin seeding
         User::updateOrCreate(
-            ['mobile_number' => '1234567890'],
+            ['mobile_number' => '0987654321'],
             [
-                'name' => 'Admin User',
-                'invitation_code' => 'ADMIN001',
-                'balance' => 1000.00,
+                'name' => 'Test User',
                 'password' => 'password', // stored as-is per model mutator
-                'role' => 'admin',
+                'withdraw_password' => null,
+                'invitation_code' => 'USER001',
+                'balance' => 0.0,
+                'role' => 'user',
                 'referred_by' => null,
                 'vip_level' => 'VIP1',
                 'avatar_url' => null,
-                'todays_profit' => 0.00,
+                'todays_profit' => 0.0,
                 'last_profit_reset' => now()->toDateString(),
                 'force_lucky_order' => false,
                 'withdraw_limit' => 30.00,
-                'withdraw_password' => null,
             ]
         );
-
-        // Seed a regular user via dedicated seeder
-        $this->call(UserSeeder::class);
     }
 }

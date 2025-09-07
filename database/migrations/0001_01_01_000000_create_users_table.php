@@ -32,11 +32,12 @@ return new class extends Migration
 
         Schema::create('sessions', function (Blueprint $table) {
             $table->string('id')->primary();
-            $table->foreignId('user_id')->nullable()->index();
-            $table->string('ip_address', 45)->nullable();
-            $table->text('user_agent')->nullable();
-            $table->longText('payload');
-            $table->integer('last_activity')->index();
+            // Align sessions with app design: reference users by mobile_number instead of user_id
+            $table->string('mobile_number')->nullable()->index();
+
+
+
+
         });
     }
 
@@ -45,8 +46,24 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('users');
-        Schema::dropIfExists('password_reset_tokens');
+        // Ensure foreign key checks don't block dropping base tables during full rollbacks
+        Schema::disableForeignKeyConstraints();
+
+        // Drop any tables that may reference users to avoid FK errors if present
+        if (Schema::hasTable('chat_messages')) {
+            Schema::drop('chat_messages');
+        }
+        if (Schema::hasTable('chats')) {
+            Schema::drop('chats');
+        }
+
+        // Drop auxiliary tables first
         Schema::dropIfExists('sessions');
+        Schema::dropIfExists('password_reset_tokens');
+
+        // Finally drop users
+        Schema::dropIfExists('users');
+
+        Schema::enableForeignKeyConstraints();
     }
 };

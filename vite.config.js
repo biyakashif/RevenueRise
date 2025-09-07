@@ -7,6 +7,11 @@ export default defineConfig({
         laravel({
             input: 'resources/js/app.js',
             refresh: true,
+            // Expose .env values to your JavaScript
+            env: {
+                VITE_PUSHER_APP_KEY: process.env.PUSHER_APP_KEY,
+                VITE_PUSHER_APP_CLUSTER: process.env.PUSHER_APP_CLUSTER,
+            },
         }),
         vue({
             template: {

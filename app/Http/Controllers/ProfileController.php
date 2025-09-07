@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use App\Models\User;
 use Illuminate\Support\Facades\Validator;
@@ -62,5 +63,32 @@ class ProfileController extends Controller
         $request->user()->delete();
 
         return Redirect::route('welcome');
+    }
+
+    /**
+     * Upload and set avatar image.
+     */
+    public function uploadAvatar(Request $request)
+    {
+        $request->validate([
+            'avatar' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+        ]);
+
+        $user = $request->user();
+
+        // Store under public disk for web access
+        $dir = 'avatars/' . $user->id;
+        // Optional: clean old files
+        foreach (Storage::disk('public')->files($dir) as $old) {
+            Storage::disk('public')->delete($old);
+        }
+
+        $path = $request->file('avatar')->store($dir, 'public');
+        $url = Storage::url($path); // e.g., /storage/avatars/ID/filename.png
+
+        $user->avatar_url = $url;
+        $user->save();
+
+        return Redirect::route('profile.index')->with('success', 'Avatar updated.');
     }
 }

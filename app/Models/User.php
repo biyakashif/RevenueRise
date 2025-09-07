@@ -51,12 +51,12 @@ class User extends Authenticatable
 
     public function getAuthIdentifierName()
     {
-        return 'mobile_number';
+        return 'id';
     }
 
     public function getAuthIdentifier()
     {
-        return $this->mobile_number;
+        return $this->id;
     }
 
     public function deposits()
@@ -101,51 +101,61 @@ class User extends Authenticatable
 
     public function assignTasks()
     {
-        // Remove old tasks for this user
-        \App\Models\Task::where('user_id', $this->id)->delete();
+        try {
+            // Remove old tasks for this user
+            \App\Models\Task::where('user_id', $this->id)->delete();
 
-        if ($this->vip_level === 'VIP1') {
-            // Assign 40 random VIP1 products
-            $products = \App\Models\Product::where('type', 'VIP1')->inRandomOrder()->limit(40)->get();
-            foreach ($products as $index => $product) {
-                \App\Models\Task::create([
-                    'user_id' => $this->id,
-                    'name' => $this->vip_level,
-                    'product_id' => $product->id,
-                    'product_type' => 'VIP1',
-                    'position' => $index + 1,
-                ]);
-            }
-        } else {
-            // Assign 36 VIPs and 4 Lucky Order products, every 10th is Lucky Order
-            $vips = \App\Models\Product::where('type', 'VIPs')->inRandomOrder()->limit(36)->get();
-            $lucky = \App\Models\Product::where('type', 'Lucky Order')->inRandomOrder()->limit(4)->get();
+            if ($this->vip_level === 'VIP1') {
+                // Assign 40 random VIP1 products if they exist
+                $products = \App\Models\Product::where('type', 'VIP1')->inRandomOrder()->limit(40)->get();
+                if ($products->isNotEmpty()) {
+                    foreach ($products as $index => $product) {
+                        \App\Models\Task::create([
+                            'user_id' => $this->id,
+                            'name' => $this->vip_level,
+                            'product_id' => $product->id,
+                            'product_type' => 'VIP1',
+                            'position' => $index + 1,
+                        ]);
+                    }
+                }
+            } else {
+                // Assign 36 VIPs and 4 Lucky Order products if they exist
+                $vips = \App\Models\Product::where('type', 'VIPs')->inRandomOrder()->limit(36)->get();
+                $lucky = \App\Models\Product::where('type', 'Lucky Order')->inRandomOrder()->limit(4)->get();
 
-            $tasks = [];
-            $vipsIndex = 0;
-            $luckyIndex = 0;
-            for ($i = 1; $i <= 40; $i++) {
-                if ($i % 10 === 0 && $luckyIndex < 4) {
-                    $tasks[] = [
-                        'user_id' => $this->id,
-                        'name' => $this->vip_level,
-                        'product_id' => $lucky[$luckyIndex]->id,
-                        'product_type' => 'Lucky Order',
-                        'position' => $i,
-                    ];
-                    $luckyIndex++;
-                } else if ($vipsIndex < 36) {
-                    $tasks[] = [
-                        'user_id' => $this->id,
-                        'name' => $this->vip_level,
-                        'product_id' => $vips[$vipsIndex]->id,
-                        'product_type' => 'VIPs',
-                        'position' => $i,
-                    ];
-                    $vipsIndex++;
+                if ($vips->isNotEmpty() || $lucky->isNotEmpty()) {
+                    $tasks = [];
+                    $vipsIndex = 0;
+                    $luckyIndex = 0;
+                    for ($i = 1; $i <= 40; $i++) {
+                        if ($i % 10 === 0 && $luckyIndex < $lucky->count()) {
+                            $tasks[] = [
+                                'user_id' => $this->id,
+                                'name' => $this->vip_level,
+                                'product_id' => $lucky[$luckyIndex]->id,
+                                'product_type' => 'Lucky Order',
+                                'position' => $i,
+                            ];
+                            $luckyIndex++;
+                        } else if ($vipsIndex < $vips->count()) {
+                            $tasks[] = [
+                                'user_id' => $this->id,
+                                'name' => $this->vip_level,
+                                'product_id' => $vips[$vipsIndex]->id,
+                                'product_type' => 'VIPs',
+                                'position' => $i,
+                            ];
+                            $vipsIndex++;
+                        }
+                    }
+                    if (!empty($tasks)) {
+                        \App\Models\Task::insert($tasks);
+                    }
                 }
             }
-            \App\Models\Task::insert($tasks);
+        } catch (\Exception $e) {
+            \Log::error('Error in assignTasks: ' . $e->getMessage());
         }
     }
 
@@ -154,6 +164,22 @@ class User extends Authenticatable
         static::created(function ($user) {
             $user->assignTasks();
         });
+    }
+
+    public function unreadMessages()
+    {
+        return $this->hasMany(ChatMessage::class, 'recipient_id')
+                    ->whereNull('read_at');
+    }
+
+    public function sentMessages()
+    {
+        return $this->hasMany(ChatMessage::class, 'sender_id');
+    }
+
+    public function receivedMessages()
+    {
+        return $this->hasMany(ChatMessage::class, 'recipient_id');
     }
 }
 ?>

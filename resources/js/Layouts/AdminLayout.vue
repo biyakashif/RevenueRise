@@ -73,15 +73,28 @@
                             <i class="fas fa-boxes fa-lg"></i>
                             <span v-show="!isCollapsed" class="ml-3">Products</span>
                         </Link>
-<Link
-    :href="route('admin.task-manager')"
-    :active="route().current('admin.task-manager')"
-    class="flex items-center justify-center sm:justify-start px-4 py-4 text-purple-600 hover:bg-gray-100 rounded-lg transition-all duration-300"
-    :class="{ 'bg-gray-100': route().current('admin.task-manager') }"
->
-    <i class="fas fa-tasks fa-lg"></i>
-    <span v-show="!isCollapsed" class="ml-3">Task Manager</span>
-</Link>
+                        <Link
+                            :href="route('admin.task-manager')"
+                            :active="route().current('admin.task-manager')"
+                            class="flex items-center justify-center sm:justify-start px-4 py-4 text-purple-600 hover:bg-gray-100 rounded-lg transition-all duration-300"
+                            :class="{ 'bg-gray-100': route().current('admin.task-manager') }"
+                        >
+                            <i class="fas fa-tasks fa-lg"></i>
+                            <span v-show="!isCollapsed" class="ml-3">Task Manager</span>
+                        </Link>
+                        <Link
+                            :href="route('admin.support')"
+                            :active="route().current('admin.support')"
+                            class="flex items-center justify-center sm:justify-start px-4 py-4 text-purple-600 hover:bg-gray-100 rounded-lg transition-all duration-300"
+                            :class="{ 'bg-gray-100': route().current('admin.support') }"
+                            @click="supportHasNewMessage = false"
+                        >
+                            <span class="relative inline-block">
+                                <i class="fas fa-headset fa-lg"></i>
+                                <span v-if="supportHasNewMessage" class="absolute -top-1 -right-1 block w-2 h-2 bg-red-500 rounded-full"></span>
+                            </span>
+                            <span v-show="!isCollapsed" class="ml-3">Support Chat</span>
+                        </Link>
                         <Link
                             :href="route('logout')"
                             method="post"
@@ -96,13 +109,13 @@
             </aside>
 
             <!-- Main Content -->
-            <main class="flex-grow p-8 bg-white">
+            <main class="flex-grow p-4 bg-white">
                 <!-- Flash Messages -->
-                <div v-if="$page.props.flash?.success" class="mb-4 px-4 py-2 bg-green-100 text-green-800 rounded">
-                    {{ $page.props.flash.success }}
+                <div v-if="page.props.flash?.success" class="mb-4 px-4 py-2 bg-green-100 text-green-800 rounded">
+                    {{ page.props.flash.success }}
                 </div>
-                <div v-if="$page.props.flash?.error" class="mb-4 px-4 py-2 bg-red-100 text-red-800 rounded">
-                    {{ $page.props.flash.error }}
+                <div v-if="page.props.flash?.error" class="mb-4 px-4 py-2 bg-red-100 text-red-800 rounded">
+                    {{ page.props.flash.error }}
                 </div>
 
                 <div v-if="$slots.header" class="mb-6">
@@ -116,11 +129,41 @@
 
 <script setup>
 import { Link, usePage } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 
+const page = usePage();
 const isCollapsed = ref(false);
+const supportHasNewMessage = ref(false);
 
 const toggleSidebar = () => {
     isCollapsed.value = !isCollapsed.value;
 };
+
+// Clear the indicator when navigating to support route
+watch(
+    () => page.url,
+    () => {
+        if (route().current('admin.support')) {
+            supportHasNewMessage.value = false;
+        }
+    },
+    { immediate: true }
+);
+
+onMounted(() => {
+    // Subscribe to admin private channel and toggle the sidebar dot on new messages
+    const adminMobile = page.props.auth?.user?.mobile_number;
+    if (adminMobile && window?.Echo) {
+        window.Echo.private(`chat.${adminMobile}`)
+            .listen('NewChatMessage', (e) => {
+                // If user isn't on the support page, show a dot
+                if (!route().current('admin.support')) {
+                    // Only mark when message originated from a user (not admin self)
+                    if (e?.chat?.sender_id && String(e.chat.sender_id) !== String(adminMobile)) {
+                        supportHasNewMessage.value = true;
+                    }
+                }
+            });
+    }
+});
 </script>

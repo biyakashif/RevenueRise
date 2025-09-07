@@ -13,8 +13,10 @@ Broadcast::channel('orders.{userId}', function ($user, $userId) {
 Broadcast::channel('admin.orders', function ($user) {
     return $user->role === 'admin';
 });
-Broadcast::channel('orders.{userId}', function ($user, $userId) {
-    return (int) $user->id === (int) $userId;
-});
 
+Broadcast::channel('chat.{mobileNumber}', function ($user, $mobileNumber) {
+    if (!$user) return false;
+    // Allow if user is the owner of the channel or is an admin
+    return ($user->mobile_number === $mobileNumber) || ($user->role === 'admin');
+});
 

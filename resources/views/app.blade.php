@@ -3,7 +3,26 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="csrf-token" content="{{ csrf_token() }}"> <!-- ADD THIS LINE -->
+        <meta name="csrf-token" content="{{ csrf_token() }}">
+        <script>
+            window.Laravel = {!! json_encode([
+                'csrfToken' => csrf_token(),
+                'user' => Auth::user(),
+                'pusher' => [
+                    'key' => config('broadcasting.connections.pusher.key'),
+                    'cluster' => config('broadcasting.connections.pusher.options.cluster'),
+                    'forceTLS' => true,
+                    'encrypted' => true,
+                    'wsHost' => 'ws-' . config('broadcasting.connections.pusher.options.cluster') . '.pusher.com',
+                    'wsPort' => 443,
+                    'wssPort' => 443,
+                    'enabledTransports' => ['ws', 'wss']
+                ],
+                'endpoints' => [
+                    'broadcasting' => '/broadcasting/auth'
+                ]
+            ]) !!};
+        </script>
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flag-icons/css/flag-icons.min.css">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" integrity="sha512-Fo3rlrZj/k7ujTnHg4CGR2D7kSs0v4LLanw2qksYuRlEzO+tcaEPQogQ0KaoGN26/zrn20ImR1DfuLWnOo7aBA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 

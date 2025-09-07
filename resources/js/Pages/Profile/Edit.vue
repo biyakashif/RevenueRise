@@ -32,80 +32,93 @@ const frozenBalance = ref(Number(user.frozen_balance ?? 0));
 
 let pollingInterval = null;
 
-// Avatar picker state
+// Avatar upload state
 const showAvatarPicker = ref(false);
-const seeds = ref([]);
 const saving = ref(false);
 const errorMessage = ref('');
+const selectedFile = ref(null);
+const previewUrl = ref('');
+const fallbackAvatar = 'https://placehold.co/128x128?text=Avatar';
 
-// DiceBear v6 Avatar URL
-function diceBearUrl(seed) {
-  const encoded = encodeURIComponent(String(seed));
-  return `https://api.dicebear.com/6.x/adventurer/svg?seed=${encoded}`;
+// Initialize avatar URL (may be null if none set)
+const avatarUrl = ref(user.avatar_url || null);
+
+// Keep avatarUrl in sync with server updates; neutral placeholder if missing
+const computedAvatar = computed(() => user.avatar_url || avatarUrl.value || fallbackAvatar);
+
+function handleImgError(e) {
+  if (e && e.target) {
+    e.target.src = fallbackAvatar;
+  }
+  if (avatarUrl.value && typeof avatarUrl.value === 'string' && avatarUrl.value.startsWith('blob:')) {
+    try { URL.revokeObjectURL(avatarUrl.value); } catch (_) {}
+    avatarUrl.value = null;
+  }
 }
 
-// Initialize avatar URL
-const avatarUrl = ref(
-  user.avatar_url || diceBearUrl(user.mobile_number || user.invitation_code || `user-${user.id || '0'}`)
-);
-
-// Keep avatarUrl in sync with server updates
-const computedAvatar = computed(() => user.avatar_url || avatarUrl.value);
-
-// Generate 12 seeds for avatar previews
-function generateSeeds() {
-  const base = (user.mobile_number || user.invitation_code || `user-${user.id || '0'}`).toString();
-  const s = new Set();
-  s.add(base);
-  for (let i = 1; i <= 12; i++) {
-    s.add(`${base}-${i}`);
+function handlePreviewError(e) {
+  if (e && e.target) {
+    e.target.src = computedAvatar.value || fallbackAvatar;
   }
-  seeds.value = Array.from(s);
 }
 
 // Open/close picker
 function openAvatarPicker() {
-  generateSeeds();
   showAvatarPicker.value = true;
 }
 function closeAvatarPicker() {
   showAvatarPicker.value = false;
   errorMessage.value = '';
   saving.value = false;
+  if (previewUrl.value) {
+    URL.revokeObjectURL(previewUrl.value);
+  }
+  selectedFile.value = null;
+  previewUrl.value = '';
+}
+// Handle file choose
+function onFileChange(e) {
+  const file = e?.target?.files?.[0];
+  if (!file) return;
+  selectedFile.value = file;
+  if (previewUrl.value) URL.revokeObjectURL(previewUrl.value);
+  previewUrl.value = URL.createObjectURL(file);
 }
 
-// Save avatar to server
-async function saveAvatar(seed) {
-  const url = diceBearUrl(seed);
+// Upload avatar to server
+async function uploadAvatar() {
+  if (!selectedFile.value) return;
   saving.value = true;
   errorMessage.value = '';
-
   try {
-    await router.post(route('profile.update'), { avatar_url: url }, {
+    const formData = new FormData();
+    formData.append('avatar', selectedFile.value);
+    await router.post(route('profile.avatar'), formData, {
       preserveState: true,
       preserveScroll: true,
       onSuccess: () => {
-        // Inertia refreshes props from `profile.index`
-        user.avatar_url = url;
-        avatarUrl.value = url;
+        // Optimistically show the local preview as the avatar until server URL arrives
+        if (previewUrl.value) {
+          avatarUrl.value = previewUrl.value;
+        }
+        user.avatar_url = undefined;
+        // Reset modal state without revoking the blob we are now using as avatar
+        selectedFile.value = null;
+        previewUrl.value = '';
         showAvatarPicker.value = false;
         saving.value = false;
+        // Fetch latest profile/balance which should include the new avatar_url
+        fetchBalance();
       },
       onError: (errors) => {
         saving.value = false;
-        errorMessage.value = errors?.avatar_url || t('Failed to save avatar. Please try again.');
+        errorMessage.value = errors?.avatar || t('Failed to upload avatar. Please try again.');
       },
     });
   } catch (e) {
     saving.value = false;
-    errorMessage.value = `${t('Failed to save avatar:')} ${e.message}`;
+    errorMessage.value = `${t('Failed to upload avatar:')} ${e?.message || e}`;
   }
-}
-
-
-// Pick and save an avatar
-function pickAvatar(seed) {
-  saveAvatar(seed);
 }
 
 const fetchBalance = async () => {
@@ -118,6 +131,10 @@ const fetchBalance = async () => {
     balance.value = Number(data.balance ?? 0);
     user.vip_level = data.vip_level ?? user.vip_level;
     if (data.avatar_url) {
+      // If we were showing a temporary blob URL, revoke it before swapping
+      if (avatarUrl.value && typeof avatarUrl.value === 'string' && avatarUrl.value.startsWith('blob:')) {
+        try { URL.revokeObjectURL(avatarUrl.value); } catch (_) {}
+      }
       user.avatar_url = data.avatar_url;
       avatarUrl.value = data.avatar_url;
     }
@@ -138,6 +155,10 @@ onMounted(() => {
       })
       .listen('AvatarUpdated', (e) => {
         if (e && e.avatar_url) {
+          // Clean up any temporary blob before updating to the server URL
+          if (avatarUrl.value && typeof avatarUrl.value === 'string' && avatarUrl.value.startsWith('blob:')) {
+            try { URL.revokeObjectURL(avatarUrl.value); } catch (_) {}
+          }
           user.avatar_url = e.avatar_url;
           avatarUrl.value = e.avatar_url;
         }
@@ -167,6 +188,7 @@ onUnmounted(() => {
               :src="computedAvatar"
               :alt="t('Avatar')"
               class="w-16 h-16 rounded-full object-cover border"
+              @error="handleImgError"
             />
             <button
               @click="openAvatarPicker"
@@ -251,8 +273,8 @@ onUnmounted(() => {
       </section>
 
       <!-- Avatar Picker Modal -->
-      <div v-if="showAvatarPicker" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-        <div class="bg-white rounded-lg w-full max-w-3xl p-4">
+      <div v-if="showAvatarPicker" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4 overflow-y-auto overflow-x-hidden">
+        <div class="bg-white rounded-lg w-11/12 max-w-sm sm:max-w-md p-4 shadow-lg max-h-[92vh] sm:max-h-[90vh] overflow-y-auto overflow-x-hidden">
           <div class="flex items-center justify-between mb-4">
             <h3 class="text-lg font-semibold">{{ t('Choose an Avatar') }}</h3>
             <button @click="closeAvatarPicker" class="text-gray-500 hover:text-gray-700">
@@ -264,21 +286,23 @@ onUnmounted(() => {
 
           <div v-if="errorMessage" class="mb-2 text-sm text-red-600">{{ errorMessage }}</div>
 
-          <div class="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 gap-3">
-            <template v-for="seed in seeds" :key="seed">
-              <button @click="() => pickAvatar(seed)" :disabled="saving" class="focus:outline-none">
-                <img
-                  :src="diceBearUrl(seed)"
-                  :alt="seed"
-                  class="w-full h-24 object-cover rounded border hover:scale-105 transition-transform"
-                />
-              </button>
-            </template>
+          <div class="space-y-3">
+            <div class="flex items-center space-x-4">
+              <div class="w-24 h-24 rounded-full overflow-hidden border bg-gray-50">
+                <img :src="previewUrl || computedAvatar" :alt="t('Avatar preview')" class="w-full h-full object-cover" @error="handlePreviewError" />
+              </div>
+              <div>
+                <input type="file" accept="image/*" capture="user" @change="onFileChange" class="block w-full max-w-full" />
+                <p class="text-xs text-gray-500 mt-1">{{ t('PNG, JPG, or WEBP up to 5MB. You can take a photo on mobile.') }}</p>
+              </div>
+            </div>
+            <div class="flex justify-end space-x-2">
+              <button @click="closeAvatarPicker" class="px-3 py-1 border rounded" :disabled="saving">{{ t('Cancel') }}</button>
+              <button @click="uploadAvatar" class="px-3 py-1 bg-purple-600 text-white rounded disabled:opacity-50" :disabled="saving || !selectedFile">{{ saving ? t('Saving...') : t('Save') }}</button>
+            </div>
           </div>
 
-          <div class="mt-4 flex justify-end">
-            <button @click="closeAvatarPicker" class="px-3 py-1 border rounded">{{ t('Cancel') }}</button>
-          </div>
+          
         </div>
       </div>
     </div>

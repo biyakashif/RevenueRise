@@ -11,13 +11,18 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
         commands: __DIR__.'/../routes/console.php',
+        channels: __DIR__.'/../routes/channels.php',
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->web(append: [
+            \Illuminate\Session\Middleware\StartSession::class,
+            \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
+            \Illuminate\View\Middleware\ShareErrorsFromSession::class,
+            \App\Http\Middleware\VerifyCsrfToken::class,
             \App\Http\Middleware\HandleInertiaRequests::class,
             \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
-            \App\Http\Middleware\SetLocale::class, // Make sure this is always before HandleInertiaRequests
+            \App\Http\Middleware\SetLocale::class,
         ]);
 
         $middleware->alias([
@@ -25,6 +30,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'is_admin' => IsAdmin::class,
         ]);
     })
+    ->withProviders([
+        \App\Providers\BroadcastServiceProvider::class,
+    ])
     ->withExceptions(function (Exceptions $exceptions) {
         //
     })

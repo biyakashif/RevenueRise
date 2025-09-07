@@ -113,11 +113,11 @@ const updateBalance = (action) => {
           </h1>
 
           <!-- Flash Messages -->
-          <div v-if="$page.props.flash?.success" class="mb-6 p-4 rounded-lg bg-green-50 border border-green-200 text-green-700 text-sm flex items-center gap-2">
-            {{ $page.props.flash.success }}
+          <div v-if="page.props.flash?.success" class="mb-6 p-4 rounded-lg bg-green-50 border border-green-200 text-green-700 text-sm flex items-center gap-2">
+            {{ page.props.flash.success }}
           </div>
-          <div v-if="$page.props.flash?.error || errorMessage" class="mb-6 p-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm flex items-center gap-2">
-            {{ $page.props.flash.error || errorMessage }}
+          <div v-if="page.props.flash?.error || errorMessage" class="mb-6 p-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm flex items-center gap-2">
+            {{ page.props.flash.error || errorMessage }}
           </div>
 
           <!-- Balance Section -->

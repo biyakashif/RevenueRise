@@ -3,7 +3,8 @@ import { Head, Link, usePage } from '@inertiajs/vue3';
 import Header from '@/Components/Header.vue';
 import ApplicationLogo from '@/Components/ApplicationLogo.vue';
 
-const { translations } = usePage().props;
+const page = usePage();
+const { translations } = page.props;
 const t = (key) => translations[key] || key;
 
 defineProps({
@@ -29,7 +30,7 @@ defineProps({
 
             <nav v-if="canLogin" class="flex flex-col gap-4">
                 <Link
-                    v-if="$page.props.auth.user"
+                    v-if="page.props.auth.user"
                     :href="route('dashboard')"
                     class="w-full text-center rounded-full px-4 py-3 bg-purple-600 font-semibold text-lg transition-all duration-300 hover:bg-purple-700 hover:scale-105 shadow-lg"
                 >
