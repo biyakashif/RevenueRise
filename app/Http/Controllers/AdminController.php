@@ -101,10 +101,10 @@ class AdminController extends Controller
         return redirect()->back()->with('success', 'User deleted successfully.');
     }
 
-    public function withdraw()
-    {
-        return Inertia::render('Admin/Withdraw');
-    }
+    // public function withdraw()
+    // {
+    //     return Inertia::render('Admin/Withdraw');
+    // }
 
     // ---------------------------------------------------------------------
     // Orders (commented out)

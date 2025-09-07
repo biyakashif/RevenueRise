@@ -11,8 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('user_orders', function (Blueprint $table) {
-            $table->decimal('commission_reward', 12, 4)->nullable();
+        Schema::table('users', function (Blueprint $table) {
+            $table->decimal('withdraw_limit', 15, 2)->default(30.00);
         });
     }
 
@@ -21,8 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('user_orders', function (Blueprint $table) {
-            $table->dropColumn('commission_reward');
+        Schema::table('users', function (Blueprint $table) {
+            $table->dropColumn('withdraw_limit');
         });
     }
 };

@@ -97,6 +97,14 @@
 
             <!-- Main Content -->
             <main class="flex-grow p-8 bg-white">
+                <!-- Flash Messages -->
+                <div v-if="$page.props.flash?.success" class="mb-4 px-4 py-2 bg-green-100 text-green-800 rounded">
+                    {{ $page.props.flash.success }}
+                </div>
+                <div v-if="$page.props.flash?.error" class="mb-4 px-4 py-2 bg-red-100 text-red-800 rounded">
+                    {{ $page.props.flash.error }}
+                </div>
+
                 <div v-if="$slots.header" class="mb-6">
                     <slot name="header" />
                 </div>
@@ -107,7 +115,7 @@
 </template>
 
 <script setup>
-import { Link } from '@inertiajs/vue3';
+import { Link, usePage } from '@inertiajs/vue3';
 import { ref } from 'vue';
 
 const isCollapsed = ref(false);

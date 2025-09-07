@@ -3,6 +3,12 @@ import { ref, computed } from 'vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, usePage } from '@inertiajs/vue3';
 import VIP1Icon from '@/assets/VIP1.png';
+import VIP2Icon from '@/assets/VIP2.png';
+import VIP3Icon from '@/assets/VIP3.png';
+import VIP4Icon from '@/assets/VIP4.png';
+import VIP5Icon from '@/assets/VIP5.png';
+import VIP6Icon from '@/assets/VIP6.png';
+import VIP7Icon from '@/assets/VIP7.png';
 
 const page = usePage();
 const translations = computed(() => page.props.translations || {});
@@ -12,12 +18,12 @@ const user = page.props.auth.user || {};
 // VIP levels with costs and icons
 const levels = [
   { id: 1, name: 'VIP1', cost: null, icon: VIP1Icon },
-  { id: 2, name: 'VIP2', cost: 300.0, icon: VIP1Icon },
-  { id: 3, name: 'VIP3', cost: 750.0, icon: VIP1Icon },
-  { id: 4, name: 'VIP4', cost: 1500.0, icon: VIP1Icon },
-  { id: 5, name: 'VIP5', cost: 3500.0, icon: VIP1Icon },
-  { id: 6, name: 'VIP6', cost: 6500.0, icon: VIP1Icon },
-  { id: 7, name: 'VIP7', cost: 10000.0, icon: VIP1Icon }
+  { id: 2, name: 'VIP2', cost: 300.0, icon: VIP2Icon },
+  { id: 3, name: 'VIP3', cost: 750.0, icon: VIP3Icon },
+  { id: 4, name: 'VIP4', cost: 1500.0, icon: VIP4Icon },
+  { id: 5, name: 'VIP5', cost: 3500.0, icon: VIP5Icon },
+  { id: 6, name: 'VIP6', cost: 6500.0, icon: VIP6Icon },
+  { id: 7, name: 'VIP7', cost: 10000.0, icon: VIP7Icon }
 ];
 
 // Normalize user's VIP name robustly and compute numeric level.

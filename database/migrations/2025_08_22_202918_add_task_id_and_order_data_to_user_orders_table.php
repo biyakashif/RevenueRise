@@ -21,9 +21,16 @@ public function up()
 public function down()
 {
     Schema::table('user_orders', function (Blueprint $table) {
-        $table->dropColumn('task_name');
-        $table->dropColumn('status');
-        $table->dropColumn('order_data');
+        // Drop columns only if they exist
+        if (Schema::hasColumn('user_orders', 'task_name')) {
+            $table->dropColumn('task_name');
+        }
+        if (Schema::hasColumn('user_orders', 'status')) {
+            $table->dropColumn('status');
+        }
+        if (Schema::hasColumn('user_orders', 'order_data')) {
+            $table->dropColumn('order_data');
+        }
     });
 }
 };

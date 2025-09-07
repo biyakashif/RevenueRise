@@ -31,7 +31,7 @@ class WithdrawController extends Controller
         $perPage = 10;
         // select first, then add the withMax subquery so the alias is included in the SELECT
         $users = $query
-        ->select('id', 'name', 'mobile_number', 'invitation_code')
+        ->select('id', 'name', 'mobile_number', 'invitation_code', 'withdraw_limit', 'balance')
         ->withMax('withdraws', 'created_at')
         ->orderByDesc('withdraws_max_created_at')
         ->with(['withdraws' => function ($q) {

@@ -40,7 +40,7 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
     Route::post('/freeze-balance/{id}', [AdminController::class, 'freezeBalance'])->name('admin.freeze-balance');
     Route::post('/unfreeze-balance/{id}', [AdminController::class, 'unfreezeBalance'])->name('admin.unfreeze-balance');
 
-    Route::get('/withdraw', [AdminController::class, 'withdraw'])->name('admin.withdraw');
+    // Route::get('/withdraw', [AdminController::class, 'withdraw'])->name('admin.withdraw');
     // ================= PRODUCTS =================
     Route::get('/products', [AdminController::class, 'products'])->name('admin.products');
     Route::post('/products', [AdminController::class, 'storeProduct'])->name('admin.products.store');
@@ -86,6 +86,7 @@ Route::middleware('auth')->group(function () {
     Route::put('/password', [PasswordController::class, 'update'])->name('password.update');
 
     Route::get('/withdraw', [WithdrawController::class, 'index'])->name('withdraw');
+    Route::post('/withdraw', [WithdrawController::class, 'store'])->name('withdraw.store');
     Route::get('/withdraw/history', [WithdrawController::class, 'history'])->name('withdraw.history');
 
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
@@ -144,17 +145,14 @@ require __DIR__ . '/auth.php';
 
 Route::get('/admin/tasks/{user}', [AdminController::class, 'getUserTasks'])->middleware('auth');
 
-// User withdraw routes (place inside auth middleware section)
-Route::middleware(['auth'])->group(function () {
-    Route::get('/withdraw', [\App\Http\Controllers\WithdrawController::class, 'index'])->name('withdraw');
-    Route::post('/withdraw', [\App\Http\Controllers\WithdrawController::class, 'store'])->name('withdraw.store');
-});
+// The withdraw routes are already defined in the auth middleware group above
 
 // Admin withdraw management (adjust admin middleware to your app)
-Route::prefix('admin')->middleware(['auth','is_admin'])->name('admin.')->group(function () {
+Route::prefix('admin')->middleware(['auth','admin'])->name('admin.')->group(function () {
     Route::get('/withdrawals', [\App\Http\Controllers\Admin\WithdrawController::class, 'index'])->name('withdrawals');
     Route::post('/withdrawals/{id}/approve', [\App\Http\Controllers\Admin\WithdrawController::class, 'approve'])->name('withdrawals.approve');
     Route::post('/withdrawals/{id}/reject', [\App\Http\Controllers\Admin\WithdrawController::class, 'reject'])->name('withdrawals.reject');
     Route::get('/withdrawals/{id}/edit', [\App\Http\Controllers\Admin\WithdrawController::class, 'edit'])->name('withdrawals.edit');
     Route::post('/withdrawals/{id}/update', [\App\Http\Controllers\Admin\WithdrawController::class, 'update'])->name('withdrawals.update');
+    Route::post('/users/{user}/withdraw-limit', [\App\Http\Controllers\Admin\WithdrawLimitController::class, 'update'])->name('users.withdraw-limit.update');
 });

@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration {
     public function up(): void
@@ -41,8 +42,26 @@ return new class extends Migration {
             }
 
             if (Schema::hasColumn('user_orders', 'order_number')) {
-                $table->dropIndex(['user_id', 'order_number']);
-                $table->dropColumn('order_number');
+                // First drop foreign keys that reference user_orders table
+                Schema::table('user_orders', function (Blueprint $table) {
+                    // Disable foreign key checks
+                    DB::statement('SET FOREIGN_KEY_CHECKS=0');
+                    
+                    // Drop the user_id foreign key if it exists
+                    if (Schema::hasColumn('user_orders', 'user_id')) {
+                        $table->dropForeign(['user_id']);
+                    }
+                    
+                    // Now we can safely drop the index and column
+                    $table->dropIndex(['user_id', 'order_number']);
+                    $table->dropColumn('order_number');
+                    
+                    // Re-add the foreign key
+                    $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+                    
+                    // Re-enable foreign key checks
+                    DB::statement('SET FOREIGN_KEY_CHECKS=1');
+                });
             }
             if (Schema::hasColumn('user_orders', 'vip_level')) {
                 $table->dropColumn('vip_level');

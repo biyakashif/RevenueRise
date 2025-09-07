@@ -20,25 +20,39 @@ let pollingInterval = null;
 
 const fetchStatus = async () => {
   try {
-    const res = await fetch(route('withdraw'), { headers: { Accept: 'application/json' } });
-    if (!res.ok) return;
-    const data = await res.json();
+    const response = await fetch('/withdraw', {
+      headers: {
+        'Accept': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
+      },
+      credentials: 'same-origin'
+    });
+    
+    if (!response.ok) return;
+    const data = await response.json();
     if (data.balances) {
-      // update balances in-place
-      props.balances.usdt_balance = data.balances.usdt_balance;
+      // update balances in-place with formatted values
+      props.balances.usdt_balance = Number(data.balances.usdt_balance).toFixed(2);
+      props.balances.withdraw_limit = Number(data.balances.withdraw_limit).toFixed(2);
     }
     if (Array.isArray(data.withdrawals)) {
-      // replace withdrawals array
-      while (props.withdrawals.length) props.withdrawals.pop();
-      data.withdrawals.forEach(w => props.withdrawals.push(w));
+      // Format amounts before updating array
+      const formattedWithdrawals = data.withdrawals.map(w => ({
+        ...w,
+        amount_withdraw: Number(w.amount_withdraw).toFixed(2)
+      }));
+      props.withdrawals.splice(0, props.withdrawals.length, ...formattedWithdrawals);
     }
   } catch (err) {
-    // silent
+    console.error('Error fetching status:', err);
   }
 };
 
 onMounted(() => {
-  pollingInterval = setInterval(fetchStatus, 4000);
+  // Initial fetch
+  fetchStatus();
+  // Set up polling every 10 seconds
+  pollingInterval = setInterval(fetchStatus, 10000);
 });
 
 onUnmounted(() => {
@@ -56,59 +70,54 @@ const modalError = ref('');
 
 const validateThenSubmit = async () => {
   modalError.value = '';
-  // Use Inertia POST so CSRF/session are handled by Inertia and Laravel
   const payload = {
     amount_withdraw: amount.value,
     crypto_wallet: cryptoWallet.value,
-    withdraw_password: withdrawPassword.value,
-    // mark this as coming from the modal so controller can treat errors accordingly if needed
-    from_modal: true,
+    withdraw_password: withdrawPassword.value
   };
 
-  router.post(route('withdraw.store'), payload, {
+  router.post('/withdraw', payload, {
     preserveState: true,
+    preserveScroll: true,
     onError: (errors) => {
-      // keep the modal open and show withdraw_password error if present
-      // Inertia validation errors appear as { errors: { field: ['msg'] } } or as a flat errors object
-      let msg = 'Validation failed';
-      if (errors && typeof errors === 'object') {
-        if (errors.withdraw_password) {
-          msg = Array.isArray(errors.withdraw_password) ? errors.withdraw_password[0] : errors.withdraw_password;
-        } else if (errors.errors && errors.errors.withdraw_password) {
-          msg = Array.isArray(errors.errors.withdraw_password) ? errors.errors.withdraw_password[0] : errors.errors.withdraw_password;
-        } else if (errors.error) {
-          msg = errors.error;
-        } else {
-          // take first error message available
-          const firstKey = Object.keys(errors)[0];
-          const val = errors[firstKey];
-          msg = Array.isArray(val) ? val[0] : String(val);
-        }
+      // Handle validation errors
+      if (errors.amount_withdraw) {
+        modalError.value = Array.isArray(errors.amount_withdraw) 
+          ? errors.amount_withdraw[0] 
+          : errors.amount_withdraw;
+      } else if (errors.withdraw_password) {
+        modalError.value = Array.isArray(errors.withdraw_password) 
+          ? errors.withdraw_password[0] 
+          : errors.withdraw_password;
+      } else if (errors.crypto_wallet) {
+        modalError.value = Array.isArray(errors.crypto_wallet) 
+          ? errors.crypto_wallet[0] 
+          : errors.crypto_wallet;
+      } else {
+        modalError.value = 'An error occurred while processing your withdrawal';
       }
-      modalError.value = msg;
     },
     onSuccess: () => {
       showModal.value = false;
       withdrawPassword.value = '';
+      amount.value = '';
+      cryptoWallet.value = '';
+      fetchStatus(); // Refresh data after successful withdrawal
     },
   });
 };
 
 const setMax = () => {
   const bal = props.balances?.usdt_balance ?? 0;
-  // preserve reasonable decimal precision
-  amount.value = String(Number(bal));
+  amount.value = Number(bal).toFixed(2);
 };
 
-// helper to format USDT amounts: up to 8 decimals, but trim trailing zeros
+// helper to format USDT amounts with 2 decimal places
 const formatUSDT = (val) => {
-  if (val === null || val === undefined || val === '') return '0';
+  if (val === null || val === undefined || val === '') return '0.00';
   const n = Number(val);
-  if (!isFinite(n)) return String(val);
-  let s = n.toFixed(8); // keep up to 8 decimals
-  s = s.replace(/\.?(0+)$/, ''); // remove trailing zeros and optional dot
-  // fallback to 0 if empty
-  return s === '' ? '0' : s;
+  if (!isFinite(n)) return '0.00';
+  return n.toFixed(2);
 };
 </script>
 
@@ -120,10 +129,9 @@ const formatUSDT = (val) => {
     </template>
 
     <div class="p-4 max-w-xl mx-auto">
-      <div class="bg-white p-6 rounded-lg shadow">
-        <p class="text-sm text-gray-600 mb-4">{{ t('Available USDT') }}: <strong>{{ balances.usdt_balance ?? 0 }}</strong></p>
-
-        <form @submit.prevent="submit" class="space-y-4">
+        <div class="bg-white p-6 rounded-lg shadow">
+          <p class="text-sm text-gray-600 mb-2">{{ t('Available USDT') }}: <strong>{{ formatUSDT(balances.usdt_balance) }}</strong></p>
+          <p class="text-sm text-gray-600 mb-4">{{ t('Minimum Withdrawal') }}: <strong>{{ formatUSDT(balances.withdraw_limit) }}</strong> USDT</p>        <form @submit.prevent="submit" class="space-y-4">
           <div>
             <label class="block text-sm font-medium text-gray-700">{{ t('USDT Amount') }}</label>
             <div class="mt-1 flex">

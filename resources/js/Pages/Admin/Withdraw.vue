@@ -1,4 +1,4 @@
-<script setup>
+<!-- <script setup>
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 </script>
 
@@ -15,4 +15,4 @@ import AdminLayout from '@/Layouts/AdminLayout.vue';
             </div>
         </div>
     </AdminLayout>
-</template>
+</template> -->

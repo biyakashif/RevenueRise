@@ -29,6 +29,7 @@ class User extends Authenticatable
         'todays_profit',
         'last_profit_reset',
         'force_lucky_order', // Added
+        'withdraw_limit',
     ];
 
     protected $hidden = [
@@ -40,6 +41,7 @@ class User extends Authenticatable
         'todays_profit' => 'float',
         'last_profit_reset' => 'date',
         'force_lucky_order' => 'boolean', // Added
+        'withdraw_limit' => 'float',
     ];
 
     public function setPasswordAttribute($value)
