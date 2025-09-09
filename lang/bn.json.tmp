@@ -1,0 +1,19 @@
+{
+    "Avatar": "头像",
+    "Available Balance": "可用余额",
+    "Cancel": "取消",
+    "Change Password": "更改密码",
+    "Change avatar": "更改头像",
+    "Choose an Avatar": "选择头像",
+    "Edit Profile": "编辑资料",
+    "Failed to save avatar: ": "保存头像失败：",
+    "Failed to save avatar. Please try again.": "保存头像失败。请重试。",
+    "Frozen Balance": "冻结余额",
+    "Invitation ID": "邀请ID",
+    "Log Out": "退出登录",
+    "Not set": "未设置",
+    "Profile": "个人资料",
+    "USDT": "USDT",
+    "Withdraw": "提现",
+    "Withdraw History": "提现记录"
+}

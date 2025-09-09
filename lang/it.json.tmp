@@ -1,0 +1,19 @@
+{
+    "Avatar": "Avatar",
+    "Available Balance": "Saldo disponibile",
+    "Cancel": "Annulla",
+    "Change Password": "Cambia password",
+    "Change avatar": "Cambia avatar",
+    "Choose an Avatar": "Scegli un avatar",
+    "Edit Profile": "Modifica profilo",
+    "Failed to save avatar: ": "Impossibile salvare l'avatar: ",
+    "Failed to save avatar. Please try again.": "Impossibile salvare l'avatar. Per favore riprova.",
+    "Frozen Balance": "Saldo bloccato",
+    "Invitation ID": "ID invito",
+    "Log Out": "Esci",
+    "Not set": "Non impostato",
+    "Profile": "Profilo",
+    "USDT": "USDT",
+    "Withdraw": "Preleva",
+    "Withdraw History": "Cronologia prelievi"
+}
