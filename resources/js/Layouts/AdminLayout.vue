@@ -131,7 +131,7 @@
 import { Link, usePage } from '@inertiajs/vue3';
 import { ref, onMounted, watch } from 'vue';
 
-const page = usePage();
+const page = usePage(); // Ensure usePage is properly used
 const isCollapsed = ref(false);
 const supportHasNewMessage = ref(false);
 

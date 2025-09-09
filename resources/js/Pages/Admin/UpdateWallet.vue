@@ -1,6 +1,6 @@
 <script setup>
 import AdminLayout from '@/Layouts/AdminLayout.vue';
-import { Head, router } from '@inertiajs/vue3';
+import { Head, router, usePage } from '@inertiajs/vue3'; // Ensure usePage is imported
 import { ref, onMounted, onUnmounted } from 'vue';
 
 const props = defineProps({
@@ -12,6 +12,7 @@ const props = defineProps({
   mobile_number: { type: String, default: null },
 });
 
+const page = usePage(); // Define page using usePage
 const localDeposits = ref([...props.deposits]);
 const liveBalance = ref(parseFloat(props.balance) || 0);
 const liveFrozenBalance = ref(parseFloat(props.frozen_balance) || 0);
