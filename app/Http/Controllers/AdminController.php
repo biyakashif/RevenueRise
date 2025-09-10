@@ -639,6 +639,8 @@ class AdminController extends Controller
     {
         Task::where('user_id', $user->id)->delete();
 
+        $user->update(['tasks_auto_reset' => false]);
+
         return response()->json(['success' => true]);
     }
 
@@ -745,9 +747,22 @@ class AdminController extends Controller
         }
 
         try {
+            DB::beginTransaction();
+
+            // Delete existing tasks for the user
+            Task::where('user_id', $user->id)->delete();
+
+            // Insert new tasks
             Task::insert($tasks);
+
+            // Re-enable auto-reset for the user
+            $user->update(['tasks_auto_reset' => true]);
+
+            DB::commit();
+
             Log::info('Tasks assigned successfully:', ['tasks' => $tasks]);
         } catch (\Exception $e) {
+            DB::rollBack();
             Log::error('Error assigning tasks:', ['error' => $e->getMessage()]);
             return response()->json(['message' => 'Failed to assign tasks.'], 500);
         }

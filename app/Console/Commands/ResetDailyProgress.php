@@ -26,8 +26,8 @@ class ResetDailyProgress extends Command
      */
     public function handle()
     {
-        // Get all users
-        $users = User::where('role', 'user')->get();
+        // Get all users where tasks_auto_reset is true
+        $users = User::where('role', 'user')->where('tasks_auto_reset', true)->get();
 
         foreach ($users as $user) {
             // ✅ Delete ALL confirmed orders for this user & their VIP level
@@ -40,6 +40,6 @@ class ResetDailyProgress extends Command
             event(new UserProgressReset($user->id));
         }
 
-        $this->info("✅ Daily progress reset successfully for all users.");
+        $this->info("✅ Daily progress reset successfully for users with auto-reset enabled.");
     }
 }
