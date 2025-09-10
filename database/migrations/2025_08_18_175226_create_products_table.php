@@ -13,6 +13,7 @@ return new class extends Migration {
             $table->decimal('price', 10, 2);
             $table->decimal('profit_multiplier', 5, 2)->default(1.0);
             $table->string('image_path'); // stored in storage/app/public/products
+            $table->string('type'); // Add a 'type' column to the products table
             $table->timestamps();
         });
     }

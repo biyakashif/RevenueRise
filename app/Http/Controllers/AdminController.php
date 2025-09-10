@@ -161,15 +161,6 @@ class AdminController extends Controller
         return redirect()->back()->with('success', 'User deleted successfully.');
     }
 
-    // public function withdraw()
-    // {
-    //     return Inertia::render('Admin/Withdraw');
-    // }
-
-    // ---------------------------------------------------------------------
-    // Orders (commented out)
-    // ---------------------------------------------------------------------
-    // ...existing commented methods kept as-is...
 
     public function showQrUploadForm()
     {
@@ -397,7 +388,7 @@ class AdminController extends Controller
         $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'type' => 'required|in:VIP1,VIPs,Lucky Order',
+            'type' => 'required|in:VIP1,VIP2,VIP3,VIP4,VIP5,VIP6,VIP7,Lucky Order',
             'purchase_price' => 'required|numeric|min:0',
             'selling_price' => 'required|numeric|min:0',
             'commission_percentage' => 'required|numeric|min:0|max:100',
@@ -446,7 +437,7 @@ class AdminController extends Controller
         $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'type' => 'required|in:VIP1,VIPs,Lucky Order',
+            'type' => 'required|in:VIP1,VIP2,VIP3,VIP4,VIP5,VIP6,VIP7,Lucky Order',
             'purchase_price' => 'required|numeric|min:0',
             'selling_price' => 'required|numeric|min:0',
             'commission_percentage' => 'required|numeric|min:0|max:100',
@@ -553,12 +544,15 @@ class AdminController extends Controller
             ];
         })->values();
 
+        $assignedUserIds = Task::distinct('user_id')->pluck('user_id')->toArray();
+
         return Inertia::render('Admin/TaskManager', [
             'tasks' => $tasks,
             'vipsProducts' => $vipsProducts,
             'luckyOrderProducts' => $luckyOrderProducts,
             'userTaskProgress' => $userTaskProgress,
             'users' => $users,
+            'assignedUserIds' => $assignedUserIds,
         ]);
     }
 
@@ -592,12 +586,53 @@ class AdminController extends Controller
 
     public function resetUserTasks(User $user)
     {
-        $user->assignTasks();
+        try {
+            Log::info('Resetting tasks for user: ' . $user->id);
+            DB::beginTransaction();
 
-        // Also reset user_orders for this user
-        UserOrder::where('user_id', $user->id)->delete();
+            $assignedTasks = Task::where('user_id', $user->id)->orderBy('position')->get();
 
-        return response()->json(['success' => true]);
+            if ($assignedTasks->isEmpty()) {
+                Log::info('No tasks to reset for user: ' . $user->id);
+                DB::rollBack();
+                return;
+            }
+
+            // Get all current product IDs for this user to avoid assigning the same product
+            $currentProductIds = $assignedTasks->pluck('product_id')->toArray();
+
+            foreach ($assignedTasks as $task) {
+                // Find a new product of the same type, excluding current ones if possible
+                $newProduct = Product::where('type', $task->product_type)
+                    ->whereNotIn('id', $currentProductIds)
+                    ->inRandomOrder()
+                    ->first();
+
+                // If no new product is found (e.g., all have been used), fall back to any random product of the same type
+                if (!$newProduct) {
+                    $newProduct = Product::where('type', $task->product_type)
+                        ->inRandomOrder()
+                        ->first();
+                }
+
+                if ($newProduct) {
+                    $task->product_id = $newProduct->id;
+                    // The position remains the same
+                    $task->save();
+                    
+                    // Add the new product ID to the list of current ones for this transaction
+                    // to minimize duplicates within the same reset operation.
+                    $currentProductIds[] = $newProduct->id;
+                }
+            }
+
+            DB::commit();
+            Log::info('Tasks reset successfully for user: ' . $user->id);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error resetting tasks for user: ' . $user->id . ' - ' . $e->getMessage());
+        }
     }
 
     public function deleteUserTasks(User $user)
@@ -629,5 +664,100 @@ class AdminController extends Controller
         });
 
         return response()->json(['user' => $user, 'tasks' => $tasks]);
+    }
+
+    public function assignTasks(Request $request)
+    {
+        $request->validate([
+            'userId' => 'required|exists:users,id',
+            'tasksNumber' => 'required|integer|min:1',
+            'luckyOrder' => 'nullable|integer|min:0',
+        ]);
+
+        Log::info('Assign Tasks Request:', $request->all());
+
+        $user = User::findOrFail($request->userId);
+        $tasksNumber = $request->tasksNumber;
+        $luckyOrder = $request->luckyOrder;
+
+        $products = Product::where('type', $user->vip_level)->inRandomOrder()->get();
+        $luckyProducts = Product::where('type', 'Lucky Order')->inRandomOrder()->get();
+
+        if ($products->isEmpty()) {
+            Log::error('No products found for user VIP level:', ['vip_level' => $user->vip_level]);
+            return response()->json(['message' => 'No products found for user VIP level.'], 400);
+        }
+
+        if ($luckyProducts->isEmpty() && $luckyOrder > 0) {
+            Log::error('No lucky order products found.');
+            return response()->json(['message' => 'No lucky order products found.'], 400);
+        }
+
+        $tasks = [];
+        $luckyOrderPositions = [];
+        if ($luckyOrder > 0) {
+            $interval = (int) floor($tasksNumber / $luckyOrder);
+            for ($i = 1; $i <= $luckyOrder; $i++) {
+                $luckyOrderPositions[] = $i * $interval;
+            }
+        }
+
+        $regularProducts = Product::where('type', $user->vip_level)->inRandomOrder()->limit($tasksNumber - $luckyOrder)->get()->shuffle();
+        $luckyOrderProducts = Product::where('type', 'Lucky Order')->inRandomOrder()->limit($luckyOrder)->get()->shuffle();
+
+        for ($i = 1; $i <= $tasksNumber; $i++) {
+            $product = null;
+            $isLucky = in_array($i, $luckyOrderPositions);
+
+            if ($isLucky) {
+                if ($luckyOrderProducts->isNotEmpty()) {
+                    $product = $luckyOrderProducts->pop();
+                }
+            } else {
+                if ($regularProducts->isNotEmpty()) {
+                    $product = $regularProducts->pop();
+                }
+            }
+
+            // Fallback if we run out of unique products
+            if (!$product) {
+                if ($isLucky) {
+                    $product = Product::where('type', 'Lucky Order')->inRandomOrder()->first();
+                } else {
+                    $product = Product::where('type', $user->vip_level)->inRandomOrder()->first();
+                }
+            }
+
+            if (!$product) {
+                Log::error('Failed to fetch a product for task assignment.', ['is_lucky' => $isLucky]);
+                continue; // Skip this task if no product can be found
+            }
+
+            $tasks[] = [
+                'user_id' => $user->id,
+                'name' => $isLucky ? 'Lucky Order' : 'Regular Task',
+                'product_id' => $product->id,
+                'product_type' => $product->type,
+                'position' => $i,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
+        }
+
+        try {
+            Task::insert($tasks);
+            Log::info('Tasks assigned successfully:', ['tasks' => $tasks]);
+        } catch (\Exception $e) {
+            Log::error('Error assigning tasks:', ['error' => $e->getMessage()]);
+            return response()->json(['message' => 'Failed to assign tasks.'], 500);
+        }
+
+        return response()->json(['message' => 'Tasks assigned successfully.']);
+    }
+
+    public function getAssignedUsers()
+    {
+        $assignedUserIds = Task::distinct('user_id')->pluck('user_id');
+        return response()->json(['assignedUserIds' => $assignedUserIds]);
     }
 }

@@ -181,7 +181,12 @@ function closeLightbox() {
             >
               <option value="">All Types</option>
               <option value="VIP1">VIP1</option>
-              <option value="VIPs">VIPs</option>
+              <option value="VIP2">VIP2</option>
+              <option value="VIP3">VIP3</option>
+              <option value="VIP4">VIP4</option>
+              <option value="VIP5">VIP5</option>
+              <option value="VIP6">VIP6</option>
+              <option value="VIP7">VIP7</option>
               <option value="Lucky Order">Lucky Order</option>
             </select>
           </div>
@@ -235,7 +240,12 @@ function closeLightbox() {
                 required
               >
                 <option value="VIP1">VIP1</option>
-                <option value="VIPs">VIPs</option>
+                <option value="VIP2">VIP2</option>
+                <option value="VIP3">VIP3</option>
+                <option value="VIP4">VIP4</option>
+                <option value="VIP5">VIP5</option>
+                <option value="VIP6">VIP6</option>
+                <option value="VIP7">VIP7</option>
                 <option value="Lucky Order">Lucky Order</option>
               </select>
               <span v-if="form.errors.type" class="text-red-500 text-xs mt-1">{{ form.errors.type }}</span>
@@ -394,8 +404,7 @@ function closeLightbox() {
                     <span
                       class="inline-block px-2 py-1 rounded text-xs"
                       :class="{
-                        'bg-purple-100 text-purple-700': product.type === 'VIP1',
-                        'bg-green-100 text-green-700': product.type === 'VIPs',
+                        'bg-purple-100 text-purple-700': product.type === 'VIP1' || product.type === 'VIP2' || product.type === 'VIP3' || product.type === 'VIP4' || product.type === 'VIP5' || product.type === 'VIP6' || product.type === 'VIP7',
                         'bg-yellow-100 text-yellow-700': product.type === 'Lucky Order',
                       }"
                     >
@@ -438,7 +447,12 @@ function closeLightbox() {
                       class="w-full border border-gray-300 rounded-md px-2 py-1 text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition"
                     >
                       <option value="VIP1">VIP1</option>
-                      <option value="VIPs">VIPs</option>
+                      <option value="VIP2">VIP2</option>
+                      <option value="VIP3">VIP3</option>
+                      <option value="VIP4">VIP4</option>
+                      <option value="VIP5">VIP5</option>
+                      <option value="VIP6">VIP6</option>
+                      <option value="VIP7">VIP7</option>
                       <option value="Lucky Order">Lucky Order</option>
                     </select>
                     <span v-if="editForm.errors.type" class="text-red-500 text-xs mt-1">{{ editForm.errors.type }}</span>

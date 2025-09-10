@@ -46,6 +46,5 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->command('progress:reset-daily')->dailyAt('00:00');
         // Auto reset todays_profit every midnight
         $schedule->command('profit:reset-daily')->dailyAt('00:00');
-        $schedule->command('tasks:reset')->dailyAt('00:00');
     })
     ->create();

@@ -23,6 +23,7 @@ class Product extends Model
         'image_path',
     ];
 
+    // Ensure the type field supports VIP1 to VIP7 and Lucky Order
     protected $casts = [
         'type' => 'string',
     ];

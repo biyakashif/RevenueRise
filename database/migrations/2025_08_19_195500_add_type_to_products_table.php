@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::table('products', function (Blueprint $table) {
             if (!Schema::hasColumn('products', 'type')) {
-                $table->enum('type', ['VIP1', 'VIPs', 'Lucky Order'])->default('VIP1')->after('description');
+                $table->enum('type', ['VIP1', 'VIP2', 'VIP3', 'VIP4', 'VIP5', 'VIP6', 'VIP7', 'Lucky Order'])->default('VIP1')->after('description');
             }
         });
     }

@@ -48,7 +48,6 @@ class RegisteredUserController extends Controller
                 'role' => 'user',
                 'vip_level' => 'VIP1', // Set default VIP1
             ]);
-            $user->assignTasks();
 
             if ($request->invitation_code) {
                 $inviter = User::where('invitation_code', $request->invitation_code)->first();

@@ -109,6 +109,58 @@ async function resetTasks(userId) {
   }
 }
 
+const assignedUsers = ref(new Set(page.props.assignedUserIds || [])); // Track users with assigned tasks
+
+function openAssignTasksModal(user) {
+  if (assignedUsers.value.has(user.id)) {
+    resetSuccess.value = 'Tasks already assigned to this user. Delete tasks first to reassign.';
+    setTimeout(() => {
+      resetSuccess.value = '';
+    }, 2000);
+    return;
+  }
+  selectedUser.value = user;
+  showAssignTasksModal.value = true;
+}
+
+async function assignTasks() {
+  if (!selectedUser.value || tasksNumber.value <= 0) {
+    alert('Please enter valid inputs.');
+    return;
+  }
+
+  try {
+    const response = await fetch(`/admin/tasks/assign`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+      },
+      body: JSON.stringify({
+        userId: selectedUser.value.id,
+        tasksNumber: tasksNumber.value,
+        luckyOrder: luckyOrder.value,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to assign tasks.');
+    }
+
+    resetSuccess.value = 'Tasks assigned successfully!';
+    assignedUsers.value.add(selectedUser.value.id); // Mark user as having tasks assigned
+    setTimeout(() => {
+      resetSuccess.value = '';
+    }, 1000);
+    closeAssignTasksModal();
+  } catch (error) {
+    resetSuccess.value = 'Error: ' + error.message;
+    setTimeout(() => {
+      resetSuccess.value = '';
+    }, 2000);
+  }
+}
+
 async function deleteTasks(userId) {
   try {
     const tokenMeta = document.querySelector('meta[name="csrf-token"]');
@@ -125,20 +177,33 @@ async function deleteTasks(userId) {
     if (!response.ok) {
       throw new Error('Failed to delete tasks');
     }
-    resetSuccess.value = "Tasks deleted successfully!";
+    resetSuccess.value = 'Tasks deleted successfully!';
+    assignedUsers.value.delete(userId); // Remove user from assigned tasks tracking
     setTimeout(() => {
-      resetSuccess.value = "";
+      resetSuccess.value = '';
     }, 1000);
     // Optionally, clear modal if open
     showModal.value = false;
     tasksByUser.value = [];
     modalUser.value = null;
   } catch (error) {
-    resetSuccess.value = "Error: " + error.message;
+    resetSuccess.value = 'Error: ' + error.message;
     setTimeout(() => {
-      resetSuccess.value = "";
+      resetSuccess.value = '';
     }, 2000);
   }
+}
+
+const showAssignTasksModal = ref(false);
+const selectedUser = ref(null);
+const tasksNumber = ref(0);
+const luckyOrder = ref(0);
+
+function closeAssignTasksModal() {
+  showAssignTasksModal.value = false;
+  selectedUser.value = null;
+  tasksNumber.value = 0;
+  luckyOrder.value = 0;
 }
 
 onMounted(() => {
@@ -171,10 +236,29 @@ onMounted(() => {
         class="w-full p-2 border rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
       />
     </div>
-        <!-- Success message -->
+
+    <!-- Assign Tasks Modal -->
+    <div v-if="showAssignTasksModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div class="bg-white p-4 rounded shadow-lg w-full max-w-md mx-2 overflow-y-auto max-h-[90vh]">
+        <h2 class="text-lg font-bold mb-4 text-center">Assign Tasks to {{ selectedUser?.name }}</h2>
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700">Enter Tasks Number</label>
+          <input v-model="tasksNumber" type="number" class="mt-1 block w-full p-2 border rounded-md" />
+        </div>
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700">Enter Lucky Order</label>
+          <input v-model="luckyOrder" type="number" class="mt-1 block w-full p-2 border rounded-md" />
+        </div>
+        <button @click="assignTasks" class="w-full bg-green-600 text-white py-2 rounded">Assign</button>
+        <button @click="closeAssignTasksModal" class="mt-4 w-full bg-gray-600 text-white py-2 rounded">Cancel</button>
+      </div>
+    </div>
+
+    <!-- Success message -->
     <div v-if="resetSuccess" class="mb-2 text-green-600 font-semibold text-center">
       {{ resetSuccess }}
     </div>
+
     <table class="min-w-full border mb-4">
       <thead>
         <tr>
@@ -190,9 +274,18 @@ onMounted(() => {
           <td class="p-2 border">{{ user.mobile_number }}</td>
           <td class="p-2 border">{{ user.vip_level }}</td>
           <td class="p-2 border">
-            <button @click="viewTasks(user.id)" class="bg-blue-600 text-white px-3 py-1 rounded">Tasks Details</button>
-            <button @click="resetTasks(user.id)" class="bg-red-500 text-white px-3 py-1 rounded ml-2">Reset Task</button>
-            <button @click="deleteTasks(user.id)" class="bg-gray-500 text-white px-3 py-1 rounded ml-2">Delete Tasks</button>
+            <button
+              @click="openAssignTasksModal(user)"
+              :disabled="assignedUsers.has(user.id)"
+              :class="assignedUsers.has(user.id) ? 'bg-gray-500' : 'bg-green-600'"
+              class="text-white px-3 py-1 rounded"
+              style="width: 120px;"
+            >
+              {{ assignedUsers.has(user.id) ? 'Assigned' : 'Assign Tasks' }}
+            </button>
+            <button @click="viewTasks(user.id)" class="bg-blue-600 text-white px-3 py-1 rounded ml-2" style="width: 120px;">Tasks Details</button>
+            <button @click="resetTasks(user.id)" class="bg-red-500 text-white px-3 py-1 rounded ml-2" style="width: 120px;">Reset Task</button>
+            <button @click="deleteTasks(user.id)" class="bg-gray-500 text-white px-3 py-1 rounded ml-2" style="width: 120px;">Delete Tasks</button>
           </td>
         </tr>
       </tbody>

@@ -73,7 +73,9 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->name('admin.')->group(fun
     Route::post('/toggle-lucky-order-flag', [AdminController::class, 'toggleLuckyOrderFlag'])->name('toggle-lucky-order-flag');
     Route::post('/tasks/{user}/reset', [AdminController::class, 'resetUserTasks']);
     Route::post('/tasks/{user}/delete', [AdminController::class, 'deleteUserTasks']);
-    
+    Route::post('/tasks/assign', [AdminController::class, 'assignTasks'])->name('tasks.assign');
+    Route::get('/tasks/assigned-users', [AdminController::class, 'getAssignedUsers'])->name('tasks.assigned-users');
+
     // Withdrawal Management
     Route::get('/withdrawals', [\App\Http\Controllers\Admin\WithdrawController::class, 'index'])->name('withdrawals');
     Route::post('/withdrawals/{id}/approve', [\App\Http\Controllers\Admin\WithdrawController::class, 'approve'])->name('withdrawals.approve');

@@ -102,60 +102,37 @@ class User extends Authenticatable
     public function assignTasks()
     {
         try {
-            // Remove old tasks for this user
-            \App\Models\Task::where('user_id', $this->id)->delete();
+            \Log::info('Assigning tasks for user: ' . $this->id);
 
-            if ($this->vip_level === 'VIP1') {
-                // Assign 40 random VIP1 products if they exist
-                $products = \App\Models\Product::where('type', 'VIP1')->inRandomOrder()->limit(40)->get();
-                if ($products->isNotEmpty()) {
-                    foreach ($products as $index => $product) {
-                        \App\Models\Task::create([
-                            'user_id' => $this->id,
-                            'name' => $this->vip_level,
-                            'product_id' => $product->id,
-                            'product_type' => 'VIP1',
-                            'position' => $index + 1,
-                        ]);
-                    }
-                }
-            } else {
-                // Assign 36 VIPs and 4 Lucky Order products if they exist
-                $vips = \App\Models\Product::where('type', 'VIPs')->inRandomOrder()->limit(36)->get();
-                $lucky = \App\Models\Product::where('type', 'Lucky Order')->inRandomOrder()->limit(4)->get();
+            // Fetch all available products
+            $availableProducts = Product::all();
 
-                if ($vips->isNotEmpty() || $lucky->isNotEmpty()) {
-                    $tasks = [];
-                    $vipsIndex = 0;
-                    $luckyIndex = 0;
-                    for ($i = 1; $i <= 40; $i++) {
-                        if ($i % 10 === 0 && $luckyIndex < $lucky->count()) {
-                            $tasks[] = [
-                                'user_id' => $this->id,
-                                'name' => $this->vip_level,
-                                'product_id' => $lucky[$luckyIndex]->id,
-                                'product_type' => 'Lucky Order',
-                                'position' => $i,
-                            ];
-                            $luckyIndex++;
-                        } else if ($vipsIndex < $vips->count()) {
-                            $tasks[] = [
-                                'user_id' => $this->id,
-                                'name' => $this->vip_level,
-                                'product_id' => $vips[$vipsIndex]->id,
-                                'product_type' => 'VIPs',
-                                'position' => $i,
-                            ];
-                            $vipsIndex++;
-                        }
-                    }
-                    if (!empty($tasks)) {
-                        \App\Models\Task::insert($tasks);
-                    }
-                }
+            // Get already assigned product IDs for this user
+            $assignedProductIds = Task::where('user_id', $this->id)->pluck('product_id')->toArray();
+
+            // Filter out already assigned products
+            $newProducts = $availableProducts->whereNotIn('id', $assignedProductIds);
+
+            // If no new products are available, allow repetition
+            if ($newProducts->isEmpty()) {
+                $newProducts = $availableProducts;
             }
+
+            // Assign tasks with the new products
+            $position = 1; // Start position counter
+            foreach ($newProducts as $product) {
+                Task::create([
+                    'user_id' => $this->id,
+                    'name' => 'Task for Product ' . $product->id, // Set a default name
+                    'product_id' => $product->id,
+                    'product_type' => $product->type,
+                    'position' => $position++, // Increment position for each task
+                ]);
+            }
+
+            \Log::info('Tasks assigned successfully for user: ' . $this->id);
         } catch (\Exception $e) {
-            \Log::error('Error in assignTasks: ' . $e->getMessage());
+            \Log::error('Error assigning tasks for user: ' . $this->id . ' - ' . $e->getMessage());
         }
     }
 
