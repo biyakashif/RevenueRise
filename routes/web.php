@@ -130,6 +130,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/deposit', [DepositController::class, 'store'])->name('deposit.store');
     Route::get('/deposit/history', [DepositController::class, 'history'])->name('deposit.history');
     Route::get('/vip/{level}/purchase', [DepositController::class, 'vipPurchase'])->name('vip.purchase');
+    
+    // Crypto API Routes (moved from admin routes for user access)
+    Route::get('/crypto-details', [AdminController::class, 'fetchCryptoDetails'])->name('crypto-details');
 
     // Order Routes
     Route::get('/my-orders', [DashboardController::class, 'orders'])->name('orders.index'); 

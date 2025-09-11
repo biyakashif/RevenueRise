@@ -105,9 +105,9 @@
         </div>
 
         <!-- No tasks available -->
-        <div v-else-if="!hasCompletedAllTasks" class="bg-white shadow-sm sm:rounded-lg p-6 text-center">
-          <p class="text-gray-500">{{ t('No tasks available for your VIP level') }} ({{ user.vip_level || t('VIP1') }})</p>
-        </div>
+    <div v-if="!hasCompletedAllTasks" class="bg-white shadow-sm sm:rounded-lg p-6 text-center">
+      <p class="text-gray-500">{{ t('No tasks available for your VIP level') }} ({{ user.vip_level }})</p>
+    </div>
       </div>
     </div>
 
@@ -287,7 +287,7 @@ const taskProgress = ref(props.confirmedCount || 0);
 const taskItemsCount = ref(props.taskTotalCount || 0);
 
 // Small derived computed
-const notEnoughTasks = computed(() => taskItemsCount.value < 40);
+const notEnoughTasks = computed(() => false); // Always allow tasks to show, even if less than 40
 
 // Modal & loading state
 const showModal = ref(false);
@@ -305,9 +305,8 @@ const currentTaskProduct = computed(() => {
   return null;
 });
 
-const MAX_ORDERS = 40;
 const hasCompletedAllTasks = computed(() => {
-  return taskProgress.value >= 40;
+  return taskProgress.value >= taskItemsCount.value && taskItemsCount.value > 0;
 });
 
 const loadPersistedModalState = () => {
@@ -454,7 +453,7 @@ const confirmProduct = () => {
       currentTaskProductIndex.value = taskProgress.value;
       modalProduct.value = null;
 
-      if (taskProgress.value >= 40) {
+      if (taskProgress.value >= taskItemsCount.value) {
         completionMessage.value = "Congratulations you have done your today's task, your next task will be updated after midnight";
       }
 

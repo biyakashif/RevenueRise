@@ -14,11 +14,12 @@ class DepositController extends Controller
 {
    public function index(Request $request)
     {
-        $detail = CryptoDepositDetail::where('symbol', 'usdt')->first();
+        $detail = CryptoDepositDetail::first();
         $depositDetails = [
-            'network' => 'TRC20',
+            'network' => $detail ? $detail->network : 'TBD',
             'address' => $detail ? $detail->address : 'TBD',
             'qr_code' => $detail ? $detail->qr_code : null,
+            'currency' => $detail ? $detail->currency : '',
             'min_deposit' => $detail?->min_deposit ?? null,
             'deposit_account' => $detail?->deposit_account ?? null,
             'deposit_arrival_time' => $detail?->deposit_arrival_time ?? null,
@@ -68,11 +69,11 @@ class DepositController extends Controller
 
         $path = $request->file('slip')->store('deposits', 'public');
         $user = auth()->user();
-        $detail = CryptoDepositDetail::where('symbol', 'usdt')->first();
+        $detail = CryptoDepositDetail::first();
 
         $data = [
             'user_id' => $user->mobile_number,
-            'symbol' => 'usdt',
+            'symbol' => $detail ? strtolower($detail->currency) : '',
             'amount' => $request->amount,
             'address' => $detail ? $detail->address : 'TBD',
             'status' => 'pending',
@@ -93,7 +94,9 @@ class DepositController extends Controller
 
     public function history()
     {
-        $deposits = Deposit::where('user_id', auth()->user()->mobile_number)->where('symbol', 'usdt')->get();
+        $deposits = Deposit::where('user_id', auth()->user()->mobile_number)
+            ->orderBy('created_at', 'desc')
+            ->get();
         return response()->json(['deposits' => $deposits]);
     }
 

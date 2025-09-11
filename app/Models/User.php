@@ -125,7 +125,6 @@ class User extends Authenticatable
             foreach ($newProducts as $product) {
                 Task::create([
                     'user_id' => $this->id,
-                    'name' => 'Task for Product ' . $product->id, // Set a default name
                     'product_id' => $product->id,
                     'product_type' => $product->type,
                     'position' => $position++, // Increment position for each task

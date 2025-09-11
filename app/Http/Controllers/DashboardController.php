@@ -37,22 +37,18 @@ class DashboardController extends Controller
 
             $user->resetTodaysProfitIfNeeded();
 
-            $vipLevel = $user->vip_level ?? 'VIP1';
-
             $confirmedProductIds = UserOrder::where('user_id', $user->id)
                 ->where('status', 'confirmed')
-                ->where('task_name', $vipLevel)
                 ->pluck('product_id');
 
-            $taskTotalCount = Task::where('name', $vipLevel)->count();
+            $taskTotalCount = Task::where('user_id', $user->id)->count();
 
             $confirmedCount = UserOrder::where('user_id', $user->id)
                 ->where('status', 'confirmed')
-                ->where('task_name', $vipLevel)
                 ->count();
 
             $taskModels = Task::with('product')
-                ->where('name', $vipLevel)
+                ->where('user_id', $user->id)
                 ->orderBy('position')
                 ->orderBy('id')
                 ->get();
@@ -92,22 +88,12 @@ class DashboardController extends Controller
                 if ($luckyProduct) {
                     $forcedTask = [
                         'id' => null,
-                        'name' => $vipLevel,
+                        'name' => null,
                         'product_id' => $luckyProduct->id,
                         'product_type' => 'Lucky Order',
                         'position' => null,
                         'status' => 'confirmed',
                         'product' => [
-                            'id' => $luckyProduct->id,
-                            'product_id' => $luckyProduct->product_id,
-                            'title' => $luckyProduct->title,
-                            'description' => $luckyProduct->description,
-                            'purchase_price' => $luckyProduct->purchase_price,
-                            'selling_price' => $luckyProduct->selling_price,
-                            'commission_reward' => $luckyProduct->commission_reward,
-                            'commission_percentage' => $luckyProduct->commission_percentage,
-                            'image_path' => $luckyProduct->image_path,
-                            'type' => $luckyProduct->type,
                             'is_forced' => true,
                         ],
                         'forced_lucky' => true,
@@ -145,7 +131,7 @@ class DashboardController extends Controller
                 'currentProductIndex' => $currentIndex,
                 'user' => $user->only(['id', 'name', 'balance', 'frozen_balance', 'vip_level', 'mobile_number', 'todays_profit']),
                 'tasks' => collect($tasksForResponse),
-                'taskTotalCount' => $taskTotalCount > 40 ? 40 : $taskTotalCount,
+                'taskTotalCount' => $taskTotalCount,
                 'confirmedCount' => $confirmedCount,
             ]);
         } catch (\Exception $e) {

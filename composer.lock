@@ -1423,16 +1423,16 @@
         },
         {
             "name": "laravel/framework",
-            "version": "v11.45.3",
+            "version": "v11.46.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/laravel/framework.git",
-                "reference": "f88bacee8daae65774ca8aa0f0bd32293e4f82b0"
+                "reference": "2c6d85f22d08123ad45aa3a6726b16f06e68eecd"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/laravel/framework/zipball/f88bacee8daae65774ca8aa0f0bd32293e4f82b0",
-                "reference": "f88bacee8daae65774ca8aa0f0bd32293e4f82b0",
+                "url": "https://api.github.com/repos/laravel/framework/zipball/2c6d85f22d08123ad45aa3a6726b16f06e68eecd",
+                "reference": "2c6d85f22d08123ad45aa3a6726b16f06e68eecd",
                 "shasum": ""
             },
             "require": {
@@ -1634,7 +1634,7 @@
                 "issues": "https://github.com/laravel/framework/issues",
                 "source": "https://github.com/laravel/framework"
             },
-            "time": "2025-09-02T23:56:44+00:00"
+            "time": "2025-09-08T21:54:34+00:00"
         },
         {
             "name": "laravel/prompts",
@@ -7185,16 +7185,16 @@
         },
         {
             "name": "laravel-lang/lang",
-            "version": "15.24.1",
+            "version": "15.24.5",
             "source": {
                 "type": "git",
                 "url": "https://github.com/Laravel-Lang/lang.git",
-                "reference": "ca42e015b7763c270822814b4880c8ad8b2bb0b4"
+                "reference": "495096372a2c45a69f9a2759973495c9d013367f"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Laravel-Lang/lang/zipball/ca42e015b7763c270822814b4880c8ad8b2bb0b4",
-                "reference": "ca42e015b7763c270822814b4880c8ad8b2bb0b4",
+                "url": "https://api.github.com/repos/Laravel-Lang/lang/zipball/495096372a2c45a69f9a2759973495c9d013367f",
+                "reference": "495096372a2c45a69f9a2759973495c9d013367f",
                 "shasum": ""
             },
             "require": {
@@ -7208,7 +7208,7 @@
             "require-dev": {
                 "dragon-code/codestyler": "^6.0",
                 "laravel-lang/status-generator": "^2.11",
-                "phpunit/phpunit": "^10.0 || ^11.0 || ^12.0",
+                "phpunit/phpunit": "^11.0 || ^12.0",
                 "symfony/var-dumper": "^7.0"
             },
             "type": "library",
@@ -7245,7 +7245,7 @@
                 "issues": "https://github.com/Laravel-Lang/lang/issues",
                 "source": "https://github.com/Laravel-Lang/lang"
             },
-            "time": "2025-09-02T21:56:46+00:00"
+            "time": "2025-09-10T20:41:54+00:00"
         },
         {
             "name": "laravel-lang/locale-list",
@@ -8651,16 +8651,16 @@
         },
         {
             "name": "phpunit/phpunit",
-            "version": "11.5.36",
+            "version": "11.5.38",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/phpunit.git",
-                "reference": "264a87c7ef68b1ab9af7172357740dc266df5957"
+                "reference": "5bd0e4f64a2261b7ade7054c51547beaf2d99e43"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/264a87c7ef68b1ab9af7172357740dc266df5957",
-                "reference": "264a87c7ef68b1ab9af7172357740dc266df5957",
+                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/5bd0e4f64a2261b7ade7054c51547beaf2d99e43",
+                "reference": "5bd0e4f64a2261b7ade7054c51547beaf2d99e43",
                 "shasum": ""
             },
             "require": {
@@ -8732,7 +8732,7 @@
             "support": {
                 "issues": "https://github.com/sebastianbergmann/phpunit/issues",
                 "security": "https://github.com/sebastianbergmann/phpunit/security/policy",
-                "source": "https://github.com/sebastianbergmann/phpunit/tree/11.5.36"
+                "source": "https://github.com/sebastianbergmann/phpunit/tree/11.5.38"
             },
             "funding": [
                 {
@@ -8756,7 +8756,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2025-09-03T06:24:17+00:00"
+            "time": "2025-09-11T10:34:07+00:00"
         },
         {
             "name": "sebastian/cli-parser",

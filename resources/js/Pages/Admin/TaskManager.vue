@@ -1,7 +1,8 @@
 <script setup>
 import AdminLayout from "@/Layouts/AdminLayout.vue";
 import { ref, onMounted, computed } from "vue";
-import { usePage } from "@inertiajs/vue3";
+import { usePage, router } from "@inertiajs/vue3";
+import Echo from 'laravel-echo';
 
 const page = usePage();
 const users = page.props.users;
@@ -58,27 +59,19 @@ function closeModal() {
   stopPolling();
 }
 
-async function applyLuckyOrder(taskId, userId) {
-  try {
-    const tokenMeta = document.querySelector('meta[name="csrf-token"]');
-    const token = tokenMeta ? tokenMeta.getAttribute('content') : '';
-    const response = await fetch(`/admin/tasks/${userId}/replace/${taskId}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRF-TOKEN': token,
-        'Accept': 'application/json',
-      },
-      body: JSON.stringify({}),
-    });
-    if (!response.ok) {
-      throw new Error('Failed to replace task');
+function applyLuckyOrder(taskId, userId) {
+  router.post(`/admin/tasks/${userId}/replace/${taskId}`, {}, {
+    preserveState: true,
+    preserveScroll: true,
+    onSuccess: () => {
+      // Refetch tasks to show the update
+      viewTasks(userId);
+    },
+    onError: (errors) => {
+      console.error('Error replacing task:', errors);
+      alert('Failed to replace task. See console for details.');
     }
-    const data = await response.json();
-    tasksByUser.value = data.tasks;
-  } catch (error) {
-    alert('Error: ' + error.message);
-  }
+  });
 }
 
 async function resetTasks(userId) {
@@ -220,6 +213,17 @@ onMounted(() => {
         }
       });
   }
+
+  if (modalUser.value) {
+    // Listen for the OrderConfirmed event
+    Echo.private(`orders.${modalUser.value.id}`)
+      .listen('OrderConfirmed', (event) => {
+        const task = tasksByUser.value.find(t => t.id === event.order.task_id);
+        if (task) {
+          task.status = 'Success'; // Update the task status
+        }
+      });
+  }
 });
 </script>
 
@@ -319,13 +323,13 @@ onMounted(() => {
               </div>
             </div>
             <div class="text-xs text-gray-400 ml-2">#{{ task.position }}</div>
-            <span v-if="task.status === 'confirmed'" class="ml-2 bg-green-500 text-white px-2 py-1 rounded text-xs">
+            <span v-if="task.status && task.status.toString().trim().toLowerCase() === 'confirmed'" class="ml-2 bg-green-500 text-white px-2 py-1 rounded text-xs">
               Confirmed
             </span>
             <button
-              v-else-if="task.product_type !== 'Lucky Order'"
+              v-if="task.product_type !== 'Lucky Order' && task.status !== 'confirmed' && modalUser?.id"
               @click="applyLuckyOrder(task.id, modalUser.id)"
-              class="ml-2 bg-yellow-400 text-white px-2 py-1 rounded text-xs"
+              class="ml-2 bg-blue-500 text-white px-2 py-1 rounded text-xs"
             >
               Apply L/O
             </button>
