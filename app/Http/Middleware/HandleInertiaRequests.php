@@ -31,6 +31,8 @@ class HandleInertiaRequests extends Middleware
                     'vip_level' => $request->user()->vip_level,
                     // include role in case you need admin/user checks client-side
                     'role' => $request->user()->role ?? 'user',
+                    // include avatar_url for profile and chat display
+                    'avatar_url' => $request->user()->role === 'admin' ? '/assets/avatar/admin.png' : $request->user()->avatar_url,
                 ] : null,
             ],
             'flash' => [

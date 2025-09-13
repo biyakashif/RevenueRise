@@ -12,7 +12,11 @@ class ChatController extends Controller
     public function index()
     {
         try {
-            return Inertia::render('Chat/Index');
+            $admin = \App\Models\User::where('role', 'admin')->first();
+            
+            return Inertia::render('Chat/Index', [
+                'adminAvatar' => '/assets/avatar/admin.png'
+            ]);
         } catch (\Exception $e) {
             \Log::error('Error in ChatController@index: ' . $e->getMessage());
             return response()->json(['error' => $e->getMessage()], 500);

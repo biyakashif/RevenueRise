@@ -34,41 +34,87 @@
                                      class="relative p-4 hover:bg-gray-100 cursor-pointer"
                                      :class="{'bg-purple-50': selectedUser?.mobile_number === user.mobile_number}">
                                     <div class="flex items-center justify-between">
-                                        <div>
-                                            <div class="font-medium">{{ user.name }}</div>
-                                            <div class="text-xs text-gray-400">{{ user.mobile_number }}</div>
+                                        <div class="flex items-center space-x-3">
+                                            <div v-if="user.avatar_url" class="w-10 h-10 rounded-full overflow-hidden border flex-shrink-0">
+                                                <img :src="user.avatar_url.startsWith('/storage') || user.avatar_url.startsWith('/assets') ? user.avatar_url : `/storage/${user.avatar_url}`" 
+                                                     :alt="user.name" 
+                                                     class="w-full h-full object-cover"
+                                                     @error="handleAvatarError">
+                                            </div>
+                                            <div v-else class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
+                                                <i class="fas fa-user text-gray-400"></i>
+                                            </div>
+                                            <div>
+                                                <div class="font-medium">{{ user.name }}</div>
+                                                <div class="text-xs text-gray-400">{{ user.mobile_number }}</div>
+                                            </div>
                                         </div>
-                                        <div v-if="user.unread_count" 
-                                             class="bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center animate-bounce">
-                                            {{ user.unread_count }}
+                                        <div class="flex items-center space-x-2">
+                                            <div v-if="user.unread_count" 
+                                                 class="bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center animate-bounce">
+                                                {{ user.unread_count }}
+                                            </div>
+                                            <button @click.stop="openDeleteModal(user)" 
+                                                    class="text-red-500 text-xs hover:underline">
+                                                Delete Chat
+                                            </button>
                                         </div>
-                                        <button @click.stop="openDeleteModal(user)" 
-                                                class="text-red-500 text-xs hover:underline">
-                                            Delete Chat
-                                        </button>
                                     </div>
                                 </div>
                             </div>
 
                             <!-- Chat Area -->
                             <div class="w-2/3 flex flex-col">
+                                <!-- Chat Header -->
+                                <div v-if="selectedUser" class="border-b p-3 bg-gray-50">
+                                    <div class="flex items-center space-x-3">
+                                        <div v-if="selectedUser.avatar_url" class="w-10 h-10 rounded-full overflow-hidden border flex-shrink-0">
+                                            <img :src="selectedUser.avatar_url.startsWith('/storage') || selectedUser.avatar_url.startsWith('/assets') ? selectedUser.avatar_url : `/storage/${selectedUser.avatar_url}`" 
+                                                 :alt="selectedUser.name" 
+                                                 class="w-full h-full object-cover border"
+                                                 @error="handleAvatarError">
+                                        </div>
+                                        <div v-else class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
+                                            <i class="fas fa-user text-gray-400"></i>
+                                        </div>
+                                        <div>
+                                            <div class="font-medium text-gray-900">{{ selectedUser.name }}</div>
+                                            <div class="text-xs text-gray-500">{{ selectedUser.mobile_number }}</div>
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <div v-if="selectedUser" ref="chatContainer" class="flex-1 overflow-y-auto p-3">
                                     <div v-for="message in messages" :key="message.id" 
-                                         class="mb-3"
-                                         :class="{'text-right': message.sender_id === page.props.auth.user.mobile_number}">
-                                        <div class="inline-block max-w-2xl rounded-lg p-3"
-                                             :class="message.sender_id === page.props.auth.user.mobile_number ? 'bg-purple-100' : 'bg-gray-100'">
-                                            <div v-if="message.image_path" class="mb-2">
-                                                <img :src="message.image_path" alt="chat image" class="max-w-sm rounded">
+                                         class="mb-3 flex"
+                                         :class="{'justify-end': message.sender_id === page.props.auth.user.mobile_number, 'justify-start': message.sender_id !== page.props.auth.user.mobile_number}">
+                                        <div class="flex items-start space-x-2 max-w-2xl"
+                                             :class="message.sender_id === page.props.auth.user.mobile_number ? 'flex-row-reverse space-x-reverse' : ''">
+                                            <div v-if="(message.sender_id === page.props.auth.user.mobile_number && page.props.auth.user.avatar_url) || (message.sender_id !== page.props.auth.user.mobile_number && selectedUser.avatar_url)" 
+                                                 class="w-8 h-8 rounded-full overflow-hidden border flex-shrink-0">
+                                                <img :src="message.sender_id === page.props.auth.user.mobile_number 
+                                                    ? (page.props.auth.user.avatar_url.startsWith('/storage') || page.props.auth.user.avatar_url.startsWith('/assets') ? page.props.auth.user.avatar_url : `/storage/${page.props.auth.user.avatar_url}`)
+                                                    : (selectedUser.avatar_url.startsWith('/storage') || selectedUser.avatar_url.startsWith('/assets') ? selectedUser.avatar_url : `/storage/${selectedUser.avatar_url}`)" 
+                                                     :alt="message.sender_id === page.props.auth.user.mobile_number ? 'You' : selectedUser.name" 
+                                                     class="w-full h-full object-cover"
+                                                     @error="handleAvatarError">
                                             </div>
-                                            <div v-if="message.video_path" class="mb-2">
-                                                <video controls class="max-w-sm rounded">
-                                                    <source :src="message.video_path" type="video/mp4">
-                                                    Your browser does not support the video tag.
-                                                </video>
+                                            <div v-else class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
+                                                <i class="fas fa-user text-gray-400 text-xs"></i>
                                             </div>
-                                            <p>{{ message.message }}</p>
-                                            <small class="text-gray-500">{{ formatDate(message.created_at) }}</small>
+                                            <div class="rounded-lg p-3"
+                                                 :class="message.sender_id === page.props.auth.user.mobile_number ? 'bg-purple-100' : 'bg-gray-100'">
+                                                <div v-if="message.image_path" class="mb-2">
+                                                    <img :src="message.image_path" alt="chat image" class="max-w-sm rounded">
+                                                </div>
+                                                <div v-if="message.video_path" class="mb-2">
+                                                    <video controls class="max-w-sm rounded">
+                                                        <source :src="message.video_path" type="video/mp4">
+                                                        Your browser does not support the video tag.
+                                                    </video>
+                                                </div>
+                                                <p>{{ message.message }}</p>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -351,8 +397,16 @@ const handleVideoUpload = async (event) => {
     }
 };
 
-const formatDate = (date) => {
-    return new Date(date).toLocaleString();
+const handleAvatarError = (e) => {
+    if (e && e.target) {
+        // Hide the image and show user icon instead
+        e.target.style.display = 'none';
+        const parent = e.target.parentElement;
+        if (parent) {
+            parent.innerHTML = '<i class="fas fa-user text-gray-400"></i>';
+            parent.classList.add('flex', 'items-center', 'justify-center');
+        }
+    }
 };
 
 const handleNewMessage = async (e) => {
@@ -418,7 +472,7 @@ const handleNewMessage = async (e) => {
                 id: senderKey,
                 mobile_number: senderKey,
                 name: `User ${e.chat.sender_id}`,
-                avatar_url: '/favicon.ico',
+                avatar_url: null, // No default avatar
                 unread_count: 1,
             });
         }

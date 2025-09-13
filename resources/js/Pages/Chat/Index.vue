@@ -17,24 +17,38 @@
                     {{ t('No messages yet') }}
                 </div>
                 <div v-else v-for="message in messages" :key="message.id" 
-                     class="mb-4"
-                     :class="{'text-right': message.sender_id === page.props.auth.user.mobile_number}">
-                    <div class="inline-block max-w-[80%] rounded-lg p-3 text-sm"
-                         :class="message.sender_id === page.props.auth.user.mobile_number ? 'bg-purple-100 self-end' : 'bg-gray-100 self-start'">
-                        <div v-if="message.image_path" class="mb-2">
-                            <img :src="message.image_path" 
-                                 alt="chat image" 
-                                 class="max-h-48 w-auto rounded cursor-pointer"
-                                 @click="openImage(message.image_path)">
+                     class="mb-4 flex"
+                     :class="{'justify-end': message.sender_id === page.props.auth.user.mobile_number, 'justify-start': message.sender_id !== page.props.auth.user.mobile_number}">
+                    <div class="flex items-start space-x-2 max-w-[80%]"
+                         :class="message.sender_id === page.props.auth.user.mobile_number ? 'flex-row-reverse space-x-reverse' : ''">
+                        <div v-if="(message.sender_id === page.props.auth.user.mobile_number && page.props.auth.user.avatar_url) || (message.sender_id !== page.props.auth.user.mobile_number && page.props.adminAvatar)" 
+                             class="w-8 h-8 rounded-full overflow-hidden border flex-shrink-0">
+                            <img :src="message.sender_id === page.props.auth.user.mobile_number 
+                                ? (page.props.auth.user.avatar_url.startsWith('/storage') || page.props.auth.user.avatar_url.startsWith('/assets') ? page.props.auth.user.avatar_url : `/storage/${page.props.auth.user.avatar_url}`)
+                                : (page.props.adminAvatar.startsWith('/storage') || page.props.adminAvatar.startsWith('/assets') ? page.props.adminAvatar : `/storage/${page.props.adminAvatar}`)" 
+                                 :alt="message.sender_id === page.props.auth.user.mobile_number ? 'You' : 'Support'" 
+                                 class="w-full h-full object-cover"
+                                 @error="handleAvatarError">
                         </div>
-                        <div v-if="message.video_path" class="mb-2">
-                            <video controls class="max-w-full rounded">
-                                <source :src="message.video_path" type="video/mp4">
-                                Your browser does not support the video tag.
-                            </video>
+                        <div v-else class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-user text-gray-400 text-xs"></i>
                         </div>
-                        <p class="text-sm text-gray-800">{{ message.message }}</p>
-                        <small class="text-gray-500 text-xs">{{ formatDate(message.created_at) }}</small>
+                        <div class="rounded-lg p-3 text-sm"
+                             :class="message.sender_id === page.props.auth.user.mobile_number ? 'bg-purple-100 self-end' : 'bg-gray-100 self-start'">
+                            <div v-if="message.image_path" class="mb-2">
+                                <img :src="message.image_path" 
+                                     alt="chat image" 
+                                     class="max-h-48 w-auto rounded cursor-pointer"
+                                     @click="openImage(message.image_path)">
+                            </div>
+                            <div v-if="message.video_path" class="mb-2">
+                                <video controls class="max-w-full rounded">
+                                    <source :src="message.video_path" type="video/mp4">
+                                    Your browser does not support the video tag.
+                                </video>
+                            </div>
+                            <p class="text-sm text-gray-800">{{ message.message }}</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -196,8 +210,16 @@ const handleVideoUpload = async (event) => {
     await loadMessages();
 };
 
-const formatDate = (date) => {
-    return new Date(date).toLocaleString();
+const handleAvatarError = (e) => {
+    if (e && e.target) {
+        // Hide the image and show user icon instead
+        e.target.style.display = 'none';
+        const parent = e.target.parentElement;
+        if (parent) {
+            parent.innerHTML = '<i class="fas fa-user text-gray-400"></i>';
+            parent.classList.add('flex', 'items-center', 'justify-center');
+        }
+    }
 };
 
 const openImage = (imagePath) => {
