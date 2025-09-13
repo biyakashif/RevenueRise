@@ -22,7 +22,7 @@ class DepositStatusUpdated implements ShouldBroadcast
     public function __construct(Deposit $deposit)
     {
         $this->deposit = $deposit;
-        $this->userId = $deposit->user_id;
+        $this->userId = $deposit->user->id;
     }
 
     /**

@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
-use App\Models\Product;
-use App\Models\Task;
+use App\Models\SliderImage;
 use App\Models\UserOrder;
+use App\Models\Task;
+use App\Models\Product;
 use Inertia\Response;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -22,8 +22,14 @@ class DashboardController extends Controller
             $user->resetTodaysProfitIfNeeded();
         }
 
+        // Get active slider images
+        $desktopSliders = SliderImage::desktop()->active()->ordered()->get();
+        $mobileSliders = SliderImage::mobile()->active()->ordered()->get();
+
         return Inertia::render('Dashboard', [
             'user' => $user ? $user->only(['id', 'mobile_number', 'invitation_code', 'balance', 'vip_level', 'frozen_balance', 'todays_profit']) : null,
+            'desktopSliders' => $desktopSliders,
+            'mobileSliders' => $mobileSliders,
         ]);
     }
 
@@ -129,7 +135,7 @@ class DashboardController extends Controller
             return Inertia::render('Orders', [
                 'products' => $products,
                 'currentProductIndex' => $currentIndex,
-                'user' => $user->only(['id', 'name', 'balance', 'frozen_balance', 'vip_level', 'mobile_number', 'todays_profit']),
+                'user' => $user->only(['id', 'name', 'balance', 'frozen_balance', 'vip_level', 'mobile_number', 'todays_profit', 'order_reward']),
                 'tasks' => collect($tasksForResponse),
                 'taskTotalCount' => $taskTotalCount,
                 'confirmedCount' => $confirmedCount,
@@ -205,7 +211,8 @@ class DashboardController extends Controller
                 }
                 // Add back selling_price + commission_reward for the genuine Lucky Order
                 $user->balance += ($product->selling_price + $product->commission_reward);
-                $user->todays_profit += $product->commission_reward; // Commission is also profit
+                $user->todays_profit += $product->commission_reward; // Keep existing todays_profit logic
+                $user->order_reward += $product->commission_reward; // Add to order_reward as well
                 $user->save();
                 \Log::info('Genuine Lucky Order confirmed, balance restored', [
                     'user_id' => $user->id, 'product_id' => $product->id, 'new_balance' => $user->balance,
@@ -213,7 +220,8 @@ class DashboardController extends Controller
             } else {
                 // Regular Order and Forced Lucky Order Logic
                 $user->balance += ($product->commission_reward + $product->commission_reward);
-                $user->todays_profit += $product->commission_reward;
+                $user->todays_profit += $product->commission_reward; // Keep existing todays_profit logic
+                $user->order_reward += $product->commission_reward; // Add to order_reward as well
                 $user->save();
                 UserOrder::create([
                     'user_id' => $user->id, 'user_name' => $user->name, 'mobile_number' => $user->mobile_number,
@@ -231,6 +239,26 @@ class DashboardController extends Controller
                 'product_id' => $request->product_id,
                 'order_number' => $nextOrderNumber,
             ]);
+
+            // Check if tasks are completed and add referral bonus
+            $taskTotalCount = Task::where('user_id', $user->id)->count();
+            $confirmedCount = UserOrder::where('user_id', $user->id)->where('status', 'confirmed')->count();
+            if ($confirmedCount == $taskTotalCount && $taskTotalCount > 0) {
+                $referrer = $user->inviter;
+                if ($referrer) {
+                    $bonus = $user->order_reward * 0.5;
+                    $referrer->balance += $bonus;
+                    $referrer->save();
+                    \Log::info('Referral bonus added', [
+                        'referrer_id' => $referrer->id,
+                        'user_id' => $user->id,
+                        'bonus' => $bonus,
+                    ]);
+                }
+                // Reset order_reward to 0 after tasks are completed
+                $user->order_reward = 0.00;
+                $user->save();
+            }
 
             return back()->with('success', 'Order saved successfully.');
         }, 5);

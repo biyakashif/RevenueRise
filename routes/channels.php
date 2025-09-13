@@ -20,3 +20,7 @@ Broadcast::channel('chat.{mobileNumber}', function ($user, $mobileNumber) {
     return ($user->mobile_number === $mobileNumber) || ($user->role === 'admin');
 });
 
+Broadcast::channel('sliders', function ($user) {
+    // Allow all authenticated users to listen to slider updates
+    return $user !== null;
+});

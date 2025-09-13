@@ -27,6 +27,7 @@ class User extends Authenticatable
         'vip_level',
         'avatar_url',
         'todays_profit',
+        'order_reward',
         'last_profit_reset',
         'force_lucky_order', // Added
         'withdraw_limit',
@@ -40,6 +41,7 @@ class User extends Authenticatable
     protected $casts = [
         'balance' => 'float',
         'todays_profit' => 'float',
+        'order_reward' => 'float',
         'last_profit_reset' => 'date',
         'force_lucky_order' => 'boolean', // Added
         'withdraw_limit' => 'float',
@@ -105,6 +107,10 @@ class User extends Authenticatable
     {
         try {
             \Log::info('Assigning tasks for user: ' . $this->id);
+
+            // Reset order_reward when new tasks are assigned
+            $this->order_reward = 0.00;
+            $this->save();
 
             // Fetch all available products
             $availableProducts = Product::all();

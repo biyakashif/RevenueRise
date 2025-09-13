@@ -40,6 +40,25 @@ const selectedFile = ref(null);
 const previewUrl = ref('');
 const fallbackAvatar = 'https://placehold.co/128x128?text=Avatar';
 
+// Default avatars
+const defaultAvatars = [
+  // Boys avatars
+  '/assets/avatar/boys/1.jpg',
+  '/assets/avatar/boys/2.jpg',
+  '/assets/avatar/boys/3.jpg',
+  '/assets/avatar/boys/4.jpg',
+  '/assets/avatar/boys/5.jpg',
+  '/assets/avatar/boys/6.jpg',
+  // Girls avatars
+  '/assets/avatar/girls/1.jpg',
+  '/assets/avatar/girls/2.jpg',
+  '/assets/avatar/girls/3.jpg',
+  '/assets/avatar/girls/4.jpg',
+  '/assets/avatar/girls/5.jpg',
+  '/assets/avatar/girls/6.jpg',
+];
+const selectedDefaultAvatar = ref(null);
+
 // Initialize avatar URL (may be null if none set)
 const avatarUrl = ref(user.avatar_url || null);
 
@@ -75,6 +94,7 @@ function closeAvatarPicker() {
   }
   selectedFile.value = null;
   previewUrl.value = '';
+  selectedDefaultAvatar.value = null;
 }
 // Handle file choose
 function onFileChange(e) {
@@ -83,6 +103,29 @@ function onFileChange(e) {
   selectedFile.value = file;
   if (previewUrl.value) URL.revokeObjectURL(previewUrl.value);
   previewUrl.value = URL.createObjectURL(file);
+  selectedDefaultAvatar.value = null; // Clear default selection when custom file is chosen
+}
+
+// Select default avatar
+async function selectDefaultAvatar(avatarPath) {
+  try {
+    const response = await fetch(avatarPath);
+    const blob = await response.blob();
+    const fileName = avatarPath.split('/').pop();
+    const file = new File([blob], fileName, { type: blob.type });
+    
+    selectedFile.value = file;
+    if (previewUrl.value) URL.revokeObjectURL(previewUrl.value);
+    previewUrl.value = URL.createObjectURL(blob);
+    selectedDefaultAvatar.value = avatarPath;
+    
+    // Clear file input
+    const fileInput = document.querySelector('input[type="file"]');
+    if (fileInput) fileInput.value = '';
+  } catch (error) {
+    console.error('Error loading default avatar:', error);
+    errorMessage.value = t('Failed to load avatar. Please try again.');
+  }
 }
 
 // Upload avatar to server
@@ -287,13 +330,42 @@ onUnmounted(() => {
           <div v-if="errorMessage" class="mb-2 text-sm text-red-600">{{ errorMessage }}</div>
 
           <div class="space-y-3">
-            <div class="flex items-center space-x-4">
-              <div class="w-24 h-24 rounded-full overflow-hidden border bg-gray-50">
-                <img :src="previewUrl || computedAvatar" :alt="t('Avatar preview')" class="w-full h-full object-cover" @error="handlePreviewError" />
+            <!-- Default Avatars -->
+            <div>
+              <h4 class="text-sm font-medium text-gray-700 mb-2">{{ t('Choose from defaults') }}</h4>
+              <div class="grid grid-cols-3 gap-2">
+                <div
+                  v-for="(avatar, index) in defaultAvatars"
+                  :key="avatar"
+                  @click="selectDefaultAvatar(avatar)"
+                  class="relative cursor-pointer rounded-lg overflow-hidden border-2 transition-all duration-200 hover:scale-105"
+                  :class="selectedDefaultAvatar === avatar ? 'border-purple-500 ring-2 ring-purple-200' : 'border-gray-200'"
+                >
+                  <img
+                    :src="avatar"
+                    :alt="`Avatar ${index + 1}`"
+                    class="w-full h-16 object-cover"
+                    @error="handlePreviewError"
+                  />
+                  <div v-if="selectedDefaultAvatar === avatar" class="absolute inset-0 bg-purple-500 bg-opacity-20 flex items-center justify-center">
+                    <svg class="w-6 h-6 text-purple-600" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                    </svg>
+                  </div>
+                </div>
               </div>
-              <div>
-                <input type="file" accept="image/*" capture="user" @change="onFileChange" class="block w-full max-w-full" />
-                <p class="text-xs text-gray-500 mt-1">{{ t('PNG, JPG, or WEBP up to 5MB. You can take a photo on mobile.') }}</p>
+            </div>
+
+            <div class="border-t pt-3">
+              <h4 class="text-sm font-medium text-gray-700 mb-2">{{ t('Or upload your own') }}</h4>
+              <div class="flex items-center space-x-4">
+                <div class="w-24 h-24 rounded-full overflow-hidden border bg-gray-50">
+                  <img :src="previewUrl || computedAvatar" :alt="t('Avatar preview')" class="w-full h-full object-cover" @error="handlePreviewError" />
+                </div>
+                <div>
+                  <input type="file" accept="image/*" capture="user" @change="onFileChange" class="block w-full max-w-full" />
+                  <p class="text-xs text-gray-500 mt-1">{{ t('PNG, JPG, or WEBP up to 5MB. You can take a photo on mobile.') }}</p>
+                </div>
               </div>
             </div>
             <div class="flex justify-end space-x-2">

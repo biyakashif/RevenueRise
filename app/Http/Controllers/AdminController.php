@@ -424,7 +424,7 @@ class AdminController extends Controller
             if ($user) {
                 $user->balance = (float) ($user->balance ?? 0.00);
                 $user->frozen_balance = (float) ($user->frozen_balance ?? 0.00);
-                $depositsQuery->where('user_id', $user->mobile_number);
+                    $depositsQuery->where('user_id', $user->id);
             }
         }
 
@@ -533,7 +533,7 @@ class AdminController extends Controller
         }
 
         if ($action === 'approve') {
-            $user = User::where('mobile_number', $deposit->user_id)->first();
+                $user = User::find($deposit->user_id);
 
             if ($user && $user->role === 'user') {
                 // Only add balance for non-VIP deposits
@@ -557,6 +557,7 @@ class AdminController extends Controller
         $deposit->save();
 
         // Broadcast the deposit status update to the user
+        $deposit->load('user');
         broadcast(new \App\Events\DepositStatusUpdated($deposit));
 
         return redirect()->back()->with('success', 'Deposit status updated successfully.');
@@ -795,6 +796,10 @@ class AdminController extends Controller
             Log::info('Resetting tasks and user orders for user: ' . $user->id);
             DB::beginTransaction();
 
+            // Reset order_reward when tasks are reset
+            $user->order_reward = 0.00;
+            $user->save();
+
             // Reset user orders
             UserOrder::where('user_id', $user->id)->delete();
 
@@ -837,6 +842,8 @@ class AdminController extends Controller
             DB::commit();
             Log::info('Tasks and user orders reset successfully for user: ' . $user->id);
 
+            // Broadcast event so frontend updates live
+            event(new \App\Events\UserProgressReset($user->id));
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Error resetting tasks and user orders for user: ' . $user->id . ' - ' . $e->getMessage());
@@ -845,13 +852,20 @@ class AdminController extends Controller
 
     public function deleteUserTasks(User $user)
     {
+        // Reset order_reward when tasks are deleted
+        $user->order_reward = 0.00;
+        $user->save();
+
         // Delete tasks and user orders
         Task::where('user_id', $user->id)->delete();
         UserOrder::where('user_id', $user->id)->delete();
 
-        $user->update(['tasks_auto_reset' => false]);
+    $user->update(['tasks_auto_reset' => false]);
 
-        return response()->json(['success' => true]);
+    // Broadcast event so frontend updates live
+    event(new \App\Events\UserProgressReset($user->id));
+
+    return response()->json(['success' => true]);
     }
 
     public function getUserTasks($userId)
@@ -958,6 +972,10 @@ class AdminController extends Controller
         try {
             DB::beginTransaction();
 
+            // Reset order_reward when tasks are reassigned (do this first)
+            $user->order_reward = 0.00;
+            $user->save();
+
             // Delete existing tasks for the user
             Task::where('user_id', $user->id)->delete();
 
@@ -976,7 +994,7 @@ class AdminController extends Controller
             return response()->json(['message' => 'Failed to assign tasks.'], 500);
         }
 
-        return response()->json(['message' => 'Tasks assigned successfully.']);
+    return redirect()->back()->with('success', 'Tasks assigned successfully.');
     }
 
     public function getAssignedUsers()

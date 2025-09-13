@@ -1,11 +1,13 @@
 <template>
-    <AuthenticatedLayout>
+    <AuthenticatedLayout :hideBottomNav="true">
         <div class="flex flex-col h-screen bg-white">
             <!-- Chat Header -->
             <div class="flex items-center justify-between px-4 py-3 bg-purple-600 text-white shadow-md">
+                <button @click="goBack" class="text-white focus:outline-none mr-3">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
                 <div class="text-lg font-semibold">{{ t('Support Chat') }}</div>
                 <button class="text-white focus:outline-none">
-                    <i class="fas fa-ellipsis-v"></i>
                 </button>
             </div>
 
@@ -208,75 +210,81 @@ const closeImageViewer = () => {
     selectedImage.value = '';
 };
 
+const goBack = () => {
+    window.history.back();
+};
+
 onMounted(() => {
     loadMessages();
 
-    // Listen for new messages
+    // Listen for new messages only if Echo is available
     const mobileNumber = page.props.auth.user.mobile_number;
     if (!mobileNumber) {
         console.error('User mobile number not found in auth props:', page.props.auth);
         return;
     }
 
-    console.log('Subscribing to private channel:', `chat.${mobileNumber}`);
-    const channel = window.Echo.private(`chat.${mobileNumber}`);
+    if (window.Echo) {
+        console.log('Subscribing to private channel:', `chat.${mobileNumber}`);
+        const channel = window.Echo.private(`chat.${mobileNumber}`);
 
-    // Log successful subscription
-    channel.subscribed(() => {
-        console.log('Successfully subscribed to channel:', `chat.${mobileNumber}`);
-    });
+        // Log successful subscription
+        channel.subscribed(() => {
+            console.log('Successfully subscribed to channel:', `chat.${mobileNumber}`);
+        });
 
-    // Log connection errors
-    channel.error((error) => {
-        console.error('Echo connection error:', error);
-    });
+        // Log connection errors
+        channel.error((error) => {
+            console.error('Echo connection error:', error);
+        });
 
-    // Listen for new messages
-    channel.listen('NewChatMessage', (e) => {
-        console.log('Received message:', e);
-        if (e.chat) {
-            // Play notification if message is from support (not this user)
-            if (e.chat.sender_id !== mobileNumber) {
-                notificationSound.play().catch(() => {/* autoplay blocked until user gesture */});
-            }
-            // Add the new message to the list
-            messages.value.push({
-                id: e.chat.id,
-                message: e.chat.message,
-                image_path: e.chat.image_path,
-                video_path: e.chat.video_path,
-                created_at: e.chat.created_at,
-                sender_id: e.chat.sender_id,
-                recipient_id: e.chat.recipient_id
-            });
-            // Sort messages by date
-            messages.value.sort((a, b) => 
-                new Date(a.created_at) - new Date(b.created_at)
-            );
-            
-            // Scroll to bottom when new message arrives
-            setTimeout(() => {
-                const chatArea = document.querySelector('.overflow-y-auto');
-                if (chatArea) {
-                    chatArea.scrollTop = chatArea.scrollHeight;
+        // Listen for new messages
+        channel.listen('NewChatMessage', (e) => {
+            console.log('Received message:', e);
+            if (e.chat) {
+                // Play notification if message is from support (not this user)
+                if (e.chat.sender_id !== mobileNumber) {
+                    notificationSound.play().catch(() => {/* autoplay blocked until user gesture */});
                 }
-            }, 100);
-            // Reading in the chat view should clear unread badge
-            window.dispatchEvent(new CustomEvent('chat:read'));
-        }
-    });
+                // Add the new message to the list
+                messages.value.push({
+                    id: e.chat.id,
+                    message: e.chat.message,
+                    image_path: e.chat.image_path,
+                    video_path: e.chat.video_path,
+                    created_at: e.chat.created_at,
+                    sender_id: e.chat.sender_id,
+                    recipient_id: e.chat.recipient_id
+                });
+                // Sort messages by date
+                messages.value.sort((a, b) => 
+                    new Date(a.created_at) - new Date(b.created_at)
+                );
+                
+                // Scroll to bottom when new message arrives
+                setTimeout(() => {
+                    const chatArea = document.querySelector('.overflow-y-auto');
+                    if (chatArea) {
+                        chatArea.scrollTop = chatArea.scrollHeight;
+                    }
+                }, 100);
+                // Reading in the chat view should clear unread badge
+                window.dispatchEvent(new CustomEvent('chat:read'));
+            }
+        });
 
-    // Listen for chat history deletion
-    channel.listen('ChatHistoryDeleted', (e) => {
-        console.log('ChatHistoryDeleted event received:', e);
-        console.log('Current user mobile number:', page.props.auth.user.mobile_number);
-        if (e.userMobile === page.props.auth.user.mobile_number) {
-            console.log('Clearing messages for user:', e.userMobile);
-            messages.value = []; // Clear messages
-        } else {
-            console.log('Event not relevant for this user.');
-        }
-    });
+        // Listen for chat history deletion
+        channel.listen('ChatHistoryDeleted', (e) => {
+            console.log('ChatHistoryDeleted event received:', e);
+            console.log('Current user mobile number:', page.props.auth.user.mobile_number);
+            if (e.userMobile === page.props.auth.user.mobile_number) {
+                console.log('Clearing messages for user:', e.userMobile);
+                messages.value = []; // Clear messages
+            } else {
+                console.log('Event not relevant for this user.');
+            }
+        });
+    }
 
     // Prime audio on first user interaction to satisfy autoplay policies
     const primeAudio = () => {

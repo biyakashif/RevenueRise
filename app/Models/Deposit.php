@@ -24,6 +24,6 @@ class Deposit extends Model
 
     public function user()
     {
-        return $this->belongsTo(User::class, 'user_id', 'mobile_number');
+        return $this->belongsTo(User::class, 'user_id', 'id');
     }
 }

@@ -83,6 +83,13 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->name('admin.')->group(fun
     Route::get('/withdrawals/{id}/edit', [\App\Http\Controllers\Admin\WithdrawController::class, 'edit'])->name('withdrawals.edit');
     Route::post('/withdrawals/{id}/update', [\App\Http\Controllers\Admin\WithdrawController::class, 'update'])->name('withdrawals.update');
     Route::post('/users/{user}/withdraw-limit', [\App\Http\Controllers\Admin\WithdrawLimitController::class, 'update'])->name('users.withdraw-limit.update');
+    
+    // Slider Management
+    Route::get('/sliders', [\App\Http\Controllers\Admin\SliderController::class, 'index'])->name('sliders');
+    Route::post('/sliders', [\App\Http\Controllers\Admin\SliderController::class, 'store'])->name('sliders.store');
+    Route::post('/sliders/{sliderImage}', [\App\Http\Controllers\Admin\SliderController::class, 'update'])->name('sliders.update');
+    Route::delete('/sliders/{sliderImage}', [\App\Http\Controllers\Admin\SliderController::class, 'destroy'])->name('sliders.destroy');
+    Route::post('/sliders/{sliderImage}/toggle', [\App\Http\Controllers\Admin\SliderController::class, 'toggle'])->name('sliders.toggle');
 });
 
 // ================= AUTHENTICATED USER ROUTES =================

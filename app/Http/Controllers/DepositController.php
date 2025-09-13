@@ -72,7 +72,7 @@ class DepositController extends Controller
         $detail = CryptoDepositDetail::first();
 
         $data = [
-            'user_id' => $user->mobile_number,
+            'user_id' => $user->id,
             'symbol' => $detail ? strtolower($detail->currency) : '',
             'amount' => $request->amount,
             'address' => $detail ? $detail->address : 'TBD',
@@ -94,7 +94,7 @@ class DepositController extends Controller
 
     public function history()
     {
-        $deposits = Deposit::where('user_id', auth()->user()->mobile_number)
+    $deposits = Deposit::where('user_id', auth()->user()->id)
             ->orderBy('created_at', 'desc')
             ->get();
         return response()->json(['deposits' => $deposits]);

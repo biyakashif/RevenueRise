@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, usePage } from '@inertiajs/vue3';
 import VIP1Icon from '@/assets/VIP1.png';
@@ -14,6 +14,97 @@ const page = usePage();
 const translations = computed(() => page.props.translations || {});
 const t = (key) => translations.value[key] || key;
 const user = page.props.auth.user || {};
+const desktopSliders = ref(page.props.desktopSliders || []);
+const mobileSliders = ref(page.props.mobileSliders || []);
+
+// Slider state
+const currentSlide = ref(0);
+const autoSlideInterval = ref(null);
+
+// Computed property to get current sliders based on screen size
+const currentSliders = computed(() => {
+  // For mobile screens, use mobile sliders if available, otherwise desktop
+  if (window.innerWidth < 768 && mobileSliders.value.length > 0) {
+    return mobileSliders.value;
+  }
+  return desktopSliders.value;
+});
+
+// Slider methods
+const nextSlide = () => {
+  currentSlide.value = (currentSlide.value + 1) % currentSliders.value.length;
+};
+
+const prevSlide = () => {
+  currentSlide.value = currentSlide.value === 0 ? currentSliders.value.length - 1 : currentSlide.value - 1;
+};
+
+const goToSlide = (index) => {
+  currentSlide.value = index;
+};
+
+// Auto slide functionality
+const startAutoSlide = () => {
+  if (autoSlideInterval.value) {
+    clearInterval(autoSlideInterval.value);
+  }
+  if (currentSliders.value.length > 1) {
+    autoSlideInterval.value = setInterval(() => {
+      nextSlide();
+    }, 5000); // Change slide every 5 seconds
+  }
+};
+
+const stopAutoSlide = () => {
+  if (autoSlideInterval.value) {
+    clearInterval(autoSlideInterval.value);
+    autoSlideInterval.value = null;
+  }
+};
+
+// Watch for changes in sliders and restart auto slide
+watch(currentSliders, (newSliders) => {
+  currentSlide.value = 0;
+  if (newSliders.length > 1) {
+    startAutoSlide();
+  } else {
+    stopAutoSlide();
+  }
+}, { immediate: true });
+
+// Handle window resize to switch between desktop and mobile sliders
+const handleResize = () => {
+  // Reset to first slide when switching between desktop/mobile
+  currentSlide.value = 0;
+};
+
+onMounted(() => {
+  window.addEventListener('resize', handleResize);
+  if (currentSliders.value.length > 1) {
+    startAutoSlide();
+  }
+
+  // Listen for real-time slider updates
+  if (window.Echo) {
+    window.Echo.channel('sliders')
+      .listen('.slider.updated', (e) => {
+        console.log('Slider updated event received:', e);
+        // Update the slider data reactively
+        desktopSliders.value = e.desktopSliders || [];
+        mobileSliders.value = e.mobileSliders || [];
+      });
+  }
+});
+
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize);
+  stopAutoSlide();
+
+  // Cleanup Echo listener
+  if (window.Echo) {
+    window.Echo.leaveChannel('sliders');
+  }
+});
 
 // VIP levels with costs and icons
 const levels = [
@@ -62,6 +153,60 @@ function fmt(n) {
   <Head title="Dashboard" />
 
   <AuthenticatedLayout>
+    <!-- Image Slider -->
+    <div v-if="currentSliders.length > 0" class="mb-6">
+      <div class="relative overflow-hidden rounded-lg bg-gray-200">
+        <div class="flex transition-transform duration-500 ease-in-out" :style="{ transform: `translateX(-${currentSlide * 100}%)` }">
+          <div
+            v-for="(slider, index) in currentSliders"
+            :key="slider.id"
+            class="flex-shrink-0 w-full"
+          >
+            <img
+              :src="`/storage/${slider.image_path}`"
+              :alt="slider.title || 'Slider image'"
+              class="w-full h-48 sm:h-64 md:h-80 object-cover"
+            />
+            <div v-if="slider.title" class="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white p-4">
+              <h3 class="text-lg font-semibold">{{ slider.title }}</h3>
+            </div>
+          </div>
+        </div>
+
+        <!-- Navigation arrows -->
+        <button
+          v-if="currentSliders.length > 1"
+          @click="prevSlide"
+          class="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-25 text-white p-1 rounded-full hover:bg-opacity-50 transition-all"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+
+        <button
+          v-if="currentSliders.length > 1"
+          @click="nextSlide"
+          class="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-25 text-white p-1 rounded-full hover:bg-opacity-50 transition-all"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+
+        <!-- Dots indicator -->
+        <div v-if="currentSliders.length > 1" class="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
+          <button
+            v-for="(slider, index) in currentSliders"
+            :key="slider.id"
+            @click="goToSlide(index)"
+            :class="index === currentSlide ? 'bg-white' : 'bg-white bg-opacity-50'"
+            class="w-3 h-3 rounded-full transition-all"
+          ></button>
+        </div>
+      </div>
+    </div>
+
     <div class="py-6 px-4 sm:px-6 lg:px-8 bg-gray-100">
       <!-- Service Boxes -->
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">

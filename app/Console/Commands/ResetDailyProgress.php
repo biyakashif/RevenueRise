@@ -36,6 +36,10 @@ class ResetDailyProgress extends Command
                 ->where('status', 'confirmed')
                 ->delete();
 
+            // Reset order_reward for users with auto-reset enabled
+            $user->order_reward = 0.00;
+            $user->save();
+
             // 🔔 Fire event so frontends update in real time
             event(new UserProgressReset($user->id));
         }

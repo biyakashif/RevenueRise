@@ -62,14 +62,9 @@
           </div>
         </div>
 
-        <!-- Completion Message -->
-        <div v-if="completionMessage" class="bg-green-50 border border-green-200 text-green-700 p-4 rounded-lg mb-6">
-          <p class="text-sm font-medium text-center">{{ t(completionMessage) }}</p>
-        </div>
-
         <!-- Task Container -->
         <div
-          v-if="activeTask && activeTask.products && activeTask.products.length && !hasCompletedAllTasks"
+          v-if="activeTask && activeTask.products && activeTask.products.length"
           class="bg-white shadow-sm sm:rounded-lg p-6 text-center relative overflow-hidden"
         >
           <div class="relative z-10">
@@ -82,7 +77,11 @@
                 <p class="text-lg font-bold">{{ taskProgress }}/{{ taskItemsCount }}</p>
               </div>
 
+              <div v-if="taskProgress >= taskItemsCount && taskItemsCount > 0" class="bg-green-50 border border-green-200 text-green-700 p-4 rounded-lg text-sm font-medium text-center">
+                {{ t("Congratulations you have done your today's task, your next task will be updated after midnight") }}
+              </div>
               <button
+                v-else
                 @click="grabOrders"
                 class="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium transition flex items-center gap-2"
                 :class="{ 'opacity-70 cursor-not-allowed': isGrabbing || isSubmitting || showModal }"
@@ -98,14 +97,14 @@
 
               <div class="text-right">
                 <p class="text-xs text-gray-500">{{ t('Reward') }}</p>
-                <p class="text-lg font-bold">{{ (user.todays_profit || 0).toFixed(2) }} USDT</p>
+                <p class="text-lg font-bold">{{ (user.order_reward && user.order_reward > 0 ? user.order_reward : lastReward).toFixed(2) }} USDT</p>
               </div>
             </div>
           </div>
         </div>
 
         <!-- No tasks available -->
-    <div v-if="!hasCompletedAllTasks" class="bg-white shadow-sm sm:rounded-lg p-6 text-center">
+    <div v-if="!taskItemsCount" class="bg-white shadow-sm sm:rounded-lg p-6 text-center">
       <p class="text-gray-500">{{ t('No tasks available for your VIP level') }} ({{ user.vip_level }})</p>
     </div>
       </div>
@@ -227,6 +226,15 @@ const t = (key) => translations.value[key] || key;
 const balanceErrorMessage = ref('');
 const completionMessage = ref('');
 const modalErrorMessage = ref(''); // New state for modal-specific error messages
+
+// Cache last non-zero reward
+const lastReward = ref(props.user.order_reward || 0);
+
+watch(() => props.user.order_reward, (newReward) => {
+  if (newReward && newReward > 0) {
+    lastReward.value = newReward;
+  }
+});
 
 // Watch server flash for errors
 watch(() => props.flash, (newFlash) => {
@@ -449,22 +457,13 @@ const confirmProduct = () => {
     onSuccess: () => {
       showModal.value = false;
       clearModalState();
-      taskProgress.value += 1;
-      currentTaskProductIndex.value = taskProgress.value;
       modalProduct.value = null;
-
-      if (taskProgress.value >= taskItemsCount.value) {
-        completionMessage.value = "Congratulations you have done your today's task, your next task will be updated after midnight";
-      }
-
-      if (currentTaskProductIndex.value >= (activeTask.value?.products?.length ?? 0)) {
-        currentTaskProductIndex.value = 0;
-        router.reload({
-          only: ['tasks', 'taskTotalCount', 'confirmedCount', 'user', 'flash'],
-          preserveScroll: true,
-          onSuccess: () => updateFromProps(),
-        });
-      }
+      // Always reload to get the latest confirmedCount from server
+      router.reload({
+        only: ['tasks', 'taskTotalCount', 'confirmedCount', 'user', 'flash'],
+        preserveScroll: true,
+        onSuccess: () => updateFromProps(),
+      });
     },
     onError: (errors) => {
       modalErrorMessage.value = errors?.message || 'Error saving order. Please try again.';
@@ -508,16 +507,32 @@ onMounted(() => {
   loadPersistedModalState();
   updateFromProps();
 
+  // Listen for progress reset event
+  if (window.Echo && props.user && props.user.id) {
+    try {
+      window.Echo.private(`orders.${props.user.id}`)
+        .listen('UserProgressReset', () => {
+          // Reload the page data when tasks are reset
+          router.reload({ 
+            only: ['tasks', 'taskTotalCount', 'confirmedCount', 'user'],
+            preserveState: true,
+            preserveScroll: true
+          });
+        })
+        .error((error) => {
+          console.error('Echo error:', error);
+        });
+    } catch (error) {
+      console.error('Echo setup error:', error);
+    }
+  }
+
   pollInterval = setInterval(() => {
     if (!isSubmitting.value && !isGrabbing.value && !showModal.value && !hasCompletedAllTasks.value) {
-      router.reload({
-        only: ['tasks', 'taskTotalCount', 'confirmedCount', 'user', 'flash'],
-        preserveScroll: true,
-        onSuccess: () => updateFromProps(),
-        onError: () => {
-          balanceErrorMessage.value = 'Failed to fetch updated tasks.';
-          setTimeout(() => (balanceErrorMessage.value = ''), 4000);
-        },
+      router.reload({ 
+        only: ['tasks', 'taskTotalCount', 'confirmedCount', 'user'],
+        preserveState: true,
+        preserveScroll: true
       });
     }
   }, 5000);

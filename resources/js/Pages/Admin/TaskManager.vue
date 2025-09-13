@@ -123,29 +123,28 @@ async function assignTasks() {
   }
 
   try {
-    const response = await fetch(`/admin/tasks/assign`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+    router.post(`/admin/tasks/assign`, {
+      userId: selectedUser.value.id,
+      tasksNumber: tasksNumber.value,
+      luckyOrder: luckyOrder.value,
+    }, {
+      preserveState: true,
+      preserveScroll: true,
+      onSuccess: () => {
+        resetSuccess.value = 'Tasks assigned successfully!';
+        assignedUsers.value.add(selectedUser.value.id);
+        setTimeout(() => {
+          resetSuccess.value = '';
+        }, 1000);
+        closeAssignTasksModal();
       },
-      body: JSON.stringify({
-        userId: selectedUser.value.id,
-        tasksNumber: tasksNumber.value,
-        luckyOrder: luckyOrder.value,
-      }),
+      onError: (errors) => {
+        resetSuccess.value = 'Error: ' + (errors ? JSON.stringify(errors) : 'Unknown error');
+        setTimeout(() => {
+          resetSuccess.value = '';
+        }, 2000);
+      }
     });
-
-    if (!response.ok) {
-      throw new Error('Failed to assign tasks.');
-    }
-
-    resetSuccess.value = 'Tasks assigned successfully!';
-    assignedUsers.value.add(selectedUser.value.id); // Mark user as having tasks assigned
-    setTimeout(() => {
-      resetSuccess.value = '';
-    }, 1000);
-    closeAssignTasksModal();
   } catch (error) {
     resetSuccess.value = 'Error: ' + error.message;
     setTimeout(() => {

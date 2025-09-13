@@ -4,11 +4,20 @@ import Header from '@/Components/Header.vue';
 import { computed, ref, onMounted } from 'vue';
 import axios from 'axios';
 
+const props = defineProps({
+    hideBottomNav: {
+        type: Boolean,
+        default: false
+    }
+});
+
 const page = usePage();
 const translations = computed(() => page.props.translations || {});
 const t = (key) => translations.value[key] || key;
 
 const unreadCount = ref(0);
+const showChatNotification = ref(false);
+const chatNotificationTimeout = ref(null);
 
 const fetchUnreadCount = async () => {
     try {
@@ -22,30 +31,54 @@ const fetchUnreadCount = async () => {
 onMounted(() => {
     fetchUnreadCount();
 
-    // Update unread count when new messages arrive
-    window.Echo.private(`chat.${page.props.auth.user.mobile_number}`)
-        .listen('NewChatMessage', (e) => {
-            // Increment only for messages not sent by this user
-            if (e?.chat?.sender_id !== page.props.auth.user.mobile_number) {
-                unreadCount.value++;
-            }
+    // Only setup Echo listeners if Echo is available and user is authenticated
+    if (window.Echo && page.props.auth && page.props.auth.user && page.props.auth.user.id && page.props.auth.user.mobile_number) {
+        // Update unread count when new messages arrive
+        window.Echo.private(`chat.${page.props.auth.user.mobile_number}`)
+            .listen('NewChatMessage', (e) => {
+                // Increment only for messages not sent by this user
+                if (e?.chat?.sender_id !== page.props.auth.user.mobile_number) {
+                    unreadCount.value++;
+                    // Show notification if not on chat route
+                    if (!window.location.pathname.startsWith('/chat')) {
+                        showChatNotification.value = true;
+                        if (chatNotificationTimeout.value) {
+                            clearTimeout(chatNotificationTimeout.value);
+                        }
+                        chatNotificationTimeout.value = setTimeout(() => {
+                            showChatNotification.value = false;
+                        }, 10000);
+                    }
+                }
+            });
+
+        // When chat view marks messages as read, sync the badge to zero
+        window.addEventListener('chat:read', () => {
+            unreadCount.value = 0;
+            showChatNotification.value = false;
         });
 
-    // When chat view marks messages as read, sync the badge to zero
-    window.addEventListener('chat:read', () => {
-        unreadCount.value = 0;
-    });
-
-    // Listen for chat history deletion
+        // Listen for chat history deletion
     window.Echo.private(`chat.${page.props.auth.user.mobile_number}`)
-        .listen('ChatHistoryDeleted', (e) => {
-            console.log('ChatHistoryDeleted event received in layout:', e);
-            if (e.userMobile === page.props.auth.user.mobile_number) {
-                console.log('Resetting unread count for user:', e.userMobile);
-                unreadCount.value = 0; // Reset unread count
-            }
-        });
+            .listen('ChatHistoryDeleted', (e) => {
+                console.log('ChatHistoryDeleted event received in layout:', e);
+                if (e.userMobile === page.props.auth.user.mobile_number) {
+                    console.log('Resetting unread count for user:', e.userMobile);
+                    unreadCount.value = 0; // Reset unread count
+                    showChatNotification.value = false;
+                }
+            });
+    }
 });
+
+const openChat = () => {
+    showChatNotification.value = false;
+    if (window.route) {
+        window.location.href = window.route('chat.index');
+    } else {
+        window.location.href = '/chat';
+    }
+};
 </script>
 
 <template>
@@ -88,9 +121,7 @@ onMounted(() => {
                         class="flex items-center px-4 py-3 text-purple-600 hover:bg-gray-100 rounded-lg transition-all duration-300 relative"
                     >
                         <span class="relative inline-block">
-                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                        </svg>
+                        <i class="fas fa-headset fa-lg mr-3"></i>
                         <span v-if="unreadCount > 0" class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] leading-none rounded-full h-4 w-4 flex items-center justify-center">{{ unreadCount }}</span>
                         </span>
                         {{ t('Support Chat') }}
@@ -108,67 +139,83 @@ onMounted(() => {
             </aside>
 
             <!-- Main Content -->
-            <main class="flex-grow p-4 sm:p-6 lg:p-8 pb-[calc(4.5rem+env(safe-area-inset-bottom))] sm:pb-6">
+            <main class="flex-grow p-4 sm:p-6 lg:p-8" :class="hideBottomNav ? 'pb-6' : 'pb-[calc(4.5rem+env(safe-area-inset-bottom))] sm:pb-6'">
                 <div v-if="$slots.header" class="mb-6">
                     <slot name="header" />
                 </div>
                 <slot />
+                    <!-- Chat Notification -->
+                                    <transition name="slide-right">
+                                    <div v-if="showChatNotification" class="fixed top-1/2 right-0 z-50 flex items-center bg-white shadow-lg rounded-l-lg px-4 py-3 border border-purple-300" style="transform: translateY(-50%);">
+                                        <button @click="openChat" class="flex items-center space-x-2 focus:outline-none">
+                                            <i class="fas fa-bell text-purple-600 text-xl"></i>
+                                            <span class="font-semibold text-purple-700">{{ t('You have a message') }}</span>
+                                        </button>
+                                    </div>
+                                    </transition>
             </main>
 
             <!-- Bottom Bar (visible on small screens) -->
             <!-- added z-10 so modals with z-50 will overlay this bar -->
-            <nav class="sm:hidden fixed bottom-0 left-0 right-0 bg-white border-t shadow-sm z-10">
+            <nav v-if="!hideBottomNav" class="sm:hidden fixed bottom-0 left-0 right-0 bg-white border-t shadow-sm z-10">
                 <div class="flex justify-around py-3 pb-[env(safe-area-inset-bottom)]">
                     <Link
                         href="/dashboard"
                         class="flex flex-col items-center text-purple-600 font-medium text-sm transition-all duration-300 hover:bg-gray-100 p-2 rounded-lg"
                     >
-                        <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0H9" />
                         </svg>
-                        {{ t('Home') }}
                     </Link>
                     <Link
                         href="/my-orders"
                         class="flex flex-col items-center text-purple-600 font-medium text-sm transition-all duration-300 hover:bg-gray-100 p-2 rounded-lg"
                     >
-                        <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
                         </svg>
-                        {{ t('Order') }}
                     </Link>
                     <Link
                         href="/deposit"
                         class="flex flex-col items-center text-purple-600 font-medium text-sm transition-all duration-300 hover:bg-gray-100 p-2 rounded-lg"
                     >
-                        <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                         </svg>
-                        {{ t('Deposit') }}
                     </Link>
                     <Link
                         :href="route('chat.index')"
                         class="flex flex-col items-center text-purple-600 font-medium text-sm transition-all duration-300 hover:bg-gray-100 p-2 rounded-lg relative"
                     >
                         <span class="relative inline-block">
-                        <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                        </svg>
+                        <i class="fas fa-headset fa-lg"></i>
                         <span v-if="unreadCount > 0" class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] leading-none rounded-full h-4 w-4 flex items-center justify-center">{{ unreadCount }}</span>
                         </span>
-                        {{ t('Support Chat') }}
                     </Link>
                     <Link
                         :href="route('profile.index')"
                         class="flex flex-col items-center text-purple-600 font-medium text-sm transition-all duration-300 hover:bg-gray-100 p-2 rounded-lg"
                     >
-                        <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                         </svg>
-                        {{ t('Profile') }}
                     </Link>
                 </div>
             </nav>
         </div>
     </div>
 </template>
+
+<style>
+.slide-right-enter-active, .slide-right-leave-active {
+    transition: all 0.4s cubic-bezier(.55,0,.1,1);
+}
+.slide-right-enter-from, .slide-right-leave-to {
+    transform: translateX(100%);
+    opacity: 0;
+}
+.slide-right-enter-to, .slide-right-leave-from {
+    transform: translateX(0);
+    opacity: 1;
+}
+</style>
