@@ -83,8 +83,10 @@ async function resetTasks(userId) {
       headers: {
         'Content-Type': 'application/json',
         'X-CSRF-TOKEN': token,
+        'X-Requested-With': 'XMLHttpRequest',
         'Accept': 'application/json',
       },
+      credentials: 'same-origin',
       body: JSON.stringify({}),
     });
     if (!response.ok) {
@@ -162,8 +164,10 @@ async function deleteTasks(userId) {
       headers: {
         'Content-Type': 'application/json',
         'X-CSRF-TOKEN': token,
+        'X-Requested-With': 'XMLHttpRequest',
         'Accept': 'application/json',
       },
+      credentials: 'same-origin',
       body: JSON.stringify({}),
     });
     if (!response.ok) {

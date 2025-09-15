@@ -227,11 +227,11 @@ const balanceErrorMessage = ref('');
 const completionMessage = ref('');
 const modalErrorMessage = ref(''); // New state for modal-specific error messages
 
-// Cache last non-zero reward
-const lastReward = ref(props.user.order_reward || 0);
+// Cache reward; keep in sync with server including zero
+const lastReward = ref(props.user.order_reward ?? 0);
 
 watch(() => props.user.order_reward, (newReward) => {
-  if (newReward && newReward > 0) {
+  if (typeof newReward === 'number') {
     lastReward.value = newReward;
   }
 });
@@ -481,6 +481,11 @@ const updateFromProps = () => {
   taskProgress.value = props.confirmedCount || 0;
   currentTaskProductIndex.value = Math.min(taskProgress.value, activeTask.value?.products?.length - 1 || 0);
 
+  // Keep reward in sync with server (handles reset/delete to 0)
+  if (typeof props.user?.order_reward === 'number') {
+    lastReward.value = props.user.order_reward;
+  }
+
   if (taskProgress.value >= taskItemsCount.value && taskItemsCount.value > 0) {
     completionMessage.value = "Congratulations you have done your today's task, your next task will be updated after midnight";
     showModal.value = false;
@@ -511,7 +516,7 @@ onMounted(() => {
   if (window.Echo && props.user && props.user.id) {
     try {
       window.Echo.private(`orders.${props.user.id}`)
-        .listen('UserProgressReset', () => {
+        .listen('.UserProgressReset', () => {
           // Reload the page data when tasks are reset
           router.reload({ 
             only: ['tasks', 'taskTotalCount', 'confirmedCount', 'user'],

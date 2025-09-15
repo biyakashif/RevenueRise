@@ -988,6 +988,9 @@ class AdminController extends Controller
             DB::commit();
 
             Log::info('Tasks assigned successfully:', ['tasks' => $tasks]);
+
+            // Broadcast event so user's Orders.vue updates live without refresh
+            event(new \App\Events\UserProgressReset($user->id));
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Error assigning tasks:', ['error' => $e->getMessage()]);
