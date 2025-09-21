@@ -17,9 +17,9 @@ class ChatController extends Controller
     public function getUsers()
     {
         $users = \App\Models\User::where('role', '!=', 'admin')
-            ->select('mobile_number', 'name', 'avatar_url')
-            ->withCount(['sentMessages' => function($query) {
-                $query->where('recipient_id', auth()->user()->mobile_number)
+            ->select('id', 'mobile_number', 'name', 'avatar_url')
+            ->withCount(['receivedMessages' => function($query) {
+                $query->where('sender_id', '!=', auth()->id())
                       ->whereNull('read_at');
             }])
             ->get();
@@ -27,30 +27,30 @@ class ChatController extends Controller
         return response()->json($users);
     }
 
-    public function getMessages($userMobile)
+    public function getMessages($userId)
     {
-        $adminMobile = auth()->user()->mobile_number;
+        $adminId = auth()->id();
         
-        $messages = \App\Models\ChatMessage::where(function($query) use ($userMobile, $adminMobile) {
-            $query->where('sender_id', $userMobile)
-                  ->where('recipient_id', $adminMobile);
-        })->orWhere(function($query) use ($userMobile, $adminMobile) {
-            $query->where('sender_id', $adminMobile)
-                  ->where('recipient_id', $userMobile);
+        $messages = \App\Models\ChatMessage::where(function($query) use ($userId, $adminId) {
+            $query->where('sender_id', $userId)
+                  ->where('recipient_id', $adminId);
+        })->orWhere(function($query) use ($userId, $adminId) {
+            $query->where('sender_id', $adminId)
+                  ->where('recipient_id', $userId);
         })
         ->orderBy('created_at', 'asc')
         ->get();
 
         // Mark messages as read
-        \App\Models\ChatMessage::where('sender_id', $userMobile)
-            ->where('recipient_id', $adminMobile)
+        \App\Models\ChatMessage::where('sender_id', $userId)
+            ->where('recipient_id', $adminId)
             ->whereNull('read_at')
             ->update(['read_at' => now()]);
 
         return response()->json($messages);
     }
 
-    public function sendMessage(Request $request, $userMobile)
+    public function sendMessage(Request $request, $userId)
     {
         try {
             $request->validate([
@@ -64,8 +64,8 @@ class ChatController extends Controller
             }
 
             $message = new \App\Models\ChatMessage();
-            $message->sender_id = auth()->user()->mobile_number;
-            $message->recipient_id = $userMobile;
+            $message->sender_id = auth()->id();
+            $message->recipient_id = $userId;
             $message->message = $request->message;
 
             if ($request->hasFile('image')) {
@@ -90,18 +90,18 @@ class ChatController extends Controller
         }
     }
 
-    public function deleteChatHistory($userMobile)
+    public function deleteChatHistory($userId)
     {
         try {
-            $adminMobile = auth()->user()->mobile_number;
+            $adminId = auth()->id();
 
             // Fetch all messages between the admin and the user
-            $messages = \App\Models\ChatMessage::where(function($query) use ($userMobile, $adminMobile) {
-                $query->where('sender_id', $userMobile)
-                      ->where('recipient_id', $adminMobile);
-            })->orWhere(function($query) use ($userMobile, $adminMobile) {
-                $query->where('sender_id', $adminMobile)
-                      ->where('recipient_id', $userMobile);
+            $messages = \App\Models\ChatMessage::where(function($query) use ($userId, $adminId) {
+                $query->where('sender_id', $userId)
+                      ->where('recipient_id', $adminId);
+            })->orWhere(function($query) use ($userId, $adminId) {
+                $query->where('sender_id', $adminId)
+                      ->where('recipient_id', $userId);
             })->get();
 
             // Delete associated files (images and videos)
@@ -122,16 +122,16 @@ class ChatController extends Controller
             }
 
             // Delete all messages between the admin and the user
-            \App\Models\ChatMessage::where(function($query) use ($userMobile, $adminMobile) {
-                $query->where('sender_id', $userMobile)
-                      ->where('recipient_id', $adminMobile);
-            })->orWhere(function($query) use ($userMobile, $adminMobile) {
-                $query->where('sender_id', $adminMobile)
-                      ->where('recipient_id', $userMobile);
+            \App\Models\ChatMessage::where(function($query) use ($userId, $adminId) {
+                $query->where('sender_id', $userId)
+                      ->where('recipient_id', $adminId);
+            })->orWhere(function($query) use ($userId, $adminId) {
+                $query->where('sender_id', $adminId)
+                      ->where('recipient_id', $userId);
             })->delete();
 
             // Broadcast the deletion event
-            broadcast(new ChatHistoryDeleted($userMobile, $adminMobile));
+            broadcast(new ChatHistoryDeleted($userId, $adminId));
 
             return response()->json(['message' => 'Chat history and associated files deleted successfully.']);
         } catch (\Exception $e) {

@@ -25,18 +25,18 @@ class ChatController extends Controller
 
     public function getMessages(Request $request)
     {
-        $mobile = auth()->user()->mobile_number;
+        $userId = auth()->id();
         
-        $messages = ChatMessage::where(function($query) use ($mobile) {
-            $query->where('sender_id', $mobile)
-                ->orWhere('recipient_id', $mobile);
+        $messages = ChatMessage::where(function($query) use ($userId) {
+            $query->where('sender_id', $userId)
+                ->orWhere('recipient_id', $userId);
         })
-        ->with('sender:mobile_number,name,avatar_url')
+        ->with('sender:id,mobile_number,name,avatar_url')
         ->orderBy('created_at', 'asc')
         ->get();
 
         // Mark messages as read
-        ChatMessage::where('recipient_id', auth()->user()->mobile_number)
+        ChatMessage::where('recipient_id', auth()->id())
             ->whereNull('read_at')
             ->update(['read_at' => now()]);
 
@@ -61,12 +61,12 @@ class ChatController extends Controller
             $sender = auth()->user();
             $admin = \App\Models\User::where('role', 'admin')->first();
 
-            \Log::info('Sender:', ['id' => $sender->mobile_number]);
-            \Log::info('Admin:', $admin ? ['id' => $admin->mobile_number] : 'No admin found');
+            \Log::info('Sender:', ['id' => $sender->id]);
+            \Log::info('Admin:', $admin ? ['id' => $admin->id] : 'No admin found');
 
             $message = new ChatMessage();
-            $message->sender_id = $sender->mobile_number;
-            $message->recipient_id = $admin ? $admin->mobile_number : '1234567890';
+            $message->sender_id = $sender->id;
+            $message->recipient_id = $admin ? $admin->id : 1; // Assuming admin id is 1 or handle properly
             $message->message = $request->message;            if ($request->hasFile('image')) {
                 $path = $request->file('image')->store('chat-images', 'public');
                 $message->image_path = '/storage/' . $path;
@@ -112,7 +112,7 @@ class ChatController extends Controller
 
     public function unreadCount()
     {
-        $count = ChatMessage::where('recipient_id', auth()->user()->mobile_number)
+        $count = ChatMessage::where('recipient_id', auth()->id())
             ->whereNull('read_at')
             ->count();
 

@@ -18,15 +18,15 @@
                 </div>
                 <div v-else v-for="message in messages" :key="message.id" 
                      class="mb-4 flex"
-                     :class="{'justify-end': message.sender_id === page.props.auth.user.mobile_number, 'justify-start': message.sender_id !== page.props.auth.user.mobile_number}">
+                     :class="{'justify-end': message.sender_id === page.props.auth.user.id, 'justify-start': message.sender_id !== page.props.auth.user.id}">
                     <div class="flex items-start space-x-2 max-w-[80%]"
-                         :class="message.sender_id === page.props.auth.user.mobile_number ? 'flex-row-reverse space-x-reverse' : ''">
-                        <div v-if="(message.sender_id === page.props.auth.user.mobile_number && page.props.auth.user.avatar_url) || (message.sender_id !== page.props.auth.user.mobile_number && page.props.adminAvatar)" 
+                         :class="message.sender_id === page.props.auth.user.id ? 'flex-row-reverse space-x-reverse' : ''">
+                        <div v-if="(message.sender_id === page.props.auth.user.id && page.props.auth.user.avatar_url) || (message.sender_id !== page.props.auth.user.id && page.props.adminAvatar)" 
                              class="w-8 h-8 rounded-full overflow-hidden border flex-shrink-0">
-                            <img :src="message.sender_id === page.props.auth.user.mobile_number 
+                            <img :src="message.sender_id === page.props.auth.user.id 
                                 ? (page.props.auth.user.avatar_url.startsWith('/storage') || page.props.auth.user.avatar_url.startsWith('/assets') ? page.props.auth.user.avatar_url : `/storage/${page.props.auth.user.avatar_url}`)
                                 : (page.props.adminAvatar.startsWith('/storage') || page.props.adminAvatar.startsWith('/assets') ? page.props.adminAvatar : `/storage/${page.props.adminAvatar}`)" 
-                                 :alt="message.sender_id === page.props.auth.user.mobile_number ? 'You' : 'Support'" 
+                                 :alt="message.sender_id === page.props.auth.user.id ? 'You' : 'Support'" 
                                  class="w-full h-full object-cover"
                                  @error="handleAvatarError">
                         </div>
@@ -34,7 +34,7 @@
                             <i class="fas fa-user text-gray-400 text-xs"></i>
                         </div>
                         <div class="rounded-lg p-3 text-sm"
-                             :class="message.sender_id === page.props.auth.user.mobile_number ? 'bg-purple-100 self-end' : 'bg-gray-100 self-start'">
+                             :class="message.sender_id === page.props.auth.user.id ? 'bg-purple-100 self-end' : 'bg-gray-100 self-start'">
                             <div v-if="message.image_path" class="mb-2">
                                 <img :src="message.image_path" 
                                      alt="chat image" 
@@ -240,19 +240,19 @@ onMounted(() => {
     loadMessages();
 
     // Listen for new messages only if Echo is available
-    const mobileNumber = page.props.auth.user.mobile_number;
-    if (!mobileNumber) {
-        console.error('User mobile number not found in auth props:', page.props.auth);
+    const userId = page.props.auth.user.id;
+    if (!userId) {
+        console.error('User id not found in auth props:', page.props.auth);
         return;
     }
 
     if (window.Echo) {
-        console.log('Subscribing to private channel:', `chat.${mobileNumber}`);
-        const channel = window.Echo.private(`chat.${mobileNumber}`);
+        console.log('Subscribing to private channel:', `chat.${userId}`);
+        const channel = window.Echo.private(`chat.${userId}`);
 
         // Log successful subscription
         channel.subscribed(() => {
-            console.log('Successfully subscribed to channel:', `chat.${mobileNumber}`);
+            console.log('Successfully subscribed to channel:', `chat.${userId}`);
         });
 
         // Log connection errors
@@ -265,7 +265,7 @@ onMounted(() => {
             console.log('Received message:', e);
             if (e.chat) {
                 // Play notification if message is from support (not this user)
-                if (e.chat.sender_id !== mobileNumber) {
+                if (e.chat.sender_id !== userId) {
                     notificationSound.play().catch(() => {/* autoplay blocked until user gesture */});
                 }
                 // Add the new message to the list
@@ -298,9 +298,9 @@ onMounted(() => {
         // Listen for chat history deletion
         channel.listen('ChatHistoryDeleted', (e) => {
             console.log('ChatHistoryDeleted event received:', e);
-            console.log('Current user mobile number:', page.props.auth.user.mobile_number);
-            if (e.userMobile === page.props.auth.user.mobile_number) {
-                console.log('Clearing messages for user:', e.userMobile);
+            console.log('Current user id:', page.props.auth.user.id);
+            if (e.userId === page.props.auth.user.id) {
+                console.log('Clearing messages for user:', e.userId);
                 messages.value = []; // Clear messages
             } else {
                 console.log('Event not relevant for this user.');

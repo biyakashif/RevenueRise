@@ -85,14 +85,18 @@ onMounted(() => {
   }
 
   // Listen for real-time slider updates
-  if (window.Echo) {
-    window.Echo.channel('sliders')
-      .listen('.slider.updated', (e) => {
-        console.log('Slider updated event received:', e);
-        // Update the slider data reactively
-        desktopSliders.value = e.desktopSliders || [];
-        mobileSliders.value = e.mobileSliders || [];
-      });
+  try {
+    if (window.Echo) {
+      window.Echo.channel('sliders')
+        .listen('.slider.updated', (e) => {
+          console.log('Slider updated event received:', e);
+          // Update the slider data reactively
+          desktopSliders.value = e.desktopSliders || [];
+          mobileSliders.value = e.mobileSliders || [];
+        });
+    }
+  } catch (error) {
+    console.error('Error setting up Echo listener for sliders:', error);
   }
 });
 
@@ -101,8 +105,12 @@ onUnmounted(() => {
   stopAutoSlide();
 
   // Cleanup Echo listener
-  if (window.Echo) {
-    window.Echo.leaveChannel('sliders');
+  try {
+    if (window.Echo) {
+      window.Echo.leaveChannel('sliders');
+    }
+  } catch (error) {
+    console.error('Error cleaning up Echo listener for sliders:', error);
   }
 });
 

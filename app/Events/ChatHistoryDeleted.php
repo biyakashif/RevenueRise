@@ -14,18 +14,18 @@ class ChatHistoryDeleted implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public $userMobile;
-    public $adminMobile;
+    public $userId;
+    public $adminId;
 
     /**
      * Create a new event instance.
      *
      * @return void
      */
-    public function __construct($userMobile, $adminMobile)
+    public function __construct($userId, $adminId)
     {
-        $this->userMobile = $userMobile;
-        $this->adminMobile = $adminMobile;
+        $this->userId = $userId;
+        $this->adminId = $adminId;
     }
 
     /**
@@ -35,14 +35,14 @@ class ChatHistoryDeleted implements ShouldBroadcast
      */
     public function broadcastOn()
     {
-        return new PrivateChannel('chat.' . $this->userMobile);
+        return new PrivateChannel('chat.' . $this->adminId); // Broadcast to admin's channel
     }
 
     public function broadcastWith()
     {
         return [
-            'userMobile' => $this->userMobile,
-            'adminMobile' => $this->adminMobile,
+            'userId' => $this->userId,
+            'adminId' => $this->adminId,
         ];
     }
 }

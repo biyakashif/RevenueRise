@@ -168,14 +168,14 @@ watch(
 
 onMounted(() => {
     // Subscribe to admin private channel and toggle the sidebar dot on new messages
-    const adminMobile = page.props.auth?.user?.mobile_number;
-    if (adminMobile && window?.Echo) {
-        window.Echo.private(`chat.${adminMobile}`)
+    const adminId = page.props.auth?.user?.id;
+    if (adminId && window?.Echo) {
+        window.Echo.private(`chat.${adminId}`)
             .listen('NewChatMessage', (e) => {
                 // If user isn't on the support page, show a dot
                 if (!route().current('admin.support')) {
                     // Only mark when message originated from a user (not admin self)
-                    if (e?.chat?.sender_id && String(e.chat.sender_id) !== String(adminMobile)) {
+                    if (e?.chat?.sender_id && String(e.chat.sender_id) !== String(adminId)) {
                         supportHasNewMessage.value = true;
                     }
                 }

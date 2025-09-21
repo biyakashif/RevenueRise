@@ -166,17 +166,17 @@ const updateWithdrawLimit = async () => {
                 <div>
                   <span :class="{
                     'px-2 py-1 rounded text-xs': true,
-                    'bg-yellow-100 text-yellow-800': w.status === 'pending',
+                    'bg-yellow-100 text-yellow-800': w.status === 'under review',
                     'bg-green-100 text-green-800': w.status === 'approved',
                     'bg-red-100 text-red-800': w.status === 'rejected'
                   }">
-                    {{ w.status.charAt(0).toUpperCase() + w.status.slice(1) }}
+                    {{ w.status.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ') }}
                   </span>
                 </div>
 
                 <div class="flex space-x-2">
-                  <button v-if="w.status === 'pending'" @click="approve(w.id)" class="bg-green-500 text-white px-3 py-1 rounded text-xs">Approve</button>
-                  <button v-if="w.status === 'pending'" @click="rejectW(w.id)" class="bg-red-500 text-white px-3 py-1 rounded text-xs">Reject</button>
+                  <button v-if="w.status === 'under review'" @click="approve(w.id)" class="bg-green-500 text-white px-3 py-1 rounded text-xs">Approve</button>
+                  <button v-if="w.status === 'under review'" @click="rejectW(w.id)" class="bg-red-500 text-white px-3 py-1 rounded text-xs">Reject</button>
                   <button @click="edit(w.id)" class="bg-blue-500 text-white px-3 py-1 rounded text-xs">Edit</button>
                 </div>
               </div>

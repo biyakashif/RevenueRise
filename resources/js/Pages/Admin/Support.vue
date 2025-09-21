@@ -29,10 +29,10 @@
                                            placeholder="Search by name or mobile number" 
                                            class="w-full p-2 border rounded" />
                                 </div>
-                                <div v-for="user in filteredUsers" :key="user.mobile_number" 
+                                <div v-for="user in filteredUsers" :key="user.id" 
                                      @click="selectUser(user)"
                                      class="relative p-4 hover:bg-gray-100 cursor-pointer"
-                                     :class="{'bg-purple-50': selectedUser?.mobile_number === user.mobile_number}">
+                                     :class="{'bg-purple-50': selectedUser?.id === user.id}">
                                     <div class="flex items-center justify-between">
                                         <div class="flex items-center space-x-3">
                                             <div v-if="user.avatar_url" class="w-10 h-10 rounded-full overflow-hidden border flex-shrink-0">
@@ -87,15 +87,15 @@
                                 <div v-if="selectedUser" ref="chatContainer" class="flex-1 overflow-y-auto p-3">
                                     <div v-for="message in messages" :key="message.id" 
                                          class="mb-3 flex"
-                                         :class="{'justify-end': message.sender_id === page.props.auth.user.mobile_number, 'justify-start': message.sender_id !== page.props.auth.user.mobile_number}">
+                                         :class="{'justify-end': message.sender_id === page.props.auth.user.id, 'justify-start': message.sender_id !== page.props.auth.user.id}">
                                         <div class="flex items-start space-x-2 max-w-2xl"
-                                             :class="message.sender_id === page.props.auth.user.mobile_number ? 'flex-row-reverse space-x-reverse' : ''">
-                                            <div v-if="(message.sender_id === page.props.auth.user.mobile_number && page.props.auth.user.avatar_url) || (message.sender_id !== page.props.auth.user.mobile_number && selectedUser.avatar_url)" 
+                                             :class="message.sender_id === page.props.auth.user.id ? 'flex-row-reverse space-x-reverse' : ''">
+                                            <div v-if="(message.sender_id === page.props.auth.user.id && page.props.auth.user.avatar_url) || (message.sender_id !== page.props.auth.user.id && selectedUser.avatar_url)" 
                                                  class="w-8 h-8 rounded-full overflow-hidden border flex-shrink-0">
-                                                <img :src="message.sender_id === page.props.auth.user.mobile_number 
+                                                <img :src="message.sender_id === page.props.auth.user.id 
                                                     ? (page.props.auth.user.avatar_url.startsWith('/storage') || page.props.auth.user.avatar_url.startsWith('/assets') ? page.props.auth.user.avatar_url : `/storage/${page.props.auth.user.avatar_url}`)
                                                     : (selectedUser.avatar_url.startsWith('/storage') || selectedUser.avatar_url.startsWith('/assets') ? selectedUser.avatar_url : `/storage/${selectedUser.avatar_url}`)" 
-                                                     :alt="message.sender_id === page.props.auth.user.mobile_number ? 'You' : selectedUser.name" 
+                                                     :alt="message.sender_id === page.props.auth.user.id ? 'You' : selectedUser.name" 
                                                      class="w-full h-full object-cover"
                                                      @error="handleAvatarError">
                                             </div>
@@ -103,7 +103,7 @@
                                                 <i class="fas fa-user text-gray-400 text-xs"></i>
                                             </div>
                                             <div class="rounded-lg p-3"
-                                                 :class="message.sender_id === page.props.auth.user.mobile_number ? 'bg-purple-100' : 'bg-gray-100'">
+                                                 :class="message.sender_id === page.props.auth.user.id ? 'bg-purple-100' : 'bg-gray-100'">
                                                 <div v-if="message.image_path" class="mb-2">
                                                     <img :src="message.image_path" alt="chat image" class="max-w-sm rounded">
                                                 </div>
@@ -230,9 +230,9 @@ const loadUsers = async (opts = { preserveCounts: true }) => {
             };
         });
         if (opts.preserveCounts) {
-            const localMap = new Map(users.value.map(u => [String(u.mobile_number), u.unread_count || 0]));
+            const localMap = new Map(users.value.map(u => [String(u.id), u.unread_count || 0]));
             users.value = serverUsers.map(u => {
-                const local = localMap.get(String(u.mobile_number)) || 0;
+                const local = localMap.get(String(u.id)) || 0;
                 return { ...u, unread_count: Math.max(u.unread_count || 0, local) };
             });
         } else {
@@ -257,14 +257,14 @@ const selectUser = async (user) => {
     try {
         selectedUser.value = user;
     isFetchingMessages.value = true;
-        const response = await axios.get(`/admin/chat/${user.mobile_number}/messages`);
+        const response = await axios.get(`/admin/chat/${user.id}/messages`);
         // Sort messages by created_at in ascending order to show latest at bottom
         messages.value = response.data.sort((a, b) => 
             new Date(a.created_at) - new Date(b.created_at)
         );
     // No per-user channel subscription needed; admin receives all on their private channel
         // Clear unread badge locally for this user
-        const idx = users.value.findIndex(u => u.mobile_number === user.mobile_number);
+        const idx = users.value.findIndex(u => u.id === user.id);
         if (idx !== -1) {
             const u = users.value[idx];
             u.unread_count = 0;
@@ -301,7 +301,7 @@ const sendMessage = async () => {
             formData.append('video', videoInput.value.files[0]);
         }
 
-        const { data } = await axios.post(`/admin/chat/${selectedUser.value.mobile_number}/send`, formData);
+        const { data } = await axios.post(`/admin/chat/${selectedUser.value.id}/send`, formData);
         newMessage.value = '';
         if (imageInput.value) {
             imageInput.value.value = '';
@@ -337,7 +337,7 @@ const handleImageUpload = async (event) => {
         const formData = new FormData();
         formData.append('image', file);
 
-        const { data } = await axios.post(`/admin/chat/${selectedUser.value.mobile_number}/send`, formData);
+        const { data } = await axios.post(`/admin/chat/${selectedUser.value.id}/send`, formData);
         event.target.value = '';
         // Optimistically append sent image and mark as seen
         if (data && data.id) {
@@ -375,7 +375,7 @@ const handleVideoUpload = async (event) => {
         const formData = new FormData();
         formData.append('video', file);
 
-        const { data } = await axios.post(`/admin/chat/${selectedUser.value.mobile_number}/send`, formData);
+        const { data } = await axios.post(`/admin/chat/${selectedUser.value.id}/send`, formData);
         event.target.value = '';
         // Optimistically append sent video and mark as seen
         if (data && data.id) {
@@ -417,7 +417,7 @@ const handleNewMessage = async (e) => {
     }
     if (dedupKey) receivedMessageIds.add(dedupKey);
     // Play notification sound for new messages from users
-    if (e.chat.sender_id !== page.props.auth.user.mobile_number) {
+    if (e.chat.sender_id !== page.props.auth.user.id) {
     playNotification();
         
         // Request notification permission if not granted
@@ -442,8 +442,8 @@ const handleNewMessage = async (e) => {
     }
 
     // Update messages if the current chat is open
-    if (selectedUser.value?.mobile_number === e.chat.sender_id || 
-        selectedUser.value?.mobile_number === e.chat.recipient_id) {
+    if (selectedUser.value?.id === e.chat.sender_id || 
+        selectedUser.value?.id === e.chat.recipient_id) {
         messages.value.push({
             id: e.chat.id,
             message: e.chat.message,
@@ -457,7 +457,7 @@ const handleNewMessage = async (e) => {
     } else {
         // Increment unread badge locally for the sender if chat not open
         const senderKey = e.chat && e.chat.sender_id != null ? String(e.chat.sender_id) : undefined;
-        let idx = users.value.findIndex(u => String(u.mobile_number) === senderKey);
+        let idx = users.value.findIndex(u => String(u.id) === senderKey);
         if (idx === -1) {
             // Fallback: try by numeric id if structure differs
             idx = users.value.findIndex(u => String(u.id) === senderKey);
@@ -503,14 +503,14 @@ onMounted(() => {
     loadUsers();
 
     // Subscribe admin to their own private channel to receive relevant messages
-    const adminMobile = page.props.auth.user?.mobile_number;
-    if (adminMobile) {
-        window.Echo.private(`chat.${adminMobile}`)
+    const adminId = page.props.auth.user?.id;
+    if (adminId) {
+        window.Echo.private(`chat.${adminId}`)
             .listen('NewChatMessage', (e) => {
                 handleNewMessage(e);
             })
             .listen('ChatHistoryDeleted', (e) => {
-                if (selectedUser.value?.mobile_number === e.userMobile) {
+                if (selectedUser.value?.id === e.userId) {
                     selectedUser.value = null;
                     messages.value = [];
                 }
@@ -550,11 +550,11 @@ const confirmDelete = async () => {
     if (!userToDelete.value) return;
 
     try {
-        await axios.delete(`/admin/chat/${userToDelete.value.mobile_number}/delete-history`);
+        await axios.delete(`/admin/chat/${userToDelete.value.id}/delete-history`);
         // Replace alert with a user-friendly notification
         console.log('Chat history deleted successfully.');
         loadUsers(); // Refresh the user list
-        if (selectedUser.value?.mobile_number === userToDelete.value.mobile_number) {
+        if (selectedUser.value?.id === userToDelete.value.id) {
             selectedUser.value = null;
             messages.value = [];
         }

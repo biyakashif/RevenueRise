@@ -5,6 +5,7 @@ import { Head, usePage, router } from '@inertiajs/vue3';
 import { ref, onMounted, onUnmounted, computed } from 'vue';
 const page = usePage();
 const translations = computed(() => page.props.translations || {});
+const user = computed(() => page.props.auth?.user);
 const t = (key) => translations.value[key] || key;
 
 const props = defineProps({
@@ -53,10 +54,29 @@ onMounted(() => {
   fetchStatus();
   // Set up polling every 10 seconds
   pollingInterval = setInterval(fetchStatus, 10000);
+
+  // Listen for live balance updates
+  try {
+    if (window.Echo && user.value && user.value.id) {
+      window.Echo.private('user.' + user.value.id)
+        .listen('.balance-updated', (e) => {
+          props.balances.usdt_balance = Number(e.balance).toFixed(2);
+        });
+    }
+  } catch (error) {
+    console.error('Error setting up Echo listener for balance:', error);
+  }
 });
 
 onUnmounted(() => {
   clearInterval(pollingInterval);
+  try {
+    if (window.Echo && user.value && user.value.id) {
+      window.Echo.leave('user.' + user.value.id);
+    }
+  } catch (error) {
+    console.error('Error cleaning up Echo listener for balance:', error);
+  }
 });
 
 const submit = (e) => {
@@ -179,11 +199,11 @@ const formatUSDT = (val) => {
               <div>
                 <span :class="{
                   'px-2 py-1 rounded text-xs': true,
-                  'bg-yellow-100 text-yellow-800': w.status === 'pending',
+                  'bg-yellow-100 text-yellow-800': w.status === 'under review',
                   'bg-green-100 text-green-800': w.status === 'approved',
                   'bg-red-100 text-red-800': w.status === 'rejected'
                 }">
-                  {{ w.status.charAt(0).toUpperCase() + w.status.slice(1) }}
+                  {{ w.status.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ') }}
                 </span>
               </div>
             </div>

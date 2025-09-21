@@ -74,11 +74,15 @@ class WithdrawController extends Controller
             ]);
         }
 
-        // Create withdrawal request (pending)
+        // Deduct the amount from user balance
+        $user->balance = ($user->balance ?? 0) - $amount;
+        $user->save();
+
+        // Create withdrawal request (under review)
         $withdraw = Withdraw::create([
             'user_id' => $user->id,
             'amount_withdraw' => $amount,
-            'status' => 'pending',
+            'status' => 'under review',
             'crypto_wallet' => $validated['crypto_wallet'],
         ]);
 

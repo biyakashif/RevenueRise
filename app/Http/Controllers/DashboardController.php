@@ -192,7 +192,7 @@ class DashboardController extends Controller
             if ($product->type === 'Lucky Order' && !$isForced) {
                 $user->refresh();
                 if ($user->balance < 0) {
-                    return back()->with('error', 'Order cannot be confirmed until your balance is positive.');
+                    return back()->with('error', 'You do not have sufficient balance to confirm this order.');
                 }
                 if ($existingOrder && $existingOrder->status === 'pending') {
                     // Update existing pending order to confirmed
@@ -255,9 +255,9 @@ class DashboardController extends Controller
                         'bonus' => $bonus,
                     ]);
                 }
-                // Reset order_reward to 0 after tasks are completed
-                $user->order_reward = 0.00;
-                $user->save();
+                // Keep order_reward displayed until admin reset or midnight auto reset
+                // $user->order_reward = 0.00;
+                // $user->save();
             }
 
             return back()->with('success', 'Order saved successfully.');

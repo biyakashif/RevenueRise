@@ -16,6 +16,21 @@ createInertiaApp({
             import.meta.glob('./Pages/**/*.vue'),
         ),
     setup({ el, App, props, plugin }) {
+        // Set window.Laravel for broadcasting
+        if (props.initialPage.props.auth && props.initialPage.props.auth.user) {
+            window.Laravel = {
+                user: props.initialPage.props.auth.user,
+                pusher: {
+                    key: import.meta.env.VITE_PUSHER_APP_KEY,
+                    cluster: import.meta.env.VITE_PUSHER_APP_CLUSTER,
+                    wsHost: import.meta.env.VITE_PUSHER_HOST || `ws-${import.meta.env.VITE_PUSHER_APP_CLUSTER}.pusherapp.com`,
+                    wsPort: import.meta.env.VITE_PUSHER_PORT || 80,
+                    wssPort: import.meta.env.VITE_PUSHER_PORT || 443,
+                    enabledTransports: ['ws', 'wss'],
+                }
+            };
+        }
+
         return createApp({ render: () => h(App, props) })
             .use(plugin)
             .use(ZiggyVue)

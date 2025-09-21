@@ -3,7 +3,7 @@
 use Illuminate\Support\Facades\Broadcast;
 
 Broadcast::channel('user.{id}', function ($user, $id) {
-    return $user->mobile_number === $id;
+    return (int) $user->id === (int) $id;
 });
 
 Broadcast::channel('orders.{userId}', function ($user, $userId) {
@@ -14,10 +14,8 @@ Broadcast::channel('admin.orders', function ($user) {
     return $user->role === 'admin';
 });
 
-Broadcast::channel('chat.{mobileNumber}', function ($user, $mobileNumber) {
-    if (!$user) return false;
-    // Allow if user is the owner of the channel or is an admin
-    return ($user->mobile_number === $mobileNumber) || ($user->role === 'admin');
+Broadcast::channel('chat.{id}', function ($user, $id) {
+    return true;
 });
 
 Broadcast::channel('sliders', function ($user) {

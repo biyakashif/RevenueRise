@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Broadcast;
 
 // Broadcasting Routes (must be at the top)
-Broadcast::routes(['middleware' => ['web', 'auth']]);
+Broadcast::routes(['middleware' => ['web']]);
 
 // Welcome Route
 Route::get('/', function () {

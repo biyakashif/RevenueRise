@@ -114,7 +114,7 @@ class DepositController extends Controller
         $action = $request->input('action');
 
         if ($action === 'approve') {
-            $user = User::where('mobile_number', $deposit->user_id)->first();
+            $user = User::find($deposit->user_id);
             $user->update(['balance' => $user->balance + $deposit->amount]);
             $deposit->update(['status' => 'approved']);
 

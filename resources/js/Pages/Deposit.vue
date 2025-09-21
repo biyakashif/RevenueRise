@@ -138,11 +138,11 @@ onMounted(() => {
     }
 
     // Listen for real-time deposit status updates
-    const mobileNumber = page.props.auth?.user?.mobile_number;
-    if (mobileNumber && window.Echo) {
+    const userId = page.props.auth?.user?.id;
+    if (userId && window.Echo) {
         connectionStatus.value = 'connecting';
 
-        const channel = window.Echo.private(`user.${mobileNumber}`)
+        const channel = window.Echo.private(`user.${userId}`)
             .listen('.App\\Events\\DepositStatusUpdated', (e) => {
                 connectionStatus.value = 'connected';
                 // Update the deposit status in history if it's currently open

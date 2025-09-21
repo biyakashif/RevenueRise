@@ -378,7 +378,7 @@ class AdminController extends Controller
         $search = $request->input('search');
 
         $query = User::where('role', 'user')
-            ->leftJoin('deposits', 'users.mobile_number', '=', 'deposits.user_id')
+            ->leftJoin('deposits', 'users.id', '=', 'deposits.user_id')
             ->select('users.id', 'users.name', 'users.mobile_number', 'users.balance', 'users.frozen_balance')
             ->groupBy('users.id', 'users.name', 'users.mobile_number', 'users.balance', 'users.frozen_balance');
 

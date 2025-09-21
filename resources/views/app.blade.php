@@ -13,7 +13,7 @@
                     'cluster' => config('broadcasting.connections.pusher.options.cluster'),
                     'forceTLS' => true,
                     'encrypted' => true,
-                    'wsHost' => 'ws-' . config('broadcasting.connections.pusher.options.cluster') . '.pusher.com',
+                    'wsHost' => 'ws-' . config('broadcasting.connections.pusher.options.cluster') . '.pusherapp.com',
                     'wsPort' => 443,
                     'wssPort' => 443,
                     'enabledTransports' => ['ws', 'wss']

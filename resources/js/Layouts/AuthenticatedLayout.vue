@@ -32,12 +32,12 @@ onMounted(() => {
     fetchUnreadCount();
 
     // Only setup Echo listeners if Echo is available and user is authenticated
-    if (window.Echo && page.props.auth && page.props.auth.user && page.props.auth.user.id && page.props.auth.user.mobile_number) {
+    if (window.Echo && page.props.auth && page.props.auth.user && page.props.auth.user.id) {
         // Update unread count when new messages arrive
-        window.Echo.private(`chat.${page.props.auth.user.mobile_number}`)
+        window.Echo.private(`chat.${page.props.auth.user.id}`)
             .listen('NewChatMessage', (e) => {
                 // Increment only for messages not sent by this user
-                if (e?.chat?.sender_id !== page.props.auth.user.mobile_number) {
+                if (e?.chat?.sender_id !== page.props.auth.user.id) {
                     unreadCount.value++;
                     // Show notification if not on chat route
                     if (!window.location.pathname.startsWith('/chat')) {
@@ -59,11 +59,11 @@ onMounted(() => {
         });
 
         // Listen for chat history deletion
-    window.Echo.private(`chat.${page.props.auth.user.mobile_number}`)
+    window.Echo.private(`chat.${page.props.auth.user.id}`)
             .listen('ChatHistoryDeleted', (e) => {
                 console.log('ChatHistoryDeleted event received in layout:', e);
-                if (e.userMobile === page.props.auth.user.mobile_number) {
-                    console.log('Resetting unread count for user:', e.userMobile);
+                if (e.userId === page.props.auth.user.id) {
+                    console.log('Resetting unread count for user:', e.userId);
                     unreadCount.value = 0; // Reset unread count
                     showChatNotification.value = false;
                 }

@@ -30,8 +30,6 @@ const user = reactive({
 const balance = ref(0);
 const frozenBalance = ref(Number(user.frozen_balance ?? 0));
 
-let pollingInterval = null;
-
 // Avatar upload state
 const showAvatarPicker = ref(false);
 const saving = ref(false);
@@ -39,6 +37,9 @@ const errorMessage = ref('');
 const selectedFile = ref(null);
 const previewUrl = ref('');
 const fallbackAvatar = 'https://placehold.co/128x128?text=Avatar';
+
+// Copy state
+const copySuccess = ref(false);
 
 // Default avatars
 const defaultAvatars = [
@@ -78,6 +79,25 @@ function handleImgError(e) {
 function handlePreviewError(e) {
   if (e && e.target) {
     e.target.src = computedAvatar.value || fallbackAvatar;
+  }
+}
+
+// Copy invitation code to clipboard
+function copyInvitationCode() {
+  const code = user.invitation_code || '';
+  if (code) {
+    navigator.clipboard.writeText(code).then(() => {
+      copySuccess.value = true;
+    }).catch(() => {
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = code;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      copySuccess.value = true;
+    });
   }
 }
 
@@ -165,6 +185,10 @@ async function uploadAvatar() {
 }
 
 const fetchBalance = async () => {
+  // Check if user is still authenticated
+  if (!page.props.auth?.user) {
+    return;
+  }
   try {
     const res = await fetch(route('balance'), {
       headers: { 'Accept': 'application/json' },
@@ -188,8 +212,8 @@ const fetchBalance = async () => {
 
 onMounted(() => {
   fetchBalance();
-  if (window?.Echo && user?.mobile_number) {
-    window.Echo.private(`user.${user.mobile_number}`)
+  if (window?.Echo && user?.id) {
+    window.Echo.private(`user.${user.id}`)
       .listen('BalanceUpdated', (e) => {
         if (e && e.balance !== undefined) balance.value = Number(e.balance);
       })
@@ -207,13 +231,12 @@ onMounted(() => {
         }
       });
   }
-  pollingInterval = setInterval(fetchBalance, 5000);
+  // Removed polling since using Pusher for real-time updates
 });
 
 onUnmounted(() => {
-  if (pollingInterval) clearInterval(pollingInterval);
-  if (window?.Echo && user?.mobile_number) {
-    window.Echo.leave(`user.${user.mobile_number}`);
+  if (window?.Echo && user?.id) {
+    window.Echo.leave(`user.${user.id}`);
   }
 });
 </script>
@@ -247,15 +270,30 @@ onUnmounted(() => {
           <div class="flex-1">
             <div class="flex items-center">
               <h3 class="text-lg font-semibold text-gray-800 leading-none">
-                {{ user?.mobile_number || t('Not set') }}
+                {{ user?.name || t('Not set') }}
               </h3>
               <span class="ml-3 inline-flex items-center justify-center bg-black text-white text-xs font-semibold rounded px-2 py-0.5">
                 {{ user.vip_level || 'VIP1' }}
               </span>
             </div>
-            <p class="text-xs text-gray-500 mt-1">
-              {{ t('Invitation ID') }}: {{ user?.invitation_code || t('Not set') }}
+            <p class="text-sm font-medium text-gray-600 leading-none mt-1">
+              {{ user?.mobile_number || t('Not set') }}
             </p>
+            <div class="flex items-center mt-2">
+              <p class="text-xs text-gray-500">
+                {{ t('Invitation Code') }}: {{ user?.invitation_code || t('Not set') }}
+              </p>
+              <button
+                @click="copyInvitationCode"
+                :class="copySuccess ? 'text-blue-600' : 'text-gray-500'"
+                class="ml-2 hover:text-blue-800"
+                :title="t('Copy Invitation Code')"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
 

@@ -65,7 +65,7 @@ class User extends Authenticatable
 
     public function deposits()
     {
-        return $this->hasMany(Deposit::class, 'user_id', 'mobile_number');
+        return $this->hasMany(Deposit::class);
     }
 
     public function inviter()
@@ -145,9 +145,10 @@ class User extends Authenticatable
 
     protected static function booted()
     {
-        static::created(function ($user) {
-            $user->assignTasks();
-        });
+        // Removed auto-assign tasks on user creation
+        // static::created(function ($user) {
+        //     $user->assignTasks();
+        // });
     }
 
     public function unreadMessages()

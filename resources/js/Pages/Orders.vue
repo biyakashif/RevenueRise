@@ -105,7 +105,7 @@
 
         <!-- No tasks available -->
     <div v-if="!taskItemsCount" class="bg-white shadow-sm sm:rounded-lg p-6 text-center">
-      <p class="text-gray-500">{{ t('No tasks available for your VIP level') }} ({{ user.vip_level }})</p>
+      <p class="text-gray-500">{{ t('No tasks available') }}</p>
     </div>
       </div>
     </div>
@@ -129,12 +129,12 @@
                 <span class="font-semibold">{{ new Date().toISOString().split('T')[0] }}</span>
               </div>
               <div class="flex justify-between">
-                <span class="text-gray-500">{{ t('Balance:') }}</span>
-                <span class="font-semibold text-green-600">{{ (user.balance || 0).toFixed(2) }} USDT</span>
+                <span v-if="modalErrorMessage" class="text-red-600 font-medium w-full text-center">{{ modalErrorMessage }}</span>
+                <template v-else>
+                  <span class="text-gray-500">{{ t('Balance:') }}</span>
+                  <span class="font-semibold text-green-600">{{ (user.balance || 0).toFixed(2) }} USDT</span>
+                </template>
               </div>
-            </div>
-            <div v-if="modalErrorMessage" class="text-xs text-red-600 font-medium text-center mb-3">
-              {{ modalErrorMessage }}
             </div>
             <div class="border-t border-gray-200 my-2"></div>
             <div class="mb-3">
@@ -454,16 +454,21 @@ const confirmProduct = () => {
     is_forced: currentTaskProduct.value.is_forced,
   }, {
     preserveScroll: true,
-    onSuccess: () => {
-      showModal.value = false;
-      clearModalState();
-      modalProduct.value = null;
-      // Always reload to get the latest confirmedCount from server
-      router.reload({
-        only: ['tasks', 'taskTotalCount', 'confirmedCount', 'user', 'flash'],
-        preserveScroll: true,
-        onSuccess: () => updateFromProps(),
-      });
+    onSuccess: (page) => {
+      if (page.props?.flash?.success) {
+        showModal.value = false;
+        clearModalState();
+        modalProduct.value = null;
+        // Always reload to get the latest confirmedCount from server
+        router.reload({
+          only: ['tasks', 'taskTotalCount', 'confirmedCount', 'user', 'flash'],
+          preserveScroll: true,
+          onSuccess: () => updateFromProps(),
+        });
+      } else if (page.props?.flash?.error) {
+        modalErrorMessage.value = page.props.flash.error;
+        setTimeout(() => (modalErrorMessage.value = ''), 4000);
+      }
     },
     onError: (errors) => {
       modalErrorMessage.value = errors?.message || 'Error saving order. Please try again.';
@@ -500,7 +505,7 @@ const updateFromProps = () => {
       modalProduct.value = pendingOrder;
       saveModalState(modalProduct.value);
       showModal.value = true;
-    } else if (props.user?.balance >= 0) {
+    } else if (props.user?.balance >= 0 && !modalErrorMessage.value) {
       clearModalState();
     }
   }
@@ -516,7 +521,7 @@ onMounted(() => {
   if (window.Echo && props.user && props.user.id) {
     try {
       window.Echo.private(`orders.${props.user.id}`)
-        .listen('.UserProgressReset', () => {
+        .listen('UserProgressReset', () => {
           // Reload the page data when tasks are reset
           router.reload({ 
             only: ['tasks', 'taskTotalCount', 'confirmedCount', 'user'],

@@ -54,12 +54,12 @@ class WithdrawController extends Controller
         ]);
     }
 
-    // approve a pending withdraw (subtract user usdt balance)
+    // approve a under_review withdraw (balance already deducted)
     public function approve(Request $request, $id)
     {
         $withdraw = Withdraw::findOrFail($id);
 
-        if ($withdraw->status !== 'pending') {
+        if ($withdraw->status !== 'under review') {
             if ($request->wantsJson() || $request->ajax()) {
                 return response()->json(['error' => 'This withdrawal has already been processed.'], 400);
             }
@@ -68,19 +68,7 @@ class WithdrawController extends Controller
 
         $user = $withdraw->user;
 
-        // This project stores balance in users.balance (USDT)
-        $amount = $withdraw->amount_withdraw;
-
-        if (($user->balance ?? 0) < $amount) {
-            if ($request->wantsJson() || $request->ajax()) {
-                return response()->json(['error' => 'Insufficient USDT balance to approve this withdrawal.'], 400);
-            }
-            return redirect()->back()->with('error', 'Insufficient USDT balance to approve this withdrawal.');
-        }
-
-        // Subtract from user's balance and save
-        $user->balance = $user->balance - $amount;
-        $user->save();
+        // Balance already deducted when submitted, no need to check or deduct again
 
         $withdraw->status = 'approved';
         $withdraw->approved_at = now();
@@ -97,21 +85,31 @@ class WithdrawController extends Controller
         return redirect()->back()->with('success', 'Withdrawal approved successfully.');
     }
 
-    // reject a pending withdraw
+    // reject a under_review withdraw (refund balance)
     public function reject(Request $request, $id)
     {
         $withdraw = Withdraw::findOrFail($id);
 
-        if ($withdraw->status !== 'pending') {
+        if ($withdraw->status !== 'under review') {
             if ($request->wantsJson() || $request->ajax()) {
                 return response()->json(['error' => 'This withdrawal has already been processed.'], 400);
             }
             return redirect()->back()->with('error', 'This withdrawal has already been processed.');
         }
 
+        $user = $withdraw->user;
+        $amount = $withdraw->amount_withdraw;
+
+        // Refund the balance since it was deducted on submission
+        $user->balance = ($user->balance ?? 0) + $amount;
+        $user->save();
+
         $withdraw->status = 'rejected';
         $withdraw->rejected_at = now();
         $withdraw->save();
+
+        // Broadcast balance update to user
+        broadcast(new \App\Events\BalanceUpdated($user));
 
         if (($request->wantsJson() || $request->ajax()) && !$request->header('X-Inertia')) {
             return response()->json([

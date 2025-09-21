@@ -19,6 +19,17 @@ document.addEventListener('DOMContentLoaded', function() {
         console.error('CSRF token not found');
     }
 
+    // Handle 419 CSRF token mismatch by reloading the page
+    window.axios.interceptors.response.use(
+        response => response,
+        error => {
+            if (error.response && error.response.status === 419) {
+                window.location.reload();
+            }
+            return Promise.reject(error);
+        }
+    );
+
     // Only setup Echo if user is authenticated and token is available
     if (window.Laravel && window.Laravel.user && window.Laravel.user.id && token) {
         window.Echo = new Echo({
@@ -27,39 +38,12 @@ document.addEventListener('DOMContentLoaded', function() {
             cluster: window.Laravel.pusher.cluster,
             forceTLS: true,
             encrypted: true,
-            wsHost: window.Laravel.pusher.wsHost,
-            wsPort: window.Laravel.pusher.wsPort,
-            wssPort: window.Laravel.pusher.wssPort,
-            enabledTransports: window.Laravel.pusher.enabledTransports,
             disableStats: true,
             auth: {
-                withCredentials: true,
                 headers: {
                     'X-CSRF-TOKEN': token.content,
                     'X-Requested-With': 'XMLHttpRequest',
                 }
-            },
-            authorizer: (channel, options) => {
-                return {
-                    authorize: (socketId, callback) => {
-                        axios.post('/broadcasting/auth', {
-                            socket_id: socketId,
-                            channel_name: channel.name
-                        }, {
-                            headers: {
-                                'X-CSRF-TOKEN': token.content,
-                                'X-Requested-With': 'XMLHttpRequest',
-                            },
-                            withCredentials: true
-                        })
-                        .then(response => {
-                            callback(false, response.data);
-                        })
-                        .catch(error => {
-                            callback(true, error);
-                        });
-                    }
-                };
             }
         });
 

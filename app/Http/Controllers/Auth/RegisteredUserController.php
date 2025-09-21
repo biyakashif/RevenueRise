@@ -28,7 +28,7 @@ class RegisteredUserController extends Controller
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'mobile_number' => ['required', 'string', 'max:255', 'unique:users', 'regex:/^([0-9\s\-\+\(\)]*)$/'],
-            'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'password' => ['required', 'confirmed', 'min:6'],
             'invitation_code' => ['nullable', 'string', 'exists:users,invitation_code'],
             'withdraw_password' => ['required', 'string', 'min:4'],
         ]);
@@ -80,7 +80,7 @@ class RegisteredUserController extends Controller
     private function generateUniqueInvitationCode(): string
     {
         do {
-            $code = Str::upper(Str::random(8));
+            $code = Str::upper(Str::random(5));
         } while (User::where('invitation_code', $code)->exists());
 
         return $code;
