@@ -48,21 +48,21 @@ function scrollToSection(id) {
                     <Link
                         v-if="!page.props.auth.user"
                         :href="route('register')"
-                        class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-full text-sm md:text-base md:px-6 md:py-2 shadow transition-all duration-200"
+                        class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-3 sm:px-4 py-2 rounded-full text-sm sm:text-base md:px-6 md:py-2 shadow transition-all duration-200"
                     >
                         Sign Up
                     </Link>
                     <Link
                         v-if="!page.props.auth.user"
                         :href="route('login')"
-                        class="text-blue-600 hover:text-blue-800 font-medium text-sm md:text-base"
+                        class="text-blue-600 hover:text-blue-800 font-medium text-sm sm:text-base"
                     >
                         Sign In
                     </Link>
                     <Link
                         v-if="page.props.auth.user"
                         :href="route('dashboard')"
-                        class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-full text-sm md:text-base md:px-6 md:py-2 shadow transition-all duration-200"
+                        class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-3 sm:px-4 py-2 rounded-full text-sm sm:text-base md:px-6 md:py-2 shadow transition-all duration-200"
                     >
                         Dashboard
                     </Link>
@@ -194,14 +194,14 @@ function scrollToSection(id) {
                     <Link
                         v-if="!page.props.auth.user"
                         :href="route('register')"
-                        class="bg-white text-blue-600 px-8 py-3 rounded-full font-semibold text-lg hover:bg-gray-100 transition-all duration-300"
+                        class="bg-white text-blue-600 px-6 sm:px-8 py-3 rounded-full font-semibold text-base sm:text-lg hover:bg-gray-100 transition-all duration-300 text-center"
                     >
                         Start Earning Now
                     </Link>
                     <Link
                         v-if="page.props.auth.user"
                         :href="route('dashboard')"
-                        class="bg-white text-blue-600 px-8 py-3 rounded-full font-semibold text-lg hover:bg-gray-100 transition-all duration-300"
+                        class="bg-white text-blue-600 px-6 sm:px-8 py-3 rounded-full font-semibold text-base sm:text-lg hover:bg-gray-100 transition-all duration-300 text-center"
                     >
                         Go to Dashboard
                     </Link>
@@ -243,7 +243,7 @@ function scrollToSection(id) {
                 <div class="flex justify-center mb-8">
                     <Link
                         :href="route('register')"
-                        class="bg-blue-500 hover:bg-blue-600 text-white font-semibold px-8 py-3 rounded-full text-lg transition-all duration-300 inline-block"
+                        class="bg-blue-500 hover:bg-blue-600 text-white font-semibold px-6 sm:px-8 py-3 rounded-full text-base sm:text-lg transition-all duration-300 inline-block text-center"
                     >
                         Start earning now
                     </Link>
@@ -527,7 +527,7 @@ function scrollToSection(id) {
                 <Link
                     v-if="!page.props.auth.user"
                     :href="route('register')"
-                    class="bg-white text-blue-600 px-8 py-3 rounded-full font-semibold text-lg hover:bg-gray-100 transition-all duration-300"
+                    class="bg-white text-blue-600 px-6 sm:px-8 py-3 rounded-full font-semibold text-base sm:text-lg hover:bg-gray-100 transition-all duration-300 inline-block text-center"
                 >
                     Get Started
                 </Link>
