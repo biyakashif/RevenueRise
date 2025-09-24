@@ -1,8 +1,7 @@
 <template>
     <AdminLayout>
-        <div class="p-4 sm:p-6 lg:p-8 bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl min-h-screen">
-            <div class="max-w-7xl mx-auto">
-                <h2 class="text-2xl sm:text-3xl font-bold text-white mb-6">User Management</h2>
+        <div class="bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl p-4 rounded-2xl shadow-2xl border border-cyan-300/30 h-full overflow-y-auto">
+            <h2 class="text-lg font-bold text-slate-800 drop-shadow-sm mb-4">User Management</h2>
 
                 <!-- Flash Messages -->
                 <transition
@@ -18,66 +17,67 @@
                     </div>
                 </transition>
 
-                <!-- Search -->
-                <div class="mb-4">
-                    <input
-                        v-model="search"
-                        @input="fetchUsers"
-                        type="text"
-                        placeholder="Search by name, mobile, or invitation code..."
-                        class="w-full p-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-md shadow-sm text-white placeholder-white/70 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                </div>
+            <!-- Search -->
+            <div class="mb-4">
+                <input
+                    v-model="search"
+                    @input="fetchUsers"
+                    type="text"
+                    placeholder="Search by name, mobile, or invitation code..."
+                    class="w-full h-12 rounded-xl bg-white/50 border-0 focus:ring-2 focus:ring-cyan-400 text-slate-900 px-4 placeholder-slate-400 backdrop-blur-sm shadow-lg"
+                />
+            </div>
 
-                <!-- Users Table -->
-                <div class="bg-white/10 backdrop-blur-xl shadow-md rounded-lg overflow-x-auto border border-white/20">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-white/5">
-                            <tr>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-white/80 uppercase tracking-wider">Name</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-white/80 uppercase tracking-wider">Mobile</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-white/80 uppercase tracking-wider">VIP Level</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-white/80 uppercase tracking-wider">Balance</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-white/80 uppercase tracking-wider">Password</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-white/80 uppercase tracking-wider">Withdraw Password</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-white/80 uppercase tracking-wider">Role</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-white/80 uppercase tracking-wider">Referred By</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-white/80 uppercase tracking-wider">Register Date</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-white/80 uppercase tracking-wider">Actions</th>
+            <!-- Users Table -->
+            <div class="bg-gradient-to-r from-white/40 via-white/30 to-white/20 backdrop-blur-sm rounded-xl shadow-lg overflow-hidden border border-white/30">
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="bg-white/20 text-slate-700 text-xs font-medium">
+                                <th class="px-4 py-3 text-left">Name</th>
+                                <th class="px-4 py-3 text-left">Mobile</th>
+                                <th class="px-4 py-3 text-left">VIP Level</th>
+                                <th class="px-4 py-3 text-left">Balance</th>
+                                <th class="px-4 py-3 text-left">Password</th>
+                                <th class="px-4 py-3 text-left">Withdraw Password</th>
+                                <th class="px-4 py-3 text-left">Invitation Code</th>
+                                <th class="px-4 py-3 text-left">Referred By</th>
+                                <th class="px-4 py-3 text-left">Register Date</th>
+                                <th class="px-4 py-3 text-left">Actions</th>
                             </tr>
                         </thead>
-                        <tbody class="bg-white/5 divide-y divide-white/10">
-                            <tr v-for="user in props.users" :key="user.id">
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">{{ user.name }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-white/80">{{ user.mobile_number }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-white/80">{{ user.vip_level }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-white/80">{{ user.balance.toFixed(2) }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-white/80">{{ user.password }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-white/80">{{ user.withdraw_password }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-white/80">{{ user.role }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-white/80">{{ user.referred_by || 'N/A' }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-white/80">{{ user.register_date }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                    <button @click="openEditModal(user)" class="text-blue-400 hover:text-blue-300 mr-3">Edit</button>
-                                    <button @click="openDeleteModal(user)" class="text-red-400 hover:text-red-300">Delete</button>
+                        <tbody class="divide-y divide-white/10">
+                            <tr v-for="user in props.users" :key="user.id" class="hover:bg-white/10 transition-all duration-200">
+                                <td class="px-4 py-3 text-sm font-medium text-slate-800">{{ user.name }}</td>
+                                <td class="px-4 py-3 text-sm text-slate-700">{{ user.mobile_number }}</td>
+                                <td class="px-4 py-3 text-sm text-slate-700">{{ user.vip_level }}</td>
+                                <td class="px-4 py-3 text-sm text-slate-700">${{ user.balance.toFixed(2) }}</td>
+                                <td class="px-4 py-3 text-sm text-slate-700">{{ user.password }}</td>
+                                <td class="px-4 py-3 text-sm text-slate-700">{{ user.withdraw_password }}</td>
+                                <td class="px-4 py-3 text-sm text-slate-700">{{ user.invitation_code || 'N/A' }}</td>
+                                <td class="px-4 py-3 text-sm text-slate-700">{{ user.referred_by || 'N/A' }}</td>
+                                <td class="px-4 py-3 text-sm text-slate-700">{{ user.register_date }}</td>
+                                <td class="px-4 py-3 text-sm">
+                                    <button @click="openEditModal(user)" class="text-blue-600 hover:text-blue-700 mr-3 text-xs">Edit</button>
+                                    <button @click="openDeleteModal(user)" class="text-red-600 hover:text-red-700 text-xs">Delete</button>
                                 </td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
-                 <p v-if="!props.users.length" class="text-center text-white/70 text-lg mt-6">No users found.</p>
             </div>
+            <p v-if="!props.users.length" class="text-center text-slate-600 text-sm mt-4">No users found.</p>
         </div>
 
         <!-- Edit User Modal -->
         <div v-if="showEditModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div class="bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl p-6 rounded-lg shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto border border-white/20">
-                <h3 class="text-xl font-bold mb-4 text-white">Edit User: {{ form.name }}</h3>
+                <h3 class="text-lg font-bold mb-4 text-slate-800">Edit User: {{ form.name }}</h3>
                 <form @submit.prevent="submitUpdate">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-white/80">Name</label>
-                            <input v-model="form.name" type="text" class="mt-1 block w-full rounded-md bg-white/10 backdrop-blur-sm border-white/20 text-white placeholder-white/70 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                            <label class="block text-xs font-medium text-slate-700 mb-1">Name</label>
+                            <input v-model="form.name" type="text" class="w-full h-10 rounded-lg bg-white/50 border-0 focus:ring-2 focus:ring-cyan-400 text-slate-900 px-3 placeholder-slate-400 backdrop-blur-sm shadow-lg text-sm">
                             <p v-if="formErrors.name" class="text-xs text-red-600 mt-1">{{ formErrors.name }}</p>
                         </div>
                         <div>
@@ -135,10 +135,10 @@
         <!-- Delete Confirmation Modal -->
         <div v-if="showDeleteModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div class="bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl p-6 rounded-lg shadow-xl w-full max-w-md border border-white/20">
-                <h3 class="text-lg font-bold text-white">Confirm Deletion</h3>
-                <p class="mt-2 text-sm text-white/80">
+                <h3 class="text-lg font-bold text-slate-800">Confirm Deletion</h3>
+                <p class="mt-2 text-sm text-slate-700">
                     Are you sure you want to delete the user
-                    <span class="font-medium text-white">{{ userToDelete.name }}</span>? This action cannot be undone.
+                    <span class="font-medium text-slate-800">{{ userToDelete.name }}</span>? This action cannot be undone.
                 </p>
                 <div class="mt-6 flex justify-end space-x-3">
                     <button @click="closeDeleteModal" class="bg-white/10 backdrop-blur-sm text-white px-4 py-2 rounded-md hover:bg-white/20 border border-white/20">Cancel</button>

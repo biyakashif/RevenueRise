@@ -120,91 +120,84 @@ const submit = () => {
 <template>
     <Head title="Upload QR Code and Wallet Address" />
     <AdminLayout>
-        <template #header>
-            <h1 class="text-xl font-bold">Upload QR Code and Wallet Address</h1>
-        </template>
-
-        <div class="py-6">
-            <div class="max-w-3xl mx-auto px-4">
-                <div class="bg-white shadow-sm rounded-lg p-4">
-                    <form @submit.prevent="submit" enctype="multipart/form-data">
-                        <div class="mb-3">
-                            <label for="currency" class="block text-sm font-medium text-gray-700 mb-1">Cryptocurrency</label>
+        <div class="bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl p-4 rounded-2xl shadow-2xl border border-cyan-300/30 h-full overflow-y-auto">
+            <h1 class="text-lg font-bold text-slate-800 drop-shadow-sm mb-4">QR Code & Wallet Address</h1>
+                    <form @submit.prevent="submit" enctype="multipart/form-data" class="space-y-4">
+                        <div>
+                            <label for="currency" class="block text-sm font-medium text-slate-700 mb-2 drop-shadow-sm">Cryptocurrency</label>
                             <select
                                 v-model="form.currency"
                                 id="currency"
-                                class="block w-full px-2 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                class="block w-full h-12 rounded-xl bg-white/50 border-0 focus:ring-2 focus:ring-cyan-400 text-slate-900 px-4 backdrop-blur-sm shadow-lg"
                             >
                                 <option v-for="crypto in availableCryptoList" :key="crypto.id" :value="crypto.symbol">
                                     {{ crypto.name }} ({{ crypto.symbol }})
                                 </option>
                             </select>
-                            <span v-if="form.errors.currency" class="text-red-500 text-xs">{{ form.errors.currency }}</span>
+                            <span v-if="form.errors.currency" class="text-red-500 text-xs mt-1">{{ form.errors.currency }}</span>
                         </div>
 
-                        <div class="mb-3">
-                            <label for="network" class="block text-sm font-medium text-gray-700 mb-1">Network</label>
+                        <div>
+                            <label for="network" class="block text-sm font-medium text-slate-700 mb-2 drop-shadow-sm">Network</label>
                             <div class="flex gap-2">
                                 <input
                                     v-model="form.network"
                                     type="text"
                                     id="network"
                                     placeholder="e.g., TRC20, ERC20, BEP20, Bitcoin"
-                                    class="flex-1 px-2 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                    class="flex-1 h-12 rounded-xl bg-white/50 border-0 focus:ring-2 focus:ring-cyan-400 text-slate-900 px-4 placeholder-slate-400 backdrop-blur-sm shadow-lg"
                                 />
                                 <button
                                     type="button"
                                     @click="resetToDefaultNetwork"
-                                    class="px-3 py-1 bg-gray-100 text-gray-600 rounded-md text-sm hover:bg-gray-200"
+                                    class="px-4 py-2 bg-gradient-to-r from-white/60 to-white/40 hover:from-white/70 hover:to-white/50 text-slate-700 rounded-xl text-sm font-medium transition-all duration-200 shadow-lg backdrop-blur-sm border border-white/30"
                                     :disabled="!form.currency"
                                     title="Reset to default network for selected cryptocurrency"
                                 >
                                     Reset
                                 </button>
                             </div>
-                            <span v-if="form.errors.network" class="text-red-500 text-xs">{{ form.errors.network }}</span>
-                            <p class="text-xs text-gray-500 mt-1">
+                            <span v-if="form.errors.network" class="text-red-500 text-xs mt-1">{{ form.errors.network }}</span>
+                            <p class="text-xs text-slate-500 mt-1">
                                 Network auto-updates when you select a currency. Use "Reset" to restore the default network.
                                 <span v-if="networkManuallyModified" class="text-orange-600 font-medium">(Modified)</span>
                             </p>
                         </div>
 
-                        <div class="mb-3">
-                            <label for="qr_code" class="block text-sm font-medium text-gray-700 mb-1">QR Code Image</label>
+                        <div>
+                            <label for="qr_code" class="block text-sm font-medium text-slate-700 mb-2 drop-shadow-sm">QR Code Image</label>
                             <input
                                 type="file"
                                 id="qr_code"
                                 accept="image/png, image/jpeg, image/jpg"
                                 @change="onFileChange"
-                                class="block w-full text-sm text-gray-500 file:mr-4 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                                class="block w-full h-12 rounded-xl bg-white/50 border-0 focus:ring-2 focus:ring-cyan-400 text-slate-900 px-4 backdrop-blur-sm shadow-lg file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-cyan-50 file:text-cyan-700 hover:file:bg-cyan-100"
                             />
-                            <span v-if="form.errors.qr_code" class="text-red-500 text-xs">{{ form.errors.qr_code }}</span>
+                            <span v-if="form.errors.qr_code" class="text-red-500 text-xs mt-1">{{ form.errors.qr_code }}</span>
                             <div v-if="initialQrCode" class="mt-2">
-                                <img :src="'/storage/' + initialQrCode" alt="Current QR Code" class="w-32 h-32" />
+                                <img :src="'/storage/' + initialQrCode" alt="Current QR Code" class="w-32 h-32 rounded-xl shadow-lg" />
                             </div>
                         </div>
 
-                        <div class="mb-3">
-                            <label for="address" class="block text-sm font-medium text-gray-700 mb-1">Wallet Address</label>
+                        <div>
+                            <label for="address" class="block text-sm font-medium text-slate-700 mb-2 drop-shadow-sm">Wallet Address</label>
                             <input
                                 v-model="form.address"
                                 type="text"
                                 id="address"
-                                class="block w-full px-2 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                class="block w-full h-12 rounded-xl bg-white/50 border-0 focus:ring-2 focus:ring-cyan-400 text-slate-900 px-4 placeholder-slate-400 backdrop-blur-sm shadow-lg"
                             />
-                            <span v-if="form.errors.address" class="text-red-500 text-xs">{{ form.errors.address }}</span>
+                            <span v-if="form.errors.address" class="text-red-500 text-xs mt-1">{{ form.errors.address }}</span>
                         </div>
 
                         <button
                             type="submit"
-                            class="px-4 py-2 bg-blue-500 text-white rounded-md text-sm hover:bg-blue-600"
+                            class="px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg text-sm font-medium transition-all duration-300 transform hover:scale-[1.02] shadow-lg hover:shadow-xl"
                             :disabled="form.processing"
                         >
                             Update
                         </button>
                     </form>
-                </div>
-            </div>
         </div>
     </AdminLayout>
 </template>

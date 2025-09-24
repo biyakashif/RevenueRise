@@ -1,10 +1,5 @@
 <template>
     <AdminLayout>
-        <template #header>
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                Support Chat
-            </h2>
-        </template>
 
         <!-- Sound permission banner -->
         <div v-if="showSoundPrompt" class="bg-yellow-50 border-b border-yellow-200">
@@ -17,22 +12,24 @@
             </div>
         </div>
 
-        <div class="py-2">
-            <div class="max-w-[1400px] mx-auto px-2">
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                    <div class="p-3 bg-white border-b border-gray-200">
-                        <div class="flex h-[75vh]">
+        <div class="bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl p-4 rounded-2xl shadow-2xl border border-cyan-300/30 h-full overflow-y-auto">
+            <h1 class="text-lg font-bold text-slate-800 drop-shadow-sm mb-4">Support Chat</h1>
+            <div class="flex h-[calc(100vh-8rem)]">
                             <!-- Users List with Chat Status -->
-                            <div class="w-1/3 border-r overflow-y-auto">
+                            <div class="w-1/3 border-r border-white/20 overflow-y-auto">
                                 <div class="p-2">
                                     <input v-model="searchQuery" 
                                            placeholder="Search by name or mobile number" 
-                                           class="w-full p-2 border rounded" />
+                                           class="w-full h-12 rounded-xl bg-white/50 border-0 focus:ring-2 focus:ring-cyan-400 text-slate-900 px-4 placeholder-slate-400 backdrop-blur-sm shadow-lg" />
                                 </div>
                                 <div v-for="user in filteredUsers" :key="user.id" 
                                      @click="selectUser(user)"
-                                     class="relative p-4 hover:bg-gray-100 cursor-pointer"
-                                     :class="{'bg-purple-50': selectedUser?.id === user.id}">
+                                     class="relative p-4 hover:bg-white/10 cursor-pointer transition-all duration-200 rounded-xl mx-2 mb-2"
+                                     :class="{
+                                         'bg-white/20': selectedUser?.id === user.id,
+                                         'opacity-60': user.is_blocked,
+                                         'border-l-4 border-red-500': user.is_blocked
+                                     }">
                                     <div class="flex items-center justify-between">
                                         <div class="flex items-center space-x-3">
                                             <div v-if="user.avatar_url" class="w-10 h-10 rounded-full overflow-hidden border flex-shrink-0">
@@ -45,8 +42,11 @@
                                                 <i class="fas fa-user text-gray-400"></i>
                                             </div>
                                             <div>
-                                                <div class="font-medium">{{ user.name }}</div>
-                                                <div class="text-xs text-gray-400">{{ user.mobile_number }}</div>
+                                                <div class="font-medium text-slate-800">
+                                                    {{ user.name }}
+                                                    <span v-if="user.is_guest" class="ml-2 px-2 py-1 bg-orange-100 text-orange-800 text-xs rounded-full">Guest</span>
+                                                </div>
+                                                <div class="text-xs text-slate-600">{{ user.mobile_number }}</div>
                                             </div>
                                         </div>
                                         <div class="flex items-center space-x-2">
@@ -54,10 +54,22 @@
                                                  class="bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center animate-bounce">
                                                 {{ user.unread_count }}
                                             </div>
-                                            <button @click.stop="openDeleteModal(user)" 
-                                                    class="text-red-500 text-xs hover:underline">
-                                                Delete Chat
-                                            </button>
+                                            <div class="flex flex-col space-y-1">
+                                                <button v-if="user.is_guest && !user.is_blocked" 
+                                                        @click.stop="blockGuestUser(user)" 
+                                                        class="text-orange-500 text-xs hover:underline">
+                                                    Block
+                                                </button>
+                                                <button v-if="user.is_guest && user.is_blocked" 
+                                                        @click.stop="unblockGuestUser(user)" 
+                                                        class="text-green-500 text-xs hover:underline">
+                                                    Unblock
+                                                </button>
+                                                <button @click.stop="openDeleteModal(user)" 
+                                                        class="text-red-500 text-xs hover:underline">
+                                                    Delete Chat
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -66,7 +78,7 @@
                             <!-- Chat Area -->
                             <div class="w-2/3 flex flex-col">
                                 <!-- Chat Header -->
-                                <div v-if="selectedUser" class="border-b p-3 bg-gray-50">
+                                <div v-if="selectedUser" class="border-b border-white/20 p-3 bg-white/10 backdrop-blur-sm rounded-t-xl">
                                     <div class="flex items-center space-x-3">
                                         <div v-if="selectedUser.avatar_url" class="w-10 h-10 rounded-full overflow-hidden border flex-shrink-0">
                                             <img :src="selectedUser.avatar_url.startsWith('/storage') || selectedUser.avatar_url.startsWith('/assets') ? selectedUser.avatar_url : `/storage/${selectedUser.avatar_url}`" 
@@ -78,8 +90,12 @@
                                             <i class="fas fa-user text-gray-400"></i>
                                         </div>
                                         <div>
-                                            <div class="font-medium text-gray-900">{{ selectedUser.name }}</div>
-                                            <div class="text-xs text-gray-500">{{ selectedUser.mobile_number }}</div>
+                                            <div class="font-medium text-slate-800">
+                                                {{ selectedUser.name }}
+                                                <span v-if="selectedUser.is_guest" class="ml-2 px-2 py-1 bg-orange-100 text-orange-800 text-xs rounded-full">Guest</span>
+                                                <span v-if="selectedUser.is_blocked" class="ml-2 px-2 py-1 bg-red-100 text-red-800 text-xs rounded-full">Blocked</span>
+                                            </div>
+                                            <div class="text-xs text-slate-600">{{ selectedUser.mobile_number }}</div>
                                         </div>
                                     </div>
                                 </div>
@@ -120,8 +136,11 @@
                                 </div>
 
                                 <!-- Message Input -->
-                                <div v-if="selectedUser" class="border-t p-3">
-                                    <form @submit.prevent="sendMessage" class="flex space-x-2">
+                                <div v-if="selectedUser" class="border-t border-white/20 p-3">
+                                    <div v-if="selectedUser.is_blocked" class="text-center py-4 text-red-600">
+                                        This user is blocked. Unblock to send messages.
+                                    </div>
+                                    <form v-else @submit.prevent="sendMessage" class="flex space-x-2">
                                         <input type="file" 
                                                ref="imageInput" 
                                                class="hidden" 
@@ -129,7 +148,7 @@
                                                accept="image/*">
                                         <button type="button" 
                                                 @click="$refs.imageInput.click()"
-                                                class="px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200">
+                                                class="px-4 py-2 bg-white/20 backdrop-blur-sm rounded-lg hover:bg-white/30 transition-all duration-200 text-slate-700">
                                             <i class="fas fa-image"></i>
                                         </button>
                                         <input type="file" 
@@ -139,28 +158,25 @@
                                                accept="video/mp4,video/x-matroska">
                                         <button type="button" 
                                                 @click="$refs.videoInput.click()"
-                                                class="px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200">
+                                                class="px-4 py-2 bg-white/20 backdrop-blur-sm rounded-lg hover:bg-white/30 transition-all duration-200 text-slate-700">
                                             <i class="fas fa-video"></i>
                                         </button>
                                         <input v-model="newMessage" 
                                                type="text" 
                                                placeholder="Type your message..." 
-                                               class="flex-1 rounded-lg border-gray-300 focus:border-purple-300 focus:ring focus:ring-purple-200 focus:ring-opacity-50"
+                                               class="flex-1 h-12 rounded-xl bg-white/50 border-0 focus:ring-2 focus:ring-cyan-400 text-slate-900 px-4 placeholder-slate-400 backdrop-blur-sm shadow-lg"
                                                @keydown.enter.exact.prevent="sendMessage">
                                         <button type="submit" 
-                                                class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
+                                                class="px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg transition-all duration-300 transform hover:scale-[1.02] shadow-lg">
                                             Send
                                         </button>
                                     </form>
                                 </div>
-                                <div v-else class="flex-1 flex items-center justify-center text-gray-500">
+                                <div v-else class="flex-1 flex items-center justify-center text-slate-600">
                                     Select a user to start chatting
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </div>
-            </div>
         </div>
 
         <!-- Modal for delete confirmation -->
@@ -202,8 +218,21 @@ const searchQuery = ref('');
 const filteredUsers = computed(() => {
     const query = searchQuery.value.toLowerCase();
     return users.value
-        .filter(user => user.name.toLowerCase().includes(query) || user.mobile_number.includes(query))
-        .sort((a, b) => b.unread_count - a.unread_count);
+        .filter(user => {
+            const name = user.name ? user.name.toLowerCase() : '';
+            const mobile = user.mobile_number ? user.mobile_number.toString() : '';
+            return name.includes(query) || mobile.includes(query);
+        })
+        .sort((a, b) => {
+            // Sort by unread count first, then by guest status (guests first), then by update time
+            if (b.unread_count !== a.unread_count) {
+                return b.unread_count - a.unread_count;
+            }
+            if (a.is_guest !== b.is_guest) {
+                return a.is_guest ? -1 : 1;
+            }
+            return new Date(b.updated_at || b.created_at) - new Date(a.updated_at || a.created_at);
+        });
 });
 
 const playNotification = () => {
@@ -220,15 +249,26 @@ const playNotification = () => {
 
 const loadUsers = async (opts = { preserveCounts: true }) => {
     try {
-        const response = await axios.get('/admin/chat/users');
-        const serverUsers = (response.data || []).map(u => {
-            const unread = (u.unread_count ?? u.sent_messages_count ?? 0);
-            return {
-                ...u,
-                mobile_number: u.mobile_number != null ? String(u.mobile_number) : u.mobile_number,
-                unread_count: unread,
-            };
-        });
+        const [chatResponse, guestResponse] = await Promise.all([
+            axios.get('/admin/chat/users'),
+            axios.get('/admin/guest-chat/users')
+        ]);
+        
+        const chatUsers = (chatResponse.data || []).map(u => ({
+            ...u,
+            mobile_number: u.mobile_number != null ? String(u.mobile_number) : u.mobile_number,
+            unread_count: u.unread_count ?? u.sent_messages_count ?? 0,
+            is_guest: false
+        }));
+        
+        const guestUsers = (guestResponse.data || []).map(u => ({
+            ...u,
+            mobile_number: u.mobile_number != null ? String(u.mobile_number) : u.mobile_number,
+            unread_count: u.unread_count ?? 0,
+            is_guest: true
+        }));
+        
+        const serverUsers = [...chatUsers, ...guestUsers];
         if (opts.preserveCounts) {
             const localMap = new Map(users.value.map(u => [String(u.id), u.unread_count || 0]));
             users.value = serverUsers.map(u => {
@@ -256,9 +296,13 @@ const scrollToBottom = () => {
 const selectUser = async (user) => {
     try {
         selectedUser.value = user;
-    isFetchingMessages.value = true;
-        const response = await axios.get(`/admin/chat/${user.id}/messages`);
-        // Sort messages by created_at in ascending order to show latest at bottom
+        isFetchingMessages.value = true;
+        
+        const endpoint = user.is_guest 
+            ? `/admin/guest-chat/${user.id}/messages`
+            : `/admin/chat/${user.id}/messages`;
+        
+        const response = await axios.get(endpoint);
         messages.value = response.data.sort((a, b) => 
             new Date(a.created_at) - new Date(b.created_at)
         );
@@ -289,6 +333,7 @@ const selectUser = async (user) => {
 const sendMessage = async () => {
     try {
         if (!newMessage.value.trim() && !imageInput.value?.files[0] && !videoInput.value?.files[0]) return;
+        if (selectedUser.value.is_blocked) return;
 
         const formData = new FormData();
         formData.append('message', newMessage.value);
@@ -301,7 +346,11 @@ const sendMessage = async () => {
             formData.append('video', videoInput.value.files[0]);
         }
 
-        const { data } = await axios.post(`/admin/chat/${selectedUser.value.id}/send`, formData);
+        const endpoint = selectedUser.value.is_guest 
+            ? `/admin/guest-chat/${selectedUser.value.id}/send`
+            : `/admin/chat/${selectedUser.value.id}/send`;
+        
+        const { data } = await axios.post(endpoint, formData);
         newMessage.value = '';
         if (imageInput.value) {
             imageInput.value.value = '';
@@ -332,12 +381,16 @@ const sendMessage = async () => {
 const handleImageUpload = async (event) => {
     try {
         const file = event.target.files[0];
-        if (!file) return;
+        if (!file || selectedUser.value.is_blocked) return;
 
         const formData = new FormData();
         formData.append('image', file);
 
-        const { data } = await axios.post(`/admin/chat/${selectedUser.value.id}/send`, formData);
+        const endpoint = selectedUser.value.is_guest 
+            ? `/admin/guest-chat/${selectedUser.value.id}/send`
+            : `/admin/chat/${selectedUser.value.id}/send`;
+        
+        const { data } = await axios.post(endpoint, formData);
         event.target.value = '';
         // Optimistically append sent image and mark as seen
         if (data && data.id) {
@@ -372,10 +425,16 @@ const handleVideoUpload = async (event) => {
     // Proceed with upload logic
 
     try {
+        if (selectedUser.value.is_blocked) return;
+        
         const formData = new FormData();
         formData.append('video', file);
 
-        const { data } = await axios.post(`/admin/chat/${selectedUser.value.id}/send`, formData);
+        const endpoint = selectedUser.value.is_guest 
+            ? `/admin/guest-chat/${selectedUser.value.id}/send`
+            : `/admin/chat/${selectedUser.value.id}/send`;
+        
+        const { data } = await axios.post(endpoint, formData);
         event.target.value = '';
         // Optimistically append sent video and mark as seen
         if (data && data.id) {
@@ -441,9 +500,12 @@ const handleNewMessage = async (e) => {
         }, 5000);
     }
 
+    // Handle both regular user and guest messages
+    const isGuestMessage = e.chat.is_guest !== undefined;
+    const senderId = isGuestMessage ? e.chat.sender_id : e.chat.sender_id;
+    
     // Update messages if the current chat is open
-    if (selectedUser.value?.id === e.chat.sender_id || 
-        selectedUser.value?.id === e.chat.recipient_id) {
+    if (selectedUser.value?.id === senderId) {
         messages.value.push({
             id: e.chat.id,
             message: e.chat.message,
@@ -451,29 +513,27 @@ const handleNewMessage = async (e) => {
             video_path: e.chat.video_path,
             created_at: e.chat.created_at,
             sender_id: e.chat.sender_id,
-            recipient_id: e.chat.recipient_id
+            recipient_id: e.chat.recipient_id,
+            is_guest: e.chat.is_guest || false
         });
         scrollToBottom();
     } else {
-        // Increment unread badge locally for the sender if chat not open
-        const senderKey = e.chat && e.chat.sender_id != null ? String(e.chat.sender_id) : undefined;
-        let idx = users.value.findIndex(u => String(u.id) === senderKey);
-        if (idx === -1) {
-            // Fallback: try by numeric id if structure differs
-            idx = users.value.findIndex(u => String(u.id) === senderKey);
-        }
+        // Increment unread badge for sender
+        let idx = users.value.findIndex(u => String(u.id) === String(senderId));
         if (idx !== -1) {
             const u = users.value[idx];
             u.unread_count = (u.unread_count || 0) + 1;
             users.value.splice(idx, 1, { ...u });
-        } else {
-            // If not present yet, insert a placeholder so admin sees badge
+        } else if (isGuestMessage) {
+            // Add new guest user to list
             users.value.unshift({
-                id: senderKey,
-                mobile_number: senderKey,
-                name: `User ${e.chat.sender_id}`,
-                avatar_url: null, // No default avatar
+                id: senderId,
+                mobile_number: 'Guest',
+                name: e.chat.sender_name || `Guest ${senderId}`,
+                avatar_url: null,
                 unread_count: 1,
+                is_guest: true,
+                is_blocked: false
             });
         }
     }
@@ -550,10 +610,13 @@ const confirmDelete = async () => {
     if (!userToDelete.value) return;
 
     try {
-        await axios.delete(`/admin/chat/${userToDelete.value.id}/delete-history`);
-        // Replace alert with a user-friendly notification
+        const endpoint = userToDelete.value.is_guest 
+            ? `/admin/guest-chat/${userToDelete.value.id}/delete-history`
+            : `/admin/chat/${userToDelete.value.id}/delete-history`;
+        
+        await axios.delete(endpoint);
         console.log('Chat history deleted successfully.');
-        loadUsers(); // Refresh the user list
+        loadUsers();
         if (selectedUser.value?.id === userToDelete.value.id) {
             selectedUser.value = null;
             messages.value = [];
@@ -562,6 +625,32 @@ const confirmDelete = async () => {
     } catch (error) {
         console.error('Error deleting chat history:', error);
         alert('Failed to delete chat history. Please try again.');
+    }
+};
+
+const blockGuestUser = async (user) => {
+    try {
+        await axios.post(`/admin/guest-chat/${user.id}/block`);
+        loadUsers();
+        if (selectedUser.value?.id === user.id) {
+            selectedUser.value = { ...selectedUser.value, is_blocked: true };
+        }
+    } catch (error) {
+        console.error('Error blocking user:', error);
+        alert('Failed to block user. Please try again.');
+    }
+};
+
+const unblockGuestUser = async (user) => {
+    try {
+        await axios.post(`/admin/guest-chat/${user.id}/unblock`);
+        loadUsers();
+        if (selectedUser.value?.id === user.id) {
+            selectedUser.value = { ...selectedUser.value, is_blocked: false };
+        }
+    } catch (error) {
+        console.error('Error unblocking user:', error);
+        alert('Failed to unblock user. Please try again.');
     }
 };
 </script>

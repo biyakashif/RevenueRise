@@ -163,24 +163,16 @@ const formatUSDT = (val) => {
         <div class="bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-2xl border border-cyan-300/30 mb-4 sm:mb-6">
           <div class="mb-4">
             <h1 class="text-xl font-bold text-slate-800 drop-shadow-sm mb-4">{{ t('Withdraw') }}</h1>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div class="bg-gradient-to-r from-white/40 via-white/30 to-white/20 backdrop-blur-sm p-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border border-white/30">
-                <div class="flex justify-between w-full items-center">
-                  <p class="text-xs text-slate-600 font-medium">{{ t('Available USDT') }}</p>
-                  <p class="text-lg font-bold text-slate-800 flex items-center gap-1">
-                    {{ formatUSDT(balances.usdt_balance) }}
-                    <span class="text-xs text-slate-500">USDT</span>
-                  </p>
-                </div>
+            <div class="bg-gradient-to-r from-white/40 via-white/30 to-white/20 backdrop-blur-sm p-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border border-white/30">
+              <div class="flex justify-between w-full items-center">
+                <p class="text-xs text-slate-600 font-medium">{{ t('Available USDT') }}</p>
+                <p class="text-lg font-bold text-slate-800 flex items-center gap-1">
+                  {{ formatUSDT(balances.usdt_balance) }}
+                  <span class="text-xs text-slate-500">USDT</span>
+                </p>
               </div>
-              <div class="bg-gradient-to-r from-white/40 via-white/30 to-white/20 backdrop-blur-sm p-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border border-white/30">
-                <div class="flex justify-between w-full items-center">
-                  <p class="text-xs text-slate-600 font-medium">{{ t('Minimum Withdrawal') }}</p>
-                  <p class="text-lg font-bold text-slate-800 flex items-center gap-1">
-                    {{ formatUSDT(balances.withdraw_limit) }}
-                    <span class="text-xs text-slate-500">USDT</span>
-                  </p>
-                </div>
+              <div class="mt-2 text-xs text-center text-slate-500">
+                {{ t('Minimum Withdrawal') }} {{ formatUSDT(balances.withdraw_limit) }} USDT
               </div>
             </div>
           </div>
@@ -202,7 +194,7 @@ const formatUSDT = (val) => {
           </div>
 
           <div class="text-right">
-            <button @click="submit" class="px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl font-medium transition-all duration-300 transform hover:scale-[1.02] shadow-lg hover:shadow-xl">{{ t('Withdraw') }}</button>
+            <button @click="submit" class="px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg text-sm font-medium transition-all duration-300 transform hover:scale-[1.02] shadow-lg hover:shadow-xl">{{ t('Withdraw') }}</button>
           </div>
           </form>
         </div>

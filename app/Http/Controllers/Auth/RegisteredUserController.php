@@ -50,6 +50,14 @@ class RegisteredUserController extends Controller
                 'vip_level' => 'VIP1', // Set default VIP1
             ]);
 
+            // Create balance record for registration reward
+            BalanceRecord::create([
+                'user_id' => $user->id,
+                'type' => 'registration',
+                'amount' => $initialBalance,
+                'description' => 'Registration bonus',
+            ]);
+
             if ($request->invitation_code) {
                 $inviter = User::where('invitation_code', $request->invitation_code)->first();
                 if ($inviter) {

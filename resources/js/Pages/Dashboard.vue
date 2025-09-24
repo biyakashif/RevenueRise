@@ -387,7 +387,7 @@ function fmt(n) {
     </div>
 
     <!-- Share Modal -->
-    <div v-if="showShareModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4" @click="closeShareModal">
+    <div v-if="showShareModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-start justify-center z-50 p-4 pt-32" @click="closeShareModal">
       <div class="bg-white/95 backdrop-blur-xl rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-white/40" @click.stop>
         <div class="text-center mb-6">
           <h3 class="text-lg font-bold text-slate-800 mb-2">Share Invite Link</h3>
@@ -434,6 +434,8 @@ function fmt(n) {
         </button>
       </div>
     </div>
+
+
     
   </AuthenticatedLayout>
 </template>

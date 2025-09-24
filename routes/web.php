@@ -48,6 +48,14 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->name('admin.')->group(fun
     Route::post('/chat/{userId}/send', [\App\Http\Controllers\Admin\ChatController::class, 'sendMessage'])->name('chat.send');
     Route::delete('/chat/{userId}/delete-history', [\App\Http\Controllers\Admin\ChatController::class, 'deleteChatHistory'])->name('chat.delete-history');
     
+    // Admin Guest Chat Routes
+    Route::get('/guest-chat/users', [\App\Http\Controllers\Admin\GuestChatController::class, 'getUsers'])->name('guest-chat.users');
+    Route::get('/guest-chat/{guestId}/messages', [\App\Http\Controllers\Admin\GuestChatController::class, 'getMessages'])->name('guest-chat.messages');
+    Route::post('/guest-chat/{guestId}/send', [\App\Http\Controllers\Admin\GuestChatController::class, 'sendMessage'])->name('guest-chat.send');
+    Route::delete('/guest-chat/{guestId}/delete-history', [\App\Http\Controllers\Admin\GuestChatController::class, 'deleteChatHistory'])->name('guest-chat.delete-history');
+    Route::post('/guest-chat/{guestId}/block', [\App\Http\Controllers\Admin\GuestChatController::class, 'blockUser'])->name('guest-chat.block');
+    Route::post('/guest-chat/{guestId}/unblock', [\App\Http\Controllers\Admin\GuestChatController::class, 'unblockUser'])->name('guest-chat.unblock');
+    
     // Deposit Management
     Route::get('/deposit-clients', [AdminController::class, 'depositClients'])->name('deposit-clients');
     Route::get('/qr-address-upload', [AdminController::class, 'showQrUploadForm'])->name('qr-address-upload');
@@ -188,7 +196,22 @@ Route::post('/locale/change', function (Request $request) {
     Session::save();
     App::setLocale($locale);
     
-    return back()->with('success', 'Language changed successfully');
+    return back()->with('success', 'Language changed successfully')
+        ->cookie('locale', $locale, 60 * 24 * 365); // 1 year cookie
 })->name('locale.change')->middleware('web');
+
+// ================= CAPTCHA ROUTES =================
+Route::get('/captcha', [\App\Http\Controllers\CaptchaController::class, 'generate'])->name('captcha.generate');
+Route::post('/captcha/verify', [\App\Http\Controllers\CaptchaController::class, 'verify'])->name('captcha.verify');
+
+// ================= GUEST CHAT ROUTES =================
+Route::post('/guest-chat/start', [\App\Http\Controllers\GuestChatController::class, 'startChat'])->name('guest-chat.start');
+Route::get('/guest-chat/{sessionId}/messages', [\App\Http\Controllers\GuestChatController::class, 'getMessages'])->name('guest-chat.messages');
+Route::post('/guest-chat/{sessionId}/send', [\App\Http\Controllers\GuestChatController::class, 'sendMessage'])->name('guest-chat.send');
+
+// CSRF token refresh
+Route::get('/csrf-token', function () {
+    return response()->json(['token' => csrf_token()]);
+})->middleware('web')->name('csrf-token');
 
 require __DIR__ . '/auth.php';

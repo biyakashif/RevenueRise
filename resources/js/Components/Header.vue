@@ -27,25 +27,46 @@ const currentLanguage = computed(() => {
 
 const dropdownOpen = ref(false);
 
-const changeLanguage = (lang) => {
-    router.post(route('locale.change'), { locale: lang }, {
-        preserveScroll: true,
-        preserveState: true,
-        onSuccess: () => {
-            dropdownOpen.value = false;
+const refreshCSRFToken = async () => {
+    const res = await fetch(route('csrf-token'), {
+        method: 'GET',
+        headers: {
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
         },
-        onError: () => {
-            console.error('Failed to change language');
-        }
+        credentials: 'same-origin'
     });
+    const data = await res.json();
+    const token = data.token;
+    document.head.querySelector('meta[name="csrf-token"]').content = token;
+    window.axios.defaults.headers.common['X-CSRF-TOKEN'] = token;
 };
+
+const changeLanguage = async (lang) => {
+    try {
+        await refreshCSRFToken();
+        await router.post(route('locale.change'), { locale: lang }, {
+            preserveScroll: true,
+            preserveState: true,
+            onSuccess: () => {
+                dropdownOpen.value = false;
+            },
+        });
+    } catch (error) {
+        if (error.response && error.response.status === 419) {
+            window.location.reload();
+        } else {
+            console.error('Failed to change language:', error);
+        }
+    }
+};;
 
 // Helper for translation, accessing the value of the computed prop
 const t = (key) => translations.value[key] || key;
 </script>
 
 <template>
-    <header class="bg-white/10 backdrop-blur-md border-b border-white/20 shadow-lg">
+    <header class="bg-white/10 backdrop-blur-md border-b border-white/20 shadow-lg relative z-50">
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div class="flex flex-row justify-between items-center h-16">
                 <!-- Logo -->
@@ -68,7 +89,7 @@ const t = (key) => translations.value[key] || key;
 
                     <div
                         v-if="dropdownOpen"
-                        class="absolute right-0 mt-2 w-40 bg-white/95 backdrop-blur-md border border-white/30 rounded-lg shadow-xl z-50"
+                        class="absolute right-0 mt-2 w-40 bg-white/95 backdrop-blur-md border border-white/30 rounded-lg shadow-xl z-[9999]"
                     >
                         <ul>
                             <li v-for="lang in languages" :key="lang.code">

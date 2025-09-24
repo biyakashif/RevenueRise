@@ -30,10 +30,34 @@ const t = (key) => {
     return translation || key;
 };
 
-const submit = () => {
-    form.post(route('login'), {
-        onFinish: () => form.reset('password'),
+const refreshCSRFToken = async () => {
+    const res = await fetch(route('csrf-token'), {
+        method: 'GET',
+        headers: {
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        credentials: 'same-origin'
     });
+    const data = await res.json();
+    const token = data.token;
+    document.head.querySelector('meta[name="csrf-token"]').content = token;
+    window.axios.defaults.headers.common['X-CSRF-TOKEN'] = token;
+};
+
+const submit = async () => {
+    try {
+        await refreshCSRFToken();
+        await form.post(route('login'), {
+            onFinish: () => form.reset('password'),
+        });
+    } catch (error) {
+        if (error.response && error.response.status === 419) {
+            window.location.reload();
+        } else {
+            throw error;
+        }
+    }
 };
 </script>
 
@@ -96,8 +120,8 @@ const submit = () => {
                     :class="{ 'opacity-50 cursor-not-allowed': form.processing }"
                     :disabled="form.processing"
                 >
-                    <span v-if="form.processing">Signing in...</span>
-                    <span v-else>Sign In</span>
+                    <span v-if="form.processing">{{ t('Signing in...') }}</span>
+                    <span v-else>{{ t('Sign In') }}</span>
                 </PrimaryButton>
             </form>
         </div>

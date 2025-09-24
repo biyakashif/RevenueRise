@@ -232,17 +232,18 @@ onMounted(() => {
 
 <template>
   <AdminLayout>
-    <h1 class="text-2xl font-bold mb-4">User Task Assignment</h1>
+    <div class="bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl p-4 rounded-2xl shadow-2xl border border-cyan-300/30 h-full overflow-y-auto">
+      <h1 class="text-lg font-bold text-slate-800 drop-shadow-sm mb-4">Task Manager</h1>
 
-    <!-- Search Bar -->
-    <div class="mb-4">
-      <input
-        v-model="searchQuery"
-        type="text"
-        placeholder="Search by name, mobile, or VIP level..."
-        class="w-full p-2 border rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-      />
-    </div>
+          <!-- Search Bar -->
+          <div class="mb-6">
+            <input
+              v-model="searchQuery"
+              type="text"
+              placeholder="Search by name, mobile, or VIP level..."
+              class="w-full h-12 rounded-xl bg-white/50 border-0 focus:ring-2 focus:ring-cyan-400 text-slate-900 px-4 placeholder-slate-400 backdrop-blur-sm shadow-lg"
+            />
+          </div>
 
     <!-- Assign Tasks Modal -->
     <div v-if="showAssignTasksModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -261,42 +262,49 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- Success message -->
-    <div v-if="resetSuccess" class="mb-2 text-green-600 font-semibold text-center">
-      {{ resetSuccess }}
-    </div>
+          <!-- Success message -->
+          <div v-if="resetSuccess" class="mb-4 p-4 rounded-xl bg-green-100/80 border border-green-200 text-green-700 text-sm text-center backdrop-blur-sm">
+            {{ resetSuccess }}
+          </div>
 
-    <table class="min-w-full border mb-4">
-      <thead>
-        <tr>
-          <th class="p-2 border">Name</th>
-          <th class="p-2 border">Mobile Number</th>
-          <th class="p-2 border">VIP Level</th>
-          <th class="p-2 border">Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="user in filteredUsers" :key="user.id">
-          <td class="p-2 border">{{ user.name }}</td>
-          <td class="p-2 border">{{ user.mobile_number }}</td>
-          <td class="p-2 border">{{ user.vip_level }}</td>
-          <td class="p-2 border">
-            <button
-              @click="openAssignTasksModal(user)"
-              :disabled="assignedUsers.has(user.id)"
-              :class="assignedUsers.has(user.id) ? 'bg-gray-500' : 'bg-green-600'"
-              class="text-white px-3 py-1 rounded"
-              style="width: 120px;"
-            >
-              {{ assignedUsers.has(user.id) ? 'Assigned' : 'Assign Tasks' }}
-            </button>
-            <button @click="viewTasks(user.id)" class="bg-blue-600 text-white px-3 py-1 rounded ml-2" style="width: 120px;">Tasks Details</button>
-            <button @click="resetTasks(user.id)" class="bg-red-500 text-white px-3 py-1 rounded ml-2" style="width: 120px;">Reset Task</button>
-            <button @click="deleteTasks(user.id)" class="bg-gray-500 text-white px-3 py-1 rounded ml-2" style="width: 120px;">Delete Tasks</button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+          <!-- Users Table -->
+          <div class="bg-gradient-to-r from-white/40 via-white/30 to-white/20 backdrop-blur-sm rounded-xl shadow-lg overflow-hidden border border-white/30">
+            <div class="overflow-x-auto">
+              <table class="w-full">
+                <thead>
+                  <tr class="bg-white/20 text-slate-700 text-sm font-medium">
+                    <th class="p-4 text-left">Name</th>
+                    <th class="p-4 text-left">Mobile Number</th>
+                    <th class="p-4 text-left">VIP Level</th>
+                    <th class="p-4 text-left">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="user in filteredUsers" :key="user.id" class="border-t border-white/20 hover:bg-white/10 transition-all duration-200">
+                    <td class="p-4 text-sm text-slate-800 font-medium">{{ user.name }}</td>
+                    <td class="p-4 text-sm text-slate-700">{{ user.mobile_number }}</td>
+                    <td class="p-4 text-sm text-slate-700">{{ user.vip_level }}</td>
+                    <td class="p-4">
+                      <div class="flex flex-wrap gap-2">
+                        <button
+                          @click="openAssignTasksModal(user)"
+                          :disabled="assignedUsers.has(user.id)"
+                          :class="assignedUsers.has(user.id) ? 'from-gray-400 to-gray-500' : 'from-green-500 to-green-600 hover:from-green-600 hover:to-green-700'"
+                          class="bg-gradient-to-r text-white px-3 py-1 rounded-lg text-xs font-medium transition-all duration-200 shadow-lg min-w-[100px]"
+                        >
+                          {{ assignedUsers.has(user.id) ? 'Assigned' : 'Assign Tasks' }}
+                        </button>
+                        <button @click="viewTasks(user.id)" class="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-3 py-1 rounded-lg text-xs font-medium transition-all duration-200 shadow-lg min-w-[100px]">Tasks Details</button>
+                        <button @click="resetTasks(user.id)" class="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-3 py-1 rounded-lg text-xs font-medium transition-all duration-200 shadow-lg min-w-[100px]">Reset Task</button>
+                        <button @click="deleteTasks(user.id)" class="bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white px-3 py-1 rounded-lg text-xs font-medium transition-all duration-200 shadow-lg min-w-[100px]">Delete Tasks</button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+    </div>
 
     <!-- Modal for tasks -->
     <div v-if="showModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">

@@ -20,16 +20,25 @@ const form = useForm({
 // Handle invitation code from URL
 onMounted(() => {
     const urlParams = new URLSearchParams(window.location.search);
-    const inviteCode = urlParams.get('invite');
+    const inviteCode = urlParams.get('invitation_code');
     if (inviteCode) {
         form.invitation_code = inviteCode;
     }
 });
 
-const submit = () => {
-    form.post(route('register'), {
-        onFinish: () => form.reset('password', 'password_confirmation', 'withdraw_password', 'withdraw_password_confirmation'),
-    });
+const submit = async () => {
+    try {
+        await refreshCSRFToken();
+        await form.post(route('register'), {
+            onFinish: () => form.reset('password', 'password_confirmation', 'withdraw_password', 'withdraw_password_confirmation'),
+        });
+    } catch (error) {
+        if (error.response && error.response.status === 419) {
+            window.location.reload();
+        } else {
+            throw error;
+        }
+    }
 };
 
 // i18n
@@ -46,6 +55,21 @@ const t = (key) => {
         console.log('Current translations:', translations.value);
     }
     return translation || key;
+};
+
+const refreshCSRFToken = async () => {
+    const res = await fetch(route('csrf-token'), {
+        method: 'GET',
+        headers: {
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        credentials: 'same-origin'
+    });
+    const data = await res.json();
+    const token = data.token;
+    document.head.querySelector('meta[name="csrf-token"]').content = token;
+    window.axios.defaults.headers.common['X-CSRF-TOKEN'] = token;
 };
 </script>
 
@@ -162,7 +186,6 @@ const t = (key) => {
                         class='w-full h-10 md:h-12 rounded-xl bg-gray-50 border-0 focus:ring-2 focus:ring-blue-500 text-gray-900 px-4 placeholder-gray-400'
                         v-model='form.invitation_code'
                         placeholder='Enter invitation code'
-                        :readonly="!!form.invitation_code"
                         autocomplete='off'
                     />
                     <InputError class='mt-1 text-xs text-red-500' :message='form.errors.invitation_code' />
@@ -174,8 +197,8 @@ const t = (key) => {
                     :class='{ "opacity-50 cursor-not-allowed": form.processing }'
                     :disabled='form.processing'
                 >
-                    <span v-if='form.processing'>Creating Account...</span>
-                    <span v-else>Create Account</span>
+                    <span v-if='form.processing'>{{ t('Creating Account...') }}</span>
+                    <span v-else>{{ t('Create Account') }}</span>
                 </PrimaryButton>
             </form>
         </div>

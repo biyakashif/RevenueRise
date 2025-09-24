@@ -13,11 +13,11 @@ const csrfToken = typeof document !== 'undefined' && document.querySelector('met
   ? document.querySelector('meta[name="csrf-token"]').getAttribute('content')
   : '';
 
-const fetchUsers = async (page = 1, search = '') => {
+const fetchUsers = async (search = '') => {
   try {
     const url = search
-      ? `/admin/withdrawals?page=${page}&search=${encodeURIComponent(search)}`
-      : `/admin/withdrawals?page=${page}`;
+      ? `/admin/withdrawals?search=${encodeURIComponent(search)}`
+      : `/admin/withdrawals`;
   const res = await fetch(url, { headers: { Accept: 'application/json' } });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
@@ -26,37 +26,29 @@ const fetchUsers = async (page = 1, search = '') => {
       ...user,
       withdraw_limit: formatUSDT(user.withdraw_limit)
     }));
-    currentPage.value = data.current_page || 1;
-    lastPage.value = data.last_page || 1;
   } catch (err) {
   // suppressed: failed to load withdrawals
   }
 };
 
 onMounted(() => {
-  fetchUsers(currentPage.value, searchQuery.value);
-  pollingInterval = setInterval(() => fetchUsers(currentPage.value, searchQuery.value), 4000);
+  fetchUsers(searchQuery.value);
+  pollingInterval = setInterval(() => fetchUsers(searchQuery.value), 4000);
 });
 
 onUnmounted(() => {
   clearInterval(pollingInterval);
 });
 
-const goToPage = (page) => {
-  if (page >= 1 && page <= lastPage.value) {
-    fetchUsers(page, searchQuery.value);
-  }
-};
-
 const searchUsers = () => {
-  fetchUsers(1, searchQuery.value);
+  fetchUsers(searchQuery.value);
 };
 
 const approve = async (id) => {
   try {
   const res = await fetch(route('admin.withdrawals.approve', id), { method: 'POST', headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': csrfToken } });
     if (!res.ok) throw new Error('Approve failed');
-    await fetchUsers(currentPage.value, searchQuery.value);
+    await fetchUsers(searchQuery.value);
   } catch (err) {
   // suppressed: approve failed
   }
@@ -66,7 +58,7 @@ const rejectW = async (id) => {
   try {
   const res = await fetch(route('admin.withdrawals.reject', id), { method: 'POST', headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': csrfToken } });
     if (!res.ok) throw new Error('Reject failed');
-    await fetchUsers(currentPage.value, searchQuery.value);
+    await fetchUsers(searchQuery.value);
   } catch (err) {
   // suppressed: reject failed
   }
@@ -117,7 +109,7 @@ const updateWithdrawLimit = async () => {
     }
 
     showLimitModal.value = false;
-    await fetchUsers(currentPage.value, searchQuery.value);
+    await fetchUsers(searchQuery.value);
   } catch (err) {
     limitModalError.value = err.message || 'Failed to update withdraw limit';
   }
@@ -127,40 +119,35 @@ const updateWithdrawLimit = async () => {
 <template>
   <Head title="Withdrawals" />
   <AdminLayout>
-    <template #header>
-      <div class="flex items-center justify-between w-full">
-        <div>
-          <h1 class="text-2xl font-bold">Withdrawals</h1>
-          <p class="text-sm text-gray-600">Search users by name, mobile or invitation code. Latest withdraws shown first.</p>
-        </div>
+
+    <div class="bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl p-4 rounded-2xl shadow-2xl border border-cyan-300/30 h-full overflow-y-auto">
+      <div class="flex items-center justify-between mb-4">
+        <h1 class="text-lg font-bold text-slate-800 drop-shadow-sm">Withdrawals</h1>
         <div class="w-1/3">
-          <input v-model="searchQuery" @input="searchUsers" type="text" placeholder="Search name, mobile or code..." class="w-full border rounded px-3 py-2" />
+          <input v-model="searchQuery" @input="searchUsers" type="text" placeholder="Search name, mobile or code..." class="w-full h-10 rounded-xl bg-white/50 border-0 focus:ring-2 focus:ring-cyan-400 text-slate-900 px-4 placeholder-slate-400 backdrop-blur-sm shadow-lg" />
         </div>
       </div>
-    </template>
-
-    <div class="p-4 bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl min-h-screen">
-      <div v-for="user in users" :key="user.id" class="mb-6 bg-white/10 backdrop-blur-xl p-4 rounded shadow border border-white/20">
+      <div v-for="user in users" :key="user.id" class="mb-4 bg-white/20 backdrop-blur-sm p-4 rounded-xl shadow-lg border border-white/30">
         <div class="flex justify-between items-start">
           <div>
-            <h3 class="font-semibold text-white">{{ user.name }} <span class="text-sm text-white/70">— {{ user.mobile_number }} / {{ user.invitation_code }}</span></h3>
-            <div class="text-sm text-white/70 mt-1">
-              Withdraw Limit: <strong class="text-white">{{ formatUSDT(user.withdraw_limit) }}</strong> USDT
+            <h3 class="font-semibold text-slate-800 text-sm">{{ user.name }} <span class="text-xs text-slate-600">— {{ user.mobile_number }} / {{ user.invitation_code }}</span></h3>
+            <div class="text-xs text-slate-600 mt-1">
+              Withdraw Limit: <strong class="text-slate-800">{{ formatUSDT(user.withdraw_limit) }}</strong> USDT
               <button @click="openLimitModal(user.id, formatUSDT(user.withdraw_limit))" 
-                class="ml-2 text-xs bg-white/10 backdrop-blur-sm px-2 py-1 rounded hover:bg-white/20 transition-colors text-white border border-white/20">
+                class="ml-2 text-xs bg-white/20 backdrop-blur-sm px-2 py-1 rounded-lg hover:bg-white/30 transition-colors text-slate-700 border border-white/30">
                 Change Limit
               </button>
             </div>
           </div>
         </div>
 
-        <div class="mt-2 space-y-3">
-          <div v-for="w in user.withdraws" :key="w.id" class="bg-white/5 backdrop-blur-sm p-4 rounded border border-white/10">
+        <div class="mt-2 space-y-2">
+          <div v-for="w in user.withdraws" :key="w.id" class="bg-white/10 backdrop-blur-sm p-3 rounded-lg border border-white/20">
             <div class="flex justify-between">
               <div>
-                <div class="text-sm text-white"><strong>{{ formatUSDT(w.amount_withdraw) }}</strong> USDT</div>
-                <div class="text-xs text-white/70">To: {{ w.crypto_wallet }}</div>
-                <div class="text-xs text-white/60">{{ new Date(w.created_at).toLocaleString() }}</div>
+                <div class="text-sm text-slate-800 font-semibold">{{ formatUSDT(w.amount_withdraw) }} USDT</div>
+                <div class="text-xs text-slate-600">To: {{ w.crypto_wallet }}</div>
+                <div class="text-xs text-slate-500">{{ new Date(w.created_at).toLocaleString() }}</div>
               </div>
               <div class="flex flex-col items-end space-y-2">
                 <div>
@@ -185,33 +172,28 @@ const updateWithdrawLimit = async () => {
         </div>
       </div>
 
-      <!-- Pagination -->
-      <div class="mt-6 flex justify-between items-center">
-        <button @click="goToPage(currentPage - 1)" :disabled="currentPage === 1" class="px-4 py-2 bg-white/10 backdrop-blur-sm rounded text-white border border-white/20 hover:bg-white/20 disabled:opacity-50">Previous</button>
-        <span class="text-white">Page {{ currentPage }} of {{ lastPage }}</span>
-        <button @click="goToPage(currentPage + 1)" :disabled="currentPage === lastPage" class="px-4 py-2 bg-white/10 backdrop-blur-sm rounded text-white border border-white/20 hover:bg-white/20 disabled:opacity-50">Next</button>
-      </div>
+
     </div>
 
     <!-- Withdraw Limit Modal -->
     <div v-if="showLimitModal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
       <div class="bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl rounded-lg p-6 w-full max-w-md border border-white/20">
-        <h3 class="text-lg font-semibold mb-4 text-white">Update Withdraw Limit</h3>
+        <h3 class="text-lg font-semibold mb-4 text-slate-800">Update Withdraw Limit</h3>
         <div class="mb-4">
-          <label class="block text-sm font-medium text-white/80 mb-2">Minimum Withdraw Amount (USDT)</label>
+          <label class="block text-sm font-medium text-slate-700 mb-2">Minimum Withdraw Amount (USDT)</label>
           <input 
             v-model="newWithdrawLimit" 
             type="number" 
             step="0.01" 
-            class="w-full bg-white/10 backdrop-blur-sm border border-white/20 rounded px-3 py-2 text-white placeholder-white/70"
+            class="w-full h-10 rounded-lg bg-white/50 border-0 focus:ring-2 focus:ring-cyan-400 text-slate-900 px-3 placeholder-slate-400 backdrop-blur-sm shadow-lg"
             min="0.01"
           />
         </div>
-        <div v-if="limitModalError" class="text-sm text-red-400 mb-4">{{ limitModalError }}</div>
+        <div v-if="limitModalError" class="text-sm text-red-600 mb-4 bg-red-100/80 p-2 rounded-lg">{{ limitModalError }}</div>
         <div class="flex justify-end space-x-2">
           <button 
             @click="showLimitModal = false; limitModalError = ''" 
-            class="px-4 py-2 bg-white/10 backdrop-blur-sm rounded text-sm hover:bg-white/20 text-white border border-white/20"
+            class="px-4 py-2 bg-white/20 backdrop-blur-sm rounded-lg text-sm hover:bg-white/30 text-slate-700 border border-white/30"
           >
             Cancel
           </button>

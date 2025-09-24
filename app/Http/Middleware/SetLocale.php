@@ -21,7 +21,12 @@ class SetLocale
             $locale = Session::get('locale');
         }
         
-        // If no session, check browser preference
+        // If no session, check cookie
+        if (!$locale || !in_array($locale, $this->locales)) {
+            $locale = $request->cookie('locale');
+        }
+        
+        // If no cookie, check browser preference
         if (!$locale || !in_array($locale, $this->locales)) {
             $locale = $request->getPreferredLanguage($this->locales);
         }

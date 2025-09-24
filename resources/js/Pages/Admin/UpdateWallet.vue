@@ -100,38 +100,36 @@ const updateBalance = (action) => {
 <template>
   <Head title="Update Wallet" />
   <AdminLayout>
-    <div class="py-6">
-      <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h1 class="text-2xl font-semibold text-gray-900 mb-2">
-            Update Wallet
-            <span v-if="selectedUserId && userName" class="block text-lg font-semibold text-gray-600">
-              for {{ userName }}
-            </span>
-            <span v-if="selectedUserId && mobileNumber" class="text-sm font-medium text-gray-500">
-              Mobile: {{ mobileNumber }}
-            </span>
-          </h1>
+    <div class="bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl p-4 rounded-2xl shadow-2xl border border-cyan-300/30 h-full overflow-y-auto">
+      <h1 class="text-lg font-bold text-slate-800 drop-shadow-sm mb-4">
+        Update Wallet
+        <span v-if="selectedUserId && userName" class="block text-base font-medium text-slate-700">
+          for {{ userName }}
+        </span>
+        <span v-if="selectedUserId && mobileNumber" class="text-sm font-medium text-slate-600">
+          Mobile: {{ mobileNumber }}
+        </span>
+      </h1>
 
           <!-- Flash Messages -->
-          <div v-if="page.props.flash?.success" class="mb-6 p-4 rounded-lg bg-green-50 border border-green-200 text-green-700 text-sm flex items-center gap-2">
+          <div v-if="page.props.flash?.success" class="mb-6 p-4 rounded-xl bg-green-100/80 border border-green-200 text-green-700 text-sm flex items-center gap-2 backdrop-blur-sm">
             {{ page.props.flash.success }}
           </div>
-          <div v-if="page.props.flash?.error || errorMessage" class="mb-6 p-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm flex items-center gap-2">
+          <div v-if="page.props.flash?.error || errorMessage" class="mb-6 p-4 rounded-xl bg-red-100/80 border border-red-200 text-red-700 text-sm flex items-center gap-2 backdrop-blur-sm">
             {{ page.props.flash.error || errorMessage }}
           </div>
 
           <!-- Balance Section -->
           <div v-if="selectedUserId" class="mb-6">
-            <div class="p-4 border border-gray-200 rounded-md bg-gray-50">
+            <div class="bg-gradient-to-r from-white/40 via-white/30 to-white/20 backdrop-blur-sm p-4 rounded-xl shadow-lg border border-white/30">
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <p class="text-sm font-medium text-gray-700">User Balance</p>
-                  <p class="text-lg font-semibold text-gray-800">${{ liveBalance.toFixed(2) }}</p>
+                  <p class="text-sm font-medium text-slate-700">User Balance</p>
+                  <p class="text-lg font-semibold text-slate-800">${{ liveBalance.toFixed(2) }}</p>
                 </div>
                 <div>
-                  <p class="text-sm font-medium text-gray-700">Frozen Balance</p>
-                  <p class="text-lg font-semibold text-gray-800">${{ liveFrozenBalance.toFixed(2) }}</p>
+                  <p class="text-sm font-medium text-slate-700">Frozen Balance</p>
+                  <p class="text-lg font-semibold text-slate-800">${{ liveFrozenBalance.toFixed(2) }}</p>
                 </div>
               </div>
               <input
@@ -140,33 +138,33 @@ const updateBalance = (action) => {
                 step="0.01"
                 min="0.01"
                 placeholder="Enter amount"
-                class="mt-4 w-full max-w-md px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition"
+                class="mt-4 w-full max-w-md h-12 rounded-xl bg-white/50 border-0 focus:ring-2 focus:ring-cyan-400 text-slate-900 px-4 placeholder-slate-400 backdrop-blur-sm shadow-lg"
               />
               <div class="mt-4 flex flex-wrap gap-3">
                 <button
                   @click="updateBalance('add')"
-                  class="px-4 py-2 bg-green-600 text-white rounded-md text-sm font-medium hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacityocios-50 transition"
+                  class="px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-lg text-sm font-medium transition-all duration-300 transform hover:scale-[1.02] shadow-lg disabled:opacity-50"
                   :disabled="!amount || parseFloat(amount) <= 0"
                 >
                   Add
                 </button>
                 <button
                   @click="updateBalance('subtract')"
-                  class="px-4 py-2 bg-red-600 text-white rounded-md text-sm font-medium hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50 transition"
+                  class="px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-lg text-sm font-medium transition-all duration-300 transform hover:scale-[1.02] shadow-lg disabled:opacity-50"
                   :disabled="!amount || parseFloat(amount) <= 0 || liveBalance < parseFloat(amount)"
                 >
                   Subtract
                 </button>
                 <button
                   @click="updateBalance('freeze')"
-                  class="px-4 py-2 bg-yellow-600 text-white rounded-md text-sm font-medium hover:bg-yellow-700 focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 disabled:opacity-50 transition"
+                  class="px-4 py-2 bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white rounded-lg text-sm font-medium transition-all duration-300 transform hover:scale-[1.02] shadow-lg disabled:opacity-50"
                   :disabled="!amount || parseFloat(amount) <= 0 || liveBalance < parseFloat(amount)"
                 >
                   Freeze Balance
                 </button>
                 <button
                   @click="updateBalance('unfreeze')"
-                  class="px-4 py-2 bg-yellow-600 text-white rounded-md text-sm font-medium hover:bg-yellow-700 focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 disabled:opacity-50 transition"
+                  class="px-4 py-2 bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white rounded-lg text-sm font-medium transition-all duration-300 transform hover:scale-[1.02] shadow-lg disabled:opacity-50"
                   :disabled="!amount || parseFloat(amount) <= 0 || liveFrozenBalance < parseFloat(amount)"
                 >
                   Unfreeze Balance
@@ -176,19 +174,20 @@ const updateBalance = (action) => {
           </div>
 
           <!-- Deposit History -->
-          <div class="overflow-x-auto">
-            <table class="w-full border-collapse">
-              <thead>
-                <tr class="bg-gray-50 text-gray-700 text-sm font-medium">
-                  <th class="p-3 text-left">Deposits</th>
-                </tr>
-              </thead>
+          <div class="bg-gradient-to-r from-white/40 via-white/30 to-white/20 backdrop-blur-sm rounded-xl shadow-lg overflow-hidden border border-white/30">
+            <div class="overflow-x-auto">
+              <table class="w-full">
+                <thead>
+                  <tr class="bg-white/20 text-slate-700 text-sm font-medium">
+                    <th class="p-4 text-left">Deposits</th>
+                  </tr>
+                </thead>
               <tbody>
-                <tr>
-                  <td class="p-3 align-top">
-                    <div v-if="localDeposits.length === 0" class="text-gray-500 text-sm">No deposits</div>
-                    <div v-else class="space-y-3">
-                      <div v-for="deposit in localDeposits" :key="deposit.id" class="border border-gray-200 rounded-md p-3 bg-white">
+                  <tr>
+                    <td class="p-4 align-top">
+                      <div v-if="localDeposits.length === 0" class="text-slate-500 text-sm">No deposits</div>
+                      <div v-else class="space-y-3">
+                        <div v-for="deposit in localDeposits" :key="deposit.id" class="bg-white/30 backdrop-blur-sm rounded-xl p-3 border border-white/30 shadow-lg">
                         <div class="flex items-start">
                           <div v-if="deposit.slip_path" class="mr-3">
                             <a :href="'/storage/' + deposit.slip_path" target="_blank">
@@ -198,33 +197,32 @@ const updateBalance = (action) => {
                           <div v-else class="mr-3 text-gray-500 text-xs">No Image</div>
                           <div class="flex-1">
                             <div class="flex items-center gap-2">
-                              <div class="text-sm font-medium text-gray-700"><strong>User:</strong> {{ deposit.user?.name || 'Unknown' }}</div>
+                              <div class="text-sm font-medium text-slate-700"><strong>User:</strong> {{ deposit.user?.name || 'Unknown' }}</div>
                               <span v-if="deposit.vip_level || deposit.title && deposit.title.toLowerCase().includes('vip')" class="inline-flex items-center px-2 py-0.5 bg-yellow-100 text-yellow-800 text-xs font-medium rounded-full">
                                 VIP Purchase
                               </span>
-                              <span v-if="deposit.title" class="ml-2 text-xs text-gray-600 italic">{{ deposit.title }}</span>
+                              <span v-if="deposit.title" class="ml-2 text-xs text-slate-600 italic">{{ deposit.title }}</span>
                             </div>
-                            <div class="text-sm text-gray-700"><strong>Amount:</strong> {{ deposit.amount }} USDT</div>
-                            <div class="text-sm text-gray-700"><strong>Date:</strong> {{ new Date(deposit.created_at).toLocaleString() }}</div>
+                            <div class="text-sm text-slate-700"><strong>Amount:</strong> {{ deposit.amount }} USDT</div>
+                            <div class="text-sm text-slate-700"><strong>Date:</strong> {{ new Date(deposit.created_at).toLocaleString() }}</div>
                             <div class="mt-2 flex justify-end gap-2">
                               <span v-if="deposit.status === 'approved'" class="text-green-600 text-xs font-semibold">Approved</span>
                               <span v-else-if="deposit.status === 'rejected'" class="text-red-600 text-xs font-semibold">Rejected</span>
                               <template v-else>
-                                <button @click="updateDepositStatus(deposit.id, 'approve')" class="px-3 py-1 bg-green-600 text-white rounded-md text-xs font-medium hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition">Approve</button>
-                                <button @click="updateDepositStatus(deposit.id, 'reject')" class="px-3 py-1 bg-red-600 text-white rounded-md text-xs font-medium hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition">Reject</button>
+                                <button @click="updateDepositStatus(deposit.id, 'approve')" class="px-3 py-1 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-lg text-xs font-medium transition-all duration-200 shadow-lg">Approve</button>
+                                <button @click="updateDepositStatus(deposit.id, 'reject')" class="px-3 py-1 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-lg text-xs font-medium transition-all duration-200 shadow-lg">Reject</button>
                               </template>
                             </div>
                           </div>
                         </div>
                       </div>
                     </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
-      </div>
     </div>
   </AdminLayout>
 </template>

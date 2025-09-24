@@ -22,3 +22,8 @@ Broadcast::channel('sliders', function ($user) {
     // Allow all authenticated users to listen to slider updates
     return $user !== null;
 });
+
+// Public channel for guest chat (no authentication required)
+Broadcast::channel('guest-chat.{sessionId}', function () {
+    return true;
+});

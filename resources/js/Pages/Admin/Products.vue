@@ -157,56 +157,53 @@ function closeLightbox() {
 
 <template>
   <AdminLayout>
-    <!-- Header Section -->
-    <div class="mb-6">
-      <h1 class="text-2xl font-semibold text-gray-900">Product Management</h1>
-      <p class="text-sm text-gray-600 mt-1">Manage and organize your product catalog</p>
-    </div>
+    <div class="bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl p-4 rounded-2xl shadow-2xl border border-cyan-300/30 h-full overflow-y-auto">
+      <h1 class="text-lg font-bold text-slate-800 drop-shadow-sm mb-4">Product Management</h1>
 
-    <!-- Search Bar and Add Product Button -->
-    <div class="bg-white rounded-lg shadow-sm p-6 mb-6 border border-gray-200">
-      <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
-        <div class="flex-1 space-y-4">
-          <h2 class="text-base font-medium text-gray-800">Search Products</h2>
-          <div class="flex flex-col sm:flex-row gap-3">
-            <input
-              v-model="searchQuery"
-              type="text"
-              placeholder="Search by Product ID..."
-              class="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition"
-            />
-            <select
-              v-model="searchType"
-              class="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition"
+      <!-- Search Bar and Add Product Button -->
+      <div class="bg-gradient-to-r from-white/40 via-white/30 to-white/20 backdrop-blur-sm p-4 rounded-xl shadow-lg border border-white/30 mb-6">
+          <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+            <div class="flex-1 space-y-4">
+              <h2 class="text-base font-medium text-slate-800 drop-shadow-sm">Search Products</h2>
+              <div class="flex flex-col sm:flex-row gap-3">
+                <input
+                  v-model="searchQuery"
+                  type="text"
+                  placeholder="Search by Product ID..."
+                  class="flex-1 h-12 rounded-xl bg-white/50 border-0 focus:ring-2 focus:ring-cyan-400 text-slate-900 px-4 placeholder-slate-400 backdrop-blur-sm shadow-lg"
+                />
+                <select
+                  v-model="searchType"
+                  class="flex-1 h-12 rounded-xl bg-white/50 border-0 focus:ring-2 focus:ring-cyan-400 text-slate-900 px-4 backdrop-blur-sm shadow-lg"
+                >
+                  <option value="">All Types</option>
+                  <option value="VIP1">VIP1</option>
+                  <option value="VIP2">VIP2</option>
+                  <option value="VIP3">VIP3</option>
+                  <option value="VIP4">VIP4</option>
+                  <option value="VIP5">VIP5</option>
+                  <option value="VIP6">VIP6</option>
+                  <option value="VIP7">VIP7</option>
+                  <option value="Lucky Order">Lucky Order</option>
+                </select>
+              </div>
+            </div>
+            <button
+              @click="showModal = true"
+              class="px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg text-sm font-medium transition-all duration-300 transform hover:scale-[1.02] shadow-lg hover:shadow-xl"
             >
-              <option value="">All Types</option>
-              <option value="VIP1">VIP1</option>
-              <option value="VIP2">VIP2</option>
-              <option value="VIP3">VIP3</option>
-              <option value="VIP4">VIP4</option>
-              <option value="VIP5">VIP5</option>
-              <option value="VIP6">VIP6</option>
-              <option value="VIP7">VIP7</option>
-              <option value="Lucky Order">Lucky Order</option>
-            </select>
+              Add New Product
+            </button>
           </div>
         </div>
-        <button
-          @click="showModal = true"
-          class="bg-purple-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-purple-700 focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition"
-        >
-          Add New Product
-        </button>
-      </div>
-    </div>
 
-    <!-- Success/Error Messages -->
-    <div v-if="successMessage" class="mb-6 p-4 rounded-lg bg-green-50 border border-green-200 text-green-700 text-sm flex items-center gap-2">
-      <span>{{ successMessage }}</span>
-    </div>
-    <div v-if="errorMessage" class="mb-6 p-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm flex items-center gap-2">
-      <span>{{ errorMessage }}</span>
-    </div>
+        <!-- Success/Error Messages -->
+        <div v-if="successMessage" class="mb-6 p-4 rounded-xl bg-green-100/80 border border-green-200 text-green-700 text-sm flex items-center gap-2 backdrop-blur-sm">
+          <span>{{ successMessage }}</span>
+        </div>
+        <div v-if="errorMessage" class="mb-6 p-4 rounded-xl bg-red-100/80 border border-red-200 text-red-700 text-sm flex items-center gap-2 backdrop-blur-sm">
+          <span>{{ errorMessage }}</span>
+        </div>
 
     <!-- Add Product Modal -->
     <transition name="modal">
@@ -362,40 +359,41 @@ function closeLightbox() {
       </div>
     </transition>
 
-    <!-- Product List -->
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200">
-      <div class="p-6">
-        <h2 class="text-base font-medium text-gray-800 mb-4">Product List</h2>
-        <div class="overflow-x-auto">
-          <table class="w-full border-collapse">
-            <thead>
-              <tr class="bg-gray-50 text-gray-700 text-sm font-medium">
-                <th class="p-3 text-left">Product ID</th>
-                <th class="p-3 text-left">Image</th>
-                <th class="p-3 text-left">Title</th>
-                <th class="p-3 text-left">Type</th>
-                <th class="p-3 text-left">Description</th>
-                <th class="p-3 text-left">Purchase Price</th>
-                <th class="p-3 text-left">Selling Price</th>
-                <th class="p-3 text-left">Commission Reward</th>
-                <th class="p-3 text-left">Commission %</th>
-                <th class="p-3 text-left">Actions</th>
-              </tr>
-            </thead>
+      <!-- Product List -->
+      <div class="bg-gradient-to-r from-white/40 via-white/30 to-white/20 backdrop-blur-sm rounded-xl shadow-lg overflow-hidden border border-white/30 mt-6">
+        <div class="p-4">
+          <h2 class="text-base font-medium text-slate-800 drop-shadow-sm mb-4">Product List</h2>
+          <div class="bg-white/20 backdrop-blur-sm rounded-xl shadow-lg overflow-hidden border border-white/30">
+              <div class="overflow-x-auto">
+                <table class="w-full">
+                  <thead>
+                    <tr class="bg-white/20 text-slate-700 text-sm font-medium">
+                      <th class="p-4 text-left">Product ID</th>
+                      <th class="p-4 text-left">Image</th>
+                      <th class="p-4 text-left">Title</th>
+                      <th class="p-4 text-left">Type</th>
+                      <th class="p-4 text-left">Description</th>
+                      <th class="p-4 text-left">Purchase Price</th>
+                      <th class="p-4 text-left">Selling Price</th>
+                      <th class="p-4 text-left">Commission Reward</th>
+                      <th class="p-4 text-left">Commission %</th>
+                      <th class="p-4 text-left">Actions</th>
+                    </tr>
+                  </thead>
             <tbody>
-              <tr
-                v-for="product in filteredProducts"
-                :key="product.id"
-                class="border-t border-gray-200 hover:bg-gray-50 transition"
-              >
-                <td class="p-3 text-sm text-gray-700">{{ product.product_id }}</td>
-                <td class="p-3">
-                  <img
-                    :src="`/storage/${product.image_path}`"
-                    class="w-10 h-10 object-cover rounded cursor-pointer hover:scale-105 transition"
-                    @click="openLightbox(`/storage/${product.image_path}`)"
-                  />
-                </td>
+                    <tr
+                      v-for="product in filteredProducts"
+                      :key="product.id"
+                      class="border-t border-white/20 hover:bg-white/10 transition-all duration-200"
+                    >
+                      <td class="p-4 text-sm text-slate-800 font-medium">{{ product.product_id }}</td>
+                      <td class="p-4">
+                        <img
+                          :src="`/storage/${product.image_path}`"
+                          class="w-10 h-10 object-cover rounded cursor-pointer hover:scale-105 transition"
+                          @click="openLightbox(`/storage/${product.image_path}`)"
+                        />
+                      </td>
 
                 <!-- Normal View -->
                 <template v-if="editing !== product.id">
@@ -519,7 +517,9 @@ function closeLightbox() {
                 </template>
               </tr>
             </tbody>
-          </table>
+                </table>
+              </div>
+          </div>
         </div>
       </div>
     </div>

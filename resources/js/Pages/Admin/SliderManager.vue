@@ -1,17 +1,14 @@
 <template>
   <AdminLayout>
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div class="bg-white rounded-lg shadow">
-
-
-        <!-- Desktop Images Section -->
-        <div class="p-6">
+    <div class="bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl p-4 rounded-2xl shadow-2xl border border-cyan-300/30 h-full overflow-y-auto">
+      <h1 class="text-lg font-bold text-slate-800 drop-shadow-sm mb-4">Slider Management</h1>
+          <!-- Desktop Images Section -->
           <div class="mb-8">
-            <div class="flex justify-between items-center mb-4">
-              <h2 class="text-lg font-semibold text-gray-900">Desktop Slider Images</h2>
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-base font-medium text-slate-800 drop-shadow-sm">Desktop Slider Images</h2>
               <button
                 @click="showUploadModal('desktop')"
-                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+                class="px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg text-sm font-medium transition-all duration-300 transform hover:scale-[1.02] shadow-lg hover:shadow-xl"
               >
                 Add Desktop Image
               </button>
@@ -21,9 +18,9 @@
               <div
                 v-for="image in desktopImages"
                 :key="image.id"
-                class="border border-gray-200 rounded-lg overflow-hidden"
+                class="bg-gradient-to-r from-white/40 via-white/30 to-white/20 backdrop-blur-sm rounded-xl shadow-lg overflow-hidden border border-white/30"
               >
-                <div class="aspect-video bg-gray-100 relative">
+                <div class="aspect-video bg-white/20 relative">
                   <img
                     :src="`/storage/${image.image_path}`"
                     :alt="image.title"
@@ -68,11 +65,11 @@
 
           <!-- Mobile Images Section -->
           <div class="mb-8">
-            <div class="flex justify-between items-center mb-4">
-              <h2 class="text-lg font-semibold text-gray-900">Mobile Slider Images</h2>
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-base font-medium text-slate-800 drop-shadow-sm">Mobile Slider Images</h2>
               <button
                 @click="showUploadModal('mobile')"
-                class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+                class="px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-lg text-sm font-medium transition-all duration-300 transform hover:scale-[1.02] shadow-lg hover:shadow-xl"
               >
                 Add Mobile Image
               </button>
@@ -82,9 +79,9 @@
               <div
                 v-for="image in mobileImages"
                 :key="image.id"
-                class="border border-gray-200 rounded-lg overflow-hidden"
+                class="bg-gradient-to-r from-white/40 via-white/30 to-white/20 backdrop-blur-sm rounded-xl shadow-lg overflow-hidden border border-white/30"
               >
-                <div class="aspect-video bg-gray-100 relative">
+                <div class="aspect-video bg-white/20 relative">
                   <img
                     :src="`/storage/${image.image_path}`"
                     :alt="image.title"
@@ -126,10 +123,8 @@
               </div>
             </div>
           </div>
-        </div>
-      </div>
 
-      <!-- Upload/Edit Modal -->
+        <!-- Upload/Edit Modal -->
       <div
         v-if="showModal"
         class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50"

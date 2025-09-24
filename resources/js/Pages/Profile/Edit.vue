@@ -239,6 +239,32 @@ onUnmounted(() => {
     window.Echo.leave(`user.${user.id}`);
   }
 });
+
+const refreshCSRFToken = async () => {
+    const res = await fetch(route('csrf-token'), {
+        method: 'GET',
+        headers: {
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        credentials: 'same-origin'
+    });
+    const data = await res.json();
+    const token = data.token;
+    document.head.querySelector('meta[name="csrf-token"]').content = token;
+    window.axios.defaults.headers.common['X-CSRF-TOKEN'] = token;
+};
+
+const logout = async () => {
+    try {
+        await refreshCSRFToken();
+        await router.post(route('logout'));
+    } catch (error) {
+        if (error.response && error.response.status === 419) {
+            window.location.reload();
+        }
+    }
+};;
 </script>
 
 <template>
@@ -377,14 +403,14 @@ onUnmounted(() => {
           </nav>
           
           <div class="p-4 border-t border-white/20">
-            <Link
-              :href="route('logout')"
-              method="post"
-              as="button"
-              class="w-full rounded-xl px-4 py-3 bg-gradient-to-r from-red-500/80 to-red-600/80 hover:from-red-600/90 hover:to-red-700/90 text-white font-medium text-sm text-center transition-all duration-300 transform hover:scale-[1.02] shadow-lg hover:shadow-xl"
-            >
-              {{ t('Log Out') }}
-            </Link>
+            <form @submit.prevent="logout" class="w-full">
+              <button
+                type="submit"
+                class="w-full rounded-xl px-4 py-3 bg-gradient-to-r from-red-500/80 to-red-600/80 hover:from-red-600/90 hover:to-red-700/90 text-white font-medium text-sm text-center transition-all duration-300 transform hover:scale-[1.02] shadow-lg hover:shadow-xl"
+              >
+                {{ t('Log Out') }}
+              </button>
+            </form>
           </div>
         </div>
       </section>
