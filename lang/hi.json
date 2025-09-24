@@ -173,6 +173,20 @@
     "No withdrawals yet": "अभी तक कोई निकासी नहीं",
     "Pending": "लंबित",
     "Approved": "स्वीकृत",
-    "Rejected": "अस्वीकृत"
+    "Rejected": "अस्वीकृत",
+    "Withdraw PIN": "निकासी पिन",
+    "Confirm PIN": "पिन की पुष्टि करें",
+    "Enter your name": "अपना नाम दर्ज करें",
+    "Enter mobile number": "मोबाइल नंबर दर्ज करें",
+    "Enter password": "पासवर्ड दर्ज करें",
+    "Confirm password": "पासवर्ड की पुष्टि करें",
+    "6-digit PIN": "६-अंकीय पिन",
+    "Enter invitation code": "आमंत्रण कोड दर्ज करें",
+    "Creating Account...": "खाता बनाया जा रहा है...",
+    "Enter your mobile number": "अपना मोबाइल नंबर दर्ज करें",
+    "Enter your password": "अपना पासवर्ड दर्ज करें",
+    "Forgot password?": "पासवर्ड भूल गए?",
+    "Signing in...": "साइन इन हो रहा है...",
+    "Sign In": "साइन इन"
 
 }

@@ -173,5 +173,19 @@
     "No deposit history available": "Kein Einzahlungsverlauf verfügbar",
     "Avatar preview": "Avatar-Vorschau",
     "PNG, JPG, or WEBP up to 5MB. You can take a photo on mobile.": "PNG, JPG oder WEBP bis 5MB. Auf dem Handy kann ein Foto aufgenommen werden.",
-    "Saving...": "Speichern..."
+    "Saving...": "Speichern...",
+    "Withdraw PIN": "Abhebungs-PIN",
+    "Confirm PIN": "PIN bestätigen",
+    "Enter your name": "Namen eingeben",
+    "Enter mobile number": "Handynummer eingeben",
+    "Enter password": "Passwort eingeben",
+    "Confirm password": "Passwort bestätigen",
+    "6-digit PIN": "6-stellige PIN",
+    "Enter invitation code": "Einladungscode eingeben",
+    "Creating Account...": "Konto wird erstellt...",
+    "Enter your mobile number": "Handynummer eingeben",
+    "Enter your password": "Passwort eingeben",
+    "Forgot password?": "Passwort vergessen?",
+    "Signing in...": "Anmeldung...",
+    "Sign In": "Anmelden"
 }

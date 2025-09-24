@@ -185,5 +185,19 @@
     "No withdrawals yet": "Пока нет выводов",
     "Pending": "В обработке",
     "Approved": "Одобрено",
-    "Rejected": "Отклонено"
+    "Rejected": "Отклонено",
+    "Withdraw PIN": "ПИН для вывода",
+    "Confirm PIN": "Подтвердить ПИН",
+    "Enter your name": "Введите ваше имя",
+    "Enter mobile number": "Введите номер телефона",
+    "Enter password": "Введите пароль",
+    "Confirm password": "Подтвердите пароль",
+    "6-digit PIN": "6-значный ПИН",
+    "Enter invitation code": "Введите код приглашения",
+    "Creating Account...": "Создание аккаунта...",
+    "Enter your mobile number": "Введите ваш номер телефона",
+    "Enter your password": "Введите ваш пароль",
+    "Forgot password?": "Забыли пароль?",
+    "Signing in...": "Вход в систему...",
+    "Sign In": "Войти"
 }

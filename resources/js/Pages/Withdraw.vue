@@ -113,16 +113,30 @@ const validateThenSubmit = async () => {
         modalError.value = Array.isArray(errors.crypto_wallet) 
           ? errors.crypto_wallet[0] 
           : errors.crypto_wallet;
+      } else if (errors.message) {
+        modalError.value = errors.message;
       } else {
         modalError.value = 'An error occurred while processing your withdrawal';
       }
     },
-    onSuccess: () => {
-      showModal.value = false;
-      withdrawPassword.value = '';
-      amount.value = '';
-      cryptoWallet.value = '';
-      fetchStatus(); // Refresh data after successful withdrawal
+    onSuccess: (page) => {
+      // Check for flash error messages even on "success"
+      if (page.props.flash && page.props.flash.error) {
+        modalError.value = page.props.flash.error;
+        return;
+      }
+      
+      // Check for flash success message to confirm actual success
+      if (page.props.flash && page.props.flash.success) {
+        showModal.value = false;
+        withdrawPassword.value = '';
+        amount.value = '';
+        cryptoWallet.value = '';
+        fetchStatus(); // Refresh data after successful withdrawal
+      } else {
+        // If no success message, something went wrong
+        modalError.value = 'Withdrawal validation failed. Please check your details.';
+      }
     },
   });
 };
@@ -144,67 +158,90 @@ const formatUSDT = (val) => {
 <template>
   <Head :title="t('Withdraw')" />
   <AuthenticatedLayout>
-    <template #header>
-      <h1 class="text-2xl font-bold">{{ t('Withdraw') }}</h1>
-    </template>
+    <div class="py-4 sm:py-6">
+      <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+        <div class="bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-2xl border border-cyan-300/30 mb-4 sm:mb-6">
+          <div class="mb-4">
+            <h1 class="text-xl font-bold text-slate-800 drop-shadow-sm mb-4">{{ t('Withdraw') }}</h1>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div class="bg-gradient-to-r from-white/40 via-white/30 to-white/20 backdrop-blur-sm p-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border border-white/30">
+                <div class="flex justify-between w-full items-center">
+                  <p class="text-xs text-slate-600 font-medium">{{ t('Available USDT') }}</p>
+                  <p class="text-lg font-bold text-slate-800 flex items-center gap-1">
+                    {{ formatUSDT(balances.usdt_balance) }}
+                    <span class="text-xs text-slate-500">USDT</span>
+                  </p>
+                </div>
+              </div>
+              <div class="bg-gradient-to-r from-white/40 via-white/30 to-white/20 backdrop-blur-sm p-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border border-white/30">
+                <div class="flex justify-between w-full items-center">
+                  <p class="text-xs text-slate-600 font-medium">{{ t('Minimum Withdrawal') }}</p>
+                  <p class="text-lg font-bold text-slate-800 flex items-center gap-1">
+                    {{ formatUSDT(balances.withdraw_limit) }}
+                    <span class="text-xs text-slate-500">USDT</span>
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
-    <div class="p-4 max-w-xl mx-auto">
-        <div class="bg-white p-6 rounded-lg shadow">
-          <p class="text-sm text-gray-600 mb-2">{{ t('Available USDT') }}: <strong>{{ formatUSDT(balances.usdt_balance) }}</strong></p>
-          <p class="text-sm text-gray-600 mb-4">{{ t('Minimum Withdrawal') }}: <strong>{{ formatUSDT(balances.withdraw_limit) }}</strong> USDT</p>        <form @submit.prevent="submit" class="space-y-4">
+        <div class="bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-2xl border border-cyan-300/30 mb-4 sm:mb-6">
+          <form @submit.prevent="submit" class="space-y-4">
           <div>
-            <label class="block text-sm font-medium text-gray-700">{{ t('USDT Amount') }}</label>
+            <label class="block text-sm font-medium text-slate-700 mb-2 drop-shadow-sm">{{ t('USDT Amount') }}</label>
             <div class="mt-1 flex">
-              <input name="amount_withdraw" v-model="amount" type="number" step="any" required class="flex-1 border rounded-l px-3 py-2" />
-              <button type="button" @click="setMax" class="ml-2 bg-gray-200 px-3 rounded-r">{{ t('MAX') }}</button>
+              <input name="amount_withdraw" v-model="amount" type="number" step="any" required class="flex-1 h-12 rounded-l-xl bg-white/50 border-0 focus:ring-2 focus:ring-cyan-400 text-slate-900 px-4 placeholder-slate-400 backdrop-blur-sm shadow-lg" />
+              <button type="button" @click="setMax" class="bg-gradient-to-r from-white/60 to-white/40 hover:from-white/70 hover:to-white/50 px-4 rounded-r-xl border-l border-white/30 text-slate-700 font-medium transition-all duration-200 shadow-lg">{{ t('MAX') }}</button>
             </div>
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-gray-700">{{ t('Recipient USDT Wallet Address') }}</label>
-            <input name="crypto_wallet" v-model="cryptoWallet" type="text" required class="mt-1 w-full border rounded px-3 py-2" />
+            <label class="block text-sm font-medium text-slate-700 mb-2 drop-shadow-sm">{{ t('Recipient USDT Wallet Address') }}</label>
+            <input name="crypto_wallet" v-model="cryptoWallet" type="text" required class="mt-1 w-full h-12 rounded-xl bg-white/50 border-0 focus:ring-2 focus:ring-cyan-400 text-slate-900 px-4 placeholder-slate-400 backdrop-blur-sm shadow-lg" />
           </div>
 
           <div class="text-right">
-            <button @click="submit" class="bg-green-600 text-white px-4 py-2 rounded">{{ t('Withdraw') }}</button>
+            <button @click="submit" class="px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl font-medium transition-all duration-300 transform hover:scale-[1.02] shadow-lg hover:shadow-xl">{{ t('Withdraw') }}</button>
           </div>
-        </form>
-      </div>
+          </form>
+        </div>
 
       <!-- Withdraw Password Modal -->
-      <div v-if="showModal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-        <div class="bg-white rounded-lg p-6 w-full max-w-md">
-          <h3 class="text-lg font-semibold mb-4">{{ t('Confirm Withdraw') }}</h3>
-          <p class="text-sm text-gray-600 mb-2">{{ t('Enter withdraw password') }}</p>
-          <input v-model="withdrawPassword" type="password" class="w-full border rounded px-3 py-2 mb-2" autocomplete="off" />
-          <div v-if="modalError" class="text-xs text-red-600 mb-2">{{ modalError }}</div>
+      <div v-if="showModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-start justify-center pt-40 z-50 p-4">
+        <div class="bg-gradient-to-br from-white/95 via-blue-50/90 to-indigo-50/95 backdrop-blur-xl rounded-2xl sm:rounded-3xl p-6 w-full max-w-md shadow-2xl border border-white/40">
+          <h3 class="text-lg font-semibold mb-4 text-slate-800 drop-shadow-sm">{{ t('Confirm Withdraw') }}</h3>
+          <p class="text-sm text-slate-600 mb-2 drop-shadow-sm">{{ t('Enter withdraw password') }}</p>
+          <input v-model="withdrawPassword" type="password" class="w-full h-12 rounded-xl bg-white/50 border-0 focus:ring-2 focus:ring-cyan-400 text-slate-900 px-4 placeholder-slate-400 backdrop-blur-sm shadow-lg mb-2" autocomplete="off" />
+          <div v-if="modalError" class="text-xs text-red-600 mb-2 bg-red-50 p-2 rounded-lg border border-red-200">{{ modalError }}</div>
           <div class="flex justify-end space-x-2">
-            <button @click="showModal = false; withdrawPassword = ''; modalError = ''" class="px-3 py-1 bg-gray-200 rounded text-sm">{{ t('Cancel') }}</button>
-            <button @click="validateThenSubmit" class="px-3 py-1 bg-green-600 text-white rounded text-sm">{{ t('Confirm Withdraw') }}</button>
+            <button @click="showModal = false; withdrawPassword = ''; modalError = ''" class="px-4 py-2 bg-white/50 hover:bg-white/70 rounded-xl text-sm border border-white/40 transition-all duration-200">{{ t('Cancel') }}</button>
+            <button @click="validateThenSubmit" class="px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl text-sm transition-all duration-200 shadow-lg">{{ t('Confirm Withdraw') }}</button>
           </div>
         </div>
       </div>
 
-      <div class="mt-6">
-        <h2 class="text-lg font-semibold">{{ t('Withdrawal History') }}</h2>
-        <div v-if="withdrawals.length === 0" class="text-gray-500 mt-2">{{ t('No withdrawals yet') }}.</div>
-        <div v-else class="space-y-3 mt-2">
-          <div v-for="w in withdrawals" :key="w.id" class="border rounded p-3 bg-gray-50">
-            <div class="flex justify-between items-center">
-              <div class="text-sm">
-                <div><strong>{{ formatUSDT(w.amount_withdraw) }}</strong> USDT</div>
-                <div class="text-xs text-gray-600">To: {{ w.crypto_wallet }}</div>
-                <div class="text-xs text-gray-500">{{ new Date(w.created_at).toLocaleString() }}</div>
-              </div>
-              <div>
-                <span :class="{
-                  'px-2 py-1 rounded text-xs': true,
-                  'bg-yellow-100 text-yellow-800': w.status === 'under review',
-                  'bg-green-100 text-green-800': w.status === 'approved',
-                  'bg-red-100 text-red-800': w.status === 'rejected'
-                }">
-                  {{ w.status.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ') }}
-                </span>
+        <div class="bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-2xl border border-cyan-300/30">
+          <h2 class="text-lg font-semibold text-slate-800 drop-shadow-sm mb-4">{{ t('Withdrawal History') }}</h2>
+          <div v-if="withdrawals.length === 0" class="text-slate-500 mt-2 drop-shadow-sm">{{ t('No withdrawals yet') }}.</div>
+          <div v-else class="space-y-3">
+            <div v-for="w in withdrawals" :key="w.id" class="bg-gradient-to-r from-white/40 via-white/30 to-white/20 backdrop-blur-sm rounded-xl p-4 border border-white/30 shadow-lg">
+              <div class="flex justify-between items-center">
+                <div class="text-sm">
+                  <div class="text-slate-800 font-semibold drop-shadow-sm"><strong>{{ formatUSDT(w.amount_withdraw) }}</strong> USDT</div>
+                  <div class="text-xs text-slate-600 drop-shadow-sm">To: {{ w.crypto_wallet }}</div>
+                  <div class="text-xs text-slate-500 drop-shadow-sm">{{ new Date(w.created_at).toLocaleString() }}</div>
+                </div>
+                <div>
+                  <span :class="{
+                    'px-3 py-1 rounded-full text-xs font-medium shadow-sm': true,
+                    'bg-yellow-100/80 text-yellow-800 border border-yellow-200': w.status === 'under review',
+                    'bg-green-100/80 text-green-800 border border-green-200': w.status === 'approved',
+                    'bg-red-100/80 text-red-800 border border-red-200': w.status === 'rejected'
+                  }">
+                    {{ w.status.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ') }}
+                  </span>
+                </div>
               </div>
             </div>
           </div>

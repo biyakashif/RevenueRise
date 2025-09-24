@@ -129,6 +129,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/withdraw', [WithdrawController::class, 'store'])->name('withdraw.store');
     Route::get('/withdraw/history', [WithdrawController::class, 'history'])->name('withdraw.history');
 
+    // Balance Record Routes
+    Route::get('/balance/records', [\App\Http\Controllers\BalanceRecordController::class, 'index'])->name('balance.records');
+
     // Auth Routes
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
 

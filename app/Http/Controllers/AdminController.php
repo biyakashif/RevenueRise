@@ -10,6 +10,7 @@ use App\Models\Product;
 use App\Models\Task;
 use App\Models\User;
 use App\Models\UserOrder;
+use App\Models\BalanceRecord;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -539,6 +540,14 @@ class AdminController extends Controller
                 // Only add balance for non-VIP deposits
                 if (empty($deposit->vip_level)) {
                     $user->balance += $deposit->amount;
+                    
+                    // Create balance record for deposit
+                    BalanceRecord::create([
+                        'user_id' => $user->id,
+                        'type' => 'deposit',
+                        'amount' => $deposit->amount,
+                        'description' => $deposit->title ?: 'Deposit approved',
+                    ]);
                 }
 
                 if (!empty($deposit->vip_level)) {

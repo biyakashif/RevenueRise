@@ -245,9 +245,9 @@ onUnmounted(() => {
   <Head :title="t('Profile')" />
 
   <AuthenticatedLayout>
-    <div class="py-6 px-4 bg-gray-100">
+    <div class="space-y-4 sm:space-y-6">
       <section class="space-y-4">
-        <div class="flex items-center space-x-3 bg-white p-4 rounded-lg shadow-sm">
+        <div class="flex items-center space-x-3 bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-2xl border border-cyan-300/30">
           <!-- Avatar -->
           <div class="relative">
             <img
@@ -258,10 +258,10 @@ onUnmounted(() => {
             />
             <button
               @click="openAvatarPicker"
-              class="absolute -bottom-1 -right-1 bg-white border rounded-full p-1 shadow hover:bg-gray-50"
+              class="absolute -bottom-1 -right-1 bg-gradient-to-br from-white/95 to-blue-50/90 border border-cyan-300/30 rounded-full p-1 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 backdrop-blur-sm"
               :title="t('Change avatar')"
             >
-              <svg class="w-4 h-4 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <svg class="w-4 h-4 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536M9 11l6-6 3 3L12 14l-3 1 1-3z"/>
               </svg>
             </button>
@@ -269,24 +269,24 @@ onUnmounted(() => {
 
           <div class="flex-1">
             <div class="flex items-center">
-              <h3 class="text-lg font-semibold text-gray-800 leading-none">
+              <h3 class="text-lg font-semibold text-slate-800 leading-none drop-shadow-sm">
                 {{ user?.name || t('Not set') }}
               </h3>
-              <span class="ml-3 inline-flex items-center justify-center bg-black text-white text-xs font-semibold rounded px-2 py-0.5">
+              <span class="ml-3 inline-flex items-center justify-center bg-gradient-to-r from-slate-800 to-slate-900 text-white text-xs font-semibold rounded-full px-3 py-1 shadow-lg">
                 {{ user.vip_level || 'VIP1' }}
               </span>
             </div>
-            <p class="text-sm font-medium text-gray-600 leading-none mt-1">
+            <p class="text-sm font-medium text-slate-600 leading-none mt-1 drop-shadow-sm">
               {{ user?.mobile_number || t('Not set') }}
             </p>
             <div class="flex items-center mt-2">
-              <p class="text-xs text-gray-500">
+              <p class="text-xs text-slate-600 drop-shadow-sm">
                 {{ t('Invitation Code') }}: {{ user?.invitation_code || t('Not set') }}
               </p>
               <button
                 @click="copyInvitationCode"
-                :class="copySuccess ? 'text-blue-600' : 'text-gray-500'"
-                class="ml-2 hover:text-blue-800"
+                :class="copySuccess ? 'text-cyan-600' : 'text-slate-600'"
+                class="ml-2 hover:text-cyan-700 transition-colors duration-200"
                 :title="t('Copy Invitation Code')"
               >
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -297,122 +297,151 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <div class="flex justify-between space-x-2 bg-white p-4 rounded-lg shadow-sm">
+        <div class="flex justify-between space-x-2 bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-2xl border border-cyan-300/30">
           <div class="text-center">
-            <p class="text-xs font-medium text-gray-600">{{ t('Available Balance') }}</p>
-            <p class="text-sm font-semibold text-gray-800">
+            <p class="text-xs font-medium text-slate-600 drop-shadow-sm">{{ t('Available Balance') }}</p>
+            <p class="text-sm font-semibold text-slate-800 drop-shadow-sm">
               {{ balance.toFixed(2) }} USDT
             </p>
           </div>
           <div class="text-center">
-            <p class="text-xs font-medium text-gray-600">{{ t('Frozen Balance') }}</p>
-            <p class="text-sm font-semibold text-gray-800">
+            <p class="text-xs font-medium text-slate-600 drop-shadow-sm">{{ t('Frozen Balance') }}</p>
+            <p class="text-sm font-semibold text-slate-800 drop-shadow-sm">
               {{ frozenBalance.toFixed(2) }} USDT
             </p>
           </div>
         </div>
 
-        <!-- ✅ Navigation Links -->
-        <nav class="mt-6 space-y-2">
-          <Link :href="route('profile.edit')" class="flex items-center justify-between w-full py-2 px-4 text-purple-600 text-sm font-medium bg-gray-50 rounded-lg hover:bg-gray-100 transition-all duration-300">
-            {{ t('Edit Profile') }}
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-            </svg>
-          </Link>
+        <!-- Navigation Links -->
+        <div class="bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl rounded-2xl shadow-2xl border border-cyan-300/30 overflow-hidden">
+          <nav class="divide-y divide-white/20">
+            <Link :href="route('profile.edit')" class="flex items-center justify-between w-full py-4 px-5 text-slate-800 text-sm font-medium hover:bg-white/20 transition-all duration-300 group">
+              <div class="flex items-center space-x-3">
+                <svg class="w-5 h-5 text-blue-600 group-hover:text-blue-700 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                </svg>
+                <span class="group-hover:text-slate-900 transition-colors">{{ t('Edit Profile') }}</span>
+              </div>
+              <svg class="w-4 h-4 text-slate-500 group-hover:text-slate-700 group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+              </svg>
+            </Link>
 
-          <Link :href="route('withdraw')" class="flex items-center justify-between w-full py-2 px-4 text-purple-600 text-sm font-medium bg-gray-50 rounded-lg hover:bg-gray-100 transition-all duration-300">
-            {{ t('Withdraw') }}
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-            </svg>
-          </Link>
+            <Link :href="route('balance.records')" class="flex items-center justify-between w-full py-4 px-5 text-slate-800 text-sm font-medium hover:bg-white/20 transition-all duration-300 group">
+              <div class="flex items-center space-x-3">
+                <svg class="w-5 h-5 text-blue-600 group-hover:text-blue-700 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/>
+                </svg>
+                <span class="group-hover:text-slate-900 transition-colors">{{ t('Balance Record') }}</span>
+              </div>
+              <svg class="w-4 h-4 text-slate-500 group-hover:text-slate-700 group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+              </svg>
+            </Link>
 
-          <Link :href="route('withdraw.history')" class="flex items-center justify-between w-full py-2 px-4 text-purple-600 text-sm font-medium bg-gray-50 rounded-lg hover:bg-gray-100 transition-all duration-300">
-            {{ t('Withdraw History') }}
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-            </svg>
-          </Link>
+            <Link :href="route('withdraw')" class="flex items-center justify-between w-full py-4 px-5 text-slate-800 text-sm font-medium hover:bg-white/20 transition-all duration-300 group">
+              <div class="flex items-center space-x-3">
+                <svg class="w-5 h-5 text-blue-600 group-hover:text-blue-700 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+                </svg>
+                <span class="group-hover:text-slate-900 transition-colors">{{ t('Withdraw') }}</span>
+              </div>
+              <svg class="w-4 h-4 text-slate-500 group-hover:text-slate-700 group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+              </svg>
+            </Link>
 
-          <Link :href="route('password.change')" class="flex items-center justify-between w-full py-2 px-4 text-purple-600 text-sm font-medium bg-gray-50 rounded-lg hover:bg-gray-100 transition-all duration-300">
-            {{ t('Change Password') }}
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-            </svg>
-          </Link>
+            <Link :href="route('withdraw.history')" class="flex items-center justify-between w-full py-4 px-5 text-slate-800 text-sm font-medium hover:bg-white/20 transition-all duration-300 group">
+              <div class="flex items-center space-x-3">
+                <svg class="w-5 h-5 text-blue-600 group-hover:text-blue-700 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+                <span class="group-hover:text-slate-900 transition-colors">{{ t('Withdraw History') }}</span>
+              </div>
+              <svg class="w-4 h-4 text-slate-500 group-hover:text-slate-700 group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+              </svg>
+            </Link>
 
-          <Link
-            :href="route('logout')"
-            method="post"
-            as="button"
-            class="w-full rounded-full px-4 py-3 bg-red-600 text-white font-semibold text-lg text-center transition-all duration-300 hover:bg-red-700 hover:scale-105 shadow-lg"
-          >
-            {{ t('Log Out') }}
-          </Link>
-        </nav>
+            <Link :href="route('password.change')" class="flex items-center justify-between w-full py-4 px-5 text-slate-800 text-sm font-medium hover:bg-white/20 transition-all duration-300 group">
+              <div class="flex items-center space-x-3">
+                <svg class="w-5 h-5 text-blue-600 group-hover:text-blue-700 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                </svg>
+                <span class="group-hover:text-slate-900 transition-colors">{{ t('Change Password') }}</span>
+              </div>
+              <svg class="w-4 h-4 text-slate-500 group-hover:text-slate-700 group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+              </svg>
+            </Link>
+          </nav>
+          
+          <div class="p-4 border-t border-white/20">
+            <Link
+              :href="route('logout')"
+              method="post"
+              as="button"
+              class="w-full rounded-xl px-4 py-3 bg-gradient-to-r from-red-500/80 to-red-600/80 hover:from-red-600/90 hover:to-red-700/90 text-white font-medium text-sm text-center transition-all duration-300 transform hover:scale-[1.02] shadow-lg hover:shadow-xl"
+            >
+              {{ t('Log Out') }}
+            </Link>
+          </div>
+        </div>
       </section>
 
       <!-- Avatar Picker Modal -->
-      <div v-if="showAvatarPicker" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4 overflow-y-auto overflow-x-hidden">
-        <div class="bg-white rounded-lg w-11/12 max-w-sm sm:max-w-md p-4 shadow-lg max-h-[92vh] sm:max-h-[90vh] overflow-y-auto overflow-x-hidden">
+      <div v-if="showAvatarPicker" class="fixed inset-0 z-50 flex items-start justify-center bg-black/50 backdrop-blur-sm p-4 pt-8 sm:pt-16">
+        <div class="bg-gradient-to-br from-white/95 via-blue-50/90 to-indigo-50/95 backdrop-blur-xl rounded-2xl w-full max-w-sm p-4 shadow-2xl border border-white/40">
           <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-semibold">{{ t('Choose an Avatar') }}</h3>
-            <button @click="closeAvatarPicker" class="text-gray-500 hover:text-gray-700">
-              <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <h3 class="text-base font-semibold text-slate-800">{{ t('Choose an Avatar') }}</h3>
+            <button @click="closeAvatarPicker" class="text-slate-500 hover:text-slate-700">
+              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
               </svg>
             </button>
           </div>
 
-          <div v-if="errorMessage" class="mb-2 text-sm text-red-600">{{ errorMessage }}</div>
+          <div v-if="errorMessage" class="mb-3 text-xs text-red-600 bg-red-50 p-2 rounded-lg">{{ errorMessage }}</div>
 
-          <div class="space-y-3">
-            <!-- Default Avatars -->
-            <div>
-              <h4 class="text-sm font-medium text-gray-700 mb-2">{{ t('Choose from defaults') }}</h4>
-              <div class="grid grid-cols-3 gap-2">
-                <div
-                  v-for="(avatar, index) in defaultAvatars"
-                  :key="avatar"
-                  @click="selectDefaultAvatar(avatar)"
-                  class="relative cursor-pointer rounded-lg overflow-hidden border-2 transition-all duration-200 hover:scale-105"
-                  :class="selectedDefaultAvatar === avatar ? 'border-purple-500 ring-2 ring-purple-200' : 'border-gray-200'"
-                >
-                  <img
-                    :src="avatar"
-                    :alt="`Avatar ${index + 1}`"
-                    class="w-full h-16 object-cover"
-                    @error="handlePreviewError"
-                  />
-                  <div v-if="selectedDefaultAvatar === avatar" class="absolute inset-0 bg-purple-500 bg-opacity-20 flex items-center justify-center">
-                    <svg class="w-6 h-6 text-purple-600" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
-                    </svg>
-                  </div>
-                </div>
+          <div class="grid grid-cols-4 gap-2 mb-4">
+            <div
+              v-for="(avatar, index) in defaultAvatars"
+              :key="avatar"
+              @click="selectDefaultAvatar(avatar)"
+              class="relative cursor-pointer rounded-lg overflow-hidden border-2 transition-all duration-200 hover:scale-105"
+              :class="selectedDefaultAvatar === avatar ? 'border-cyan-500 ring-1 ring-cyan-200' : 'border-white/40'"
+            >
+              <img
+                :src="avatar"
+                :alt="`Avatar ${index + 1}`"
+                class="w-full h-12 object-cover"
+                @error="handlePreviewError"
+              />
+              <div v-if="selectedDefaultAvatar === avatar" class="absolute inset-0 bg-cyan-500 bg-opacity-20 flex items-center justify-center">
+                <svg class="w-4 h-4 text-cyan-600" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                </svg>
               </div>
-            </div>
-
-            <div class="border-t pt-3">
-              <h4 class="text-sm font-medium text-gray-700 mb-2">{{ t('Or upload your own') }}</h4>
-              <div class="flex items-center space-x-4">
-                <div class="w-24 h-24 rounded-full overflow-hidden border bg-gray-50">
-                  <img :src="previewUrl || computedAvatar" :alt="t('Avatar preview')" class="w-full h-full object-cover" @error="handlePreviewError" />
-                </div>
-                <div>
-                  <input type="file" accept="image/*" capture="user" @change="onFileChange" class="block w-full max-w-full" />
-                  <p class="text-xs text-gray-500 mt-1">{{ t('PNG, JPG, or WEBP up to 5MB. You can take a photo on mobile.') }}</p>
-                </div>
-              </div>
-            </div>
-            <div class="flex justify-end space-x-2">
-              <button @click="closeAvatarPicker" class="px-3 py-1 border rounded" :disabled="saving">{{ t('Cancel') }}</button>
-              <button @click="uploadAvatar" class="px-3 py-1 bg-purple-600 text-white rounded disabled:opacity-50" :disabled="saving || !selectedFile">{{ saving ? t('Saving...') : t('Save') }}</button>
             </div>
           </div>
 
+          <div class="border-t border-white/30 pt-3 mb-4">
+            <h4 class="text-sm font-medium text-slate-700 mb-3">{{ t('Or upload your own') }}</h4>
+            <div class="flex items-center space-x-3 mb-3">
+              <div class="w-12 h-12 rounded-full overflow-hidden border border-white/40 bg-white/50 flex-shrink-0">
+                <img :src="previewUrl || computedAvatar" :alt="t('Avatar preview')" class="w-full h-full object-cover" @error="handlePreviewError" />
+              </div>
+              <div class="flex-1">
+                <input type="file" accept="image/*" capture="user" @change="onFileChange" class="block w-full text-xs" />
+              </div>
+            </div>
+            <p class="text-xs text-slate-500 mb-3">{{ t('PNG, JPG, or WEBP up to 5MB. You can take a photo on mobile.') }}</p>
+          </div>
           
+          <div class="flex justify-end space-x-2">
+            <button @click="closeAvatarPicker" class="px-3 py-2 text-xs border border-white/40 rounded-lg bg-white/50 hover:bg-white/70 transition-all" :disabled="saving">{{ t('Cancel') }}</button>
+            <button @click="uploadAvatar" class="px-3 py-2 text-xs bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white rounded-lg disabled:opacity-50 transition-all shadow-lg" :disabled="saving || !selectedFile">{{ saving ? t('Saving...') : t('Save') }}</button>
+          </div>
         </div>
       </div>
     </div>

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\BalanceRecord;
 use App\Events\BalanceUpdated;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
@@ -54,6 +55,17 @@ class RegisteredUserController extends Controller
                 if ($inviter) {
                     $inviter->balance += 10.00;
                     $inviter->save();
+                    
+                    // Create balance record for inviter
+                    BalanceRecord::create([
+                        'user_id' => $inviter->id,
+                        'type' => 'invitation',
+                        'amount' => 10.00,
+                        'from_user_name' => $user->name,
+                        'from_mobile_number' => $user->mobile_number,
+                        'description' => 'Invitation bonus for referring new user',
+                    ]);
+                    
                     event(new BalanceUpdated($inviter));
                 } else {
                     Log::warning('Inviter not found for invitation code', [

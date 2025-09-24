@@ -97,4 +97,26 @@ class WithdrawController extends Controller
         return redirect()->route('withdraw')
             ->with('success', 'Withdrawal request submitted successfully. Await admin approval.');
     }
+
+    // show only withdrawal history
+    public function history(Request $request)
+    {
+        $user = Auth::user();
+
+        $withdrawals = Withdraw::where('user_id', $user->id)
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function ($withdraw) {
+                $withdraw->amount_withdraw = number_format($withdraw->amount_withdraw, 2, '.', '');
+                return $withdraw;
+            });
+
+        if ($request->wantsJson()) {
+            return response()->json(['withdrawals' => $withdrawals]);
+        }
+
+        return Inertia::render('WithdrawHistory', [
+            'withdrawals' => $withdrawals,
+        ]);
+    }
 }

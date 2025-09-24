@@ -18,22 +18,7 @@ return new class extends Migration
             $table->dropForeign(['recipient_id']);
         });
 
-        // Update sender_id and recipient_id to use user.id instead of mobile_number
-        DB::statement('
-            UPDATE chat_messages cm
-            JOIN users u ON cm.sender_id = u.mobile_number
-            SET cm.sender_id = u.id
-            WHERE cm.sender_id = u.mobile_number;
-        ');
-
-        DB::statement('
-            UPDATE chat_messages cm
-            JOIN users u ON cm.recipient_id = u.mobile_number
-            SET cm.recipient_id = u.id
-            WHERE cm.recipient_id = u.mobile_number;
-        ');
-
-        // Change column types and foreign keys
+        // Change column types and foreign keys (data is already user IDs from controllers/Vue updates)
         Schema::table('chat_messages', function (Blueprint $table) {
             $table->unsignedBigInteger('sender_id')->change();
             $table->unsignedBigInteger('recipient_id')->change();
@@ -47,9 +32,36 @@ return new class extends Migration
      */
     public function down(): void
     {
+        // Drop foreign keys
+        DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+        try {
+            DB::statement('ALTER TABLE chat_messages DROP FOREIGN KEY chat_messages_sender_id_foreign;');
+        } catch (\Exception $e) {
+            // Foreign key might not exist
+        }
+        try {
+            DB::statement('ALTER TABLE chat_messages DROP FOREIGN KEY chat_messages_recipient_id_foreign;');
+        } catch (\Exception $e) {
+            // Foreign key might not exist
+        }
+        DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+
+        // Revert sender_id and recipient_id back to mobile_number
+        DB::statement('
+            UPDATE chat_messages cm
+            JOIN users u ON cm.sender_id = u.id
+            SET cm.sender_id = u.mobile_number
+            WHERE cm.sender_id = u.id;
+        ');
+
+        DB::statement('
+            UPDATE chat_messages cm
+            JOIN users u ON cm.recipient_id = u.id
+            SET cm.recipient_id = u.mobile_number
+            WHERE cm.recipient_id = u.id;
+        ');
+
         Schema::table('chat_messages', function (Blueprint $table) {
-            $table->dropForeign(['sender_id']);
-            $table->dropForeign(['recipient_id']);
             $table->string('sender_id')->change();
             $table->string('recipient_id')->change();
             $table->foreign('sender_id')->references('mobile_number')->on('users')->onDelete('cascade');

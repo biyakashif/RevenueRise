@@ -139,15 +139,15 @@ const updateWithdrawLimit = async () => {
       </div>
     </template>
 
-    <div class="p-4">
-      <div v-for="user in users" :key="user.id" class="mb-6 bg-white p-4 rounded shadow">
+    <div class="p-4 bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl min-h-screen">
+      <div v-for="user in users" :key="user.id" class="mb-6 bg-white/10 backdrop-blur-xl p-4 rounded shadow border border-white/20">
         <div class="flex justify-between items-start">
           <div>
-            <h3 class="font-semibold">{{ user.name }} <span class="text-sm text-gray-600">— {{ user.mobile_number }} / {{ user.invitation_code }}</span></h3>
-            <div class="text-sm text-gray-600 mt-1">
-              Withdraw Limit: <strong>{{ formatUSDT(user.withdraw_limit) }}</strong> USDT
+            <h3 class="font-semibold text-white">{{ user.name }} <span class="text-sm text-white/70">— {{ user.mobile_number }} / {{ user.invitation_code }}</span></h3>
+            <div class="text-sm text-white/70 mt-1">
+              Withdraw Limit: <strong class="text-white">{{ formatUSDT(user.withdraw_limit) }}</strong> USDT
               <button @click="openLimitModal(user.id, formatUSDT(user.withdraw_limit))" 
-                class="ml-2 text-xs bg-gray-200 px-2 py-1 rounded hover:bg-gray-300 transition-colors">
+                class="ml-2 text-xs bg-white/10 backdrop-blur-sm px-2 py-1 rounded hover:bg-white/20 transition-colors text-white border border-white/20">
                 Change Limit
               </button>
             </div>
@@ -155,12 +155,12 @@ const updateWithdrawLimit = async () => {
         </div>
 
         <div class="mt-2 space-y-3">
-          <div v-for="w in user.withdraws" :key="w.id" class="bg-gray-50 p-4 rounded">
+          <div v-for="w in user.withdraws" :key="w.id" class="bg-white/5 backdrop-blur-sm p-4 rounded border border-white/10">
             <div class="flex justify-between">
               <div>
-                <div class="text-sm"><strong>{{ formatUSDT(w.amount_withdraw) }}</strong> USDT</div>
-                <div class="text-xs text-gray-600">To: {{ w.crypto_wallet }}</div>
-                <div class="text-xs text-gray-500">{{ new Date(w.created_at).toLocaleString() }}</div>
+                <div class="text-sm text-white"><strong>{{ formatUSDT(w.amount_withdraw) }}</strong> USDT</div>
+                <div class="text-xs text-white/70">To: {{ w.crypto_wallet }}</div>
+                <div class="text-xs text-white/60">{{ new Date(w.created_at).toLocaleString() }}</div>
               </div>
               <div class="flex flex-col items-end space-y-2">
                 <div>
@@ -175,9 +175,9 @@ const updateWithdrawLimit = async () => {
                 </div>
 
                 <div class="flex space-x-2">
-                  <button v-if="w.status === 'under review'" @click="approve(w.id)" class="bg-green-500 text-white px-3 py-1 rounded text-xs">Approve</button>
-                  <button v-if="w.status === 'under review'" @click="rejectW(w.id)" class="bg-red-500 text-white px-3 py-1 rounded text-xs">Reject</button>
-                  <button @click="edit(w.id)" class="bg-blue-500 text-white px-3 py-1 rounded text-xs">Edit</button>
+                  <button v-if="w.status === 'under review'" @click="approve(w.id)" class="bg-gradient-to-r from-green-500 to-green-600 text-white px-3 py-1 rounded text-xs hover:from-green-600 hover:to-green-700 transform hover:scale-105 transition-all duration-200">Approve</button>
+                  <button v-if="w.status === 'under review'" @click="rejectW(w.id)" class="bg-gradient-to-r from-red-500 to-red-600 text-white px-3 py-1 rounded text-xs hover:from-red-600 hover:to-red-700 transform hover:scale-105 transition-all duration-200">Reject</button>
+                  <button @click="edit(w.id)" class="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-3 py-1 rounded text-xs hover:from-blue-600 hover:to-blue-700 transform hover:scale-105 transition-all duration-200">Edit</button>
                 </div>
               </div>
             </div>
@@ -187,37 +187,37 @@ const updateWithdrawLimit = async () => {
 
       <!-- Pagination -->
       <div class="mt-6 flex justify-between items-center">
-        <button @click="goToPage(currentPage - 1)" :disabled="currentPage === 1" class="px-4 py-2 bg-gray-200 rounded">Previous</button>
-        <span>Page {{ currentPage }} of {{ lastPage }}</span>
-        <button @click="goToPage(currentPage + 1)" :disabled="currentPage === lastPage" class="px-4 py-2 bg-gray-200 rounded">Next</button>
+        <button @click="goToPage(currentPage - 1)" :disabled="currentPage === 1" class="px-4 py-2 bg-white/10 backdrop-blur-sm rounded text-white border border-white/20 hover:bg-white/20 disabled:opacity-50">Previous</button>
+        <span class="text-white">Page {{ currentPage }} of {{ lastPage }}</span>
+        <button @click="goToPage(currentPage + 1)" :disabled="currentPage === lastPage" class="px-4 py-2 bg-white/10 backdrop-blur-sm rounded text-white border border-white/20 hover:bg-white/20 disabled:opacity-50">Next</button>
       </div>
     </div>
 
     <!-- Withdraw Limit Modal -->
     <div v-if="showLimitModal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-      <div class="bg-white rounded-lg p-6 w-full max-w-md">
-        <h3 class="text-lg font-semibold mb-4">Update Withdraw Limit</h3>
+      <div class="bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl rounded-lg p-6 w-full max-w-md border border-white/20">
+        <h3 class="text-lg font-semibold mb-4 text-white">Update Withdraw Limit</h3>
         <div class="mb-4">
-          <label class="block text-sm font-medium text-gray-700 mb-2">Minimum Withdraw Amount (USDT)</label>
+          <label class="block text-sm font-medium text-white/80 mb-2">Minimum Withdraw Amount (USDT)</label>
           <input 
             v-model="newWithdrawLimit" 
             type="number" 
             step="0.01" 
-            class="w-full border rounded px-3 py-2"
+            class="w-full bg-white/10 backdrop-blur-sm border border-white/20 rounded px-3 py-2 text-white placeholder-white/70"
             min="0.01"
           />
         </div>
-        <div v-if="limitModalError" class="text-sm text-red-600 mb-4">{{ limitModalError }}</div>
+        <div v-if="limitModalError" class="text-sm text-red-400 mb-4">{{ limitModalError }}</div>
         <div class="flex justify-end space-x-2">
           <button 
             @click="showLimitModal = false; limitModalError = ''" 
-            class="px-4 py-2 bg-gray-200 rounded text-sm hover:bg-gray-300"
+            class="px-4 py-2 bg-white/10 backdrop-blur-sm rounded text-sm hover:bg-white/20 text-white border border-white/20"
           >
             Cancel
           </button>
           <button 
             @click="updateWithdrawLimit()" 
-            class="px-4 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
+            class="px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded text-sm hover:from-blue-600 hover:to-blue-700 transform hover:scale-105 transition-all duration-200"
           >
             Update
           </button>

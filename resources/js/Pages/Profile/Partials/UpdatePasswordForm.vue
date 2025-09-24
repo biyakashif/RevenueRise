@@ -45,50 +45,45 @@ const updatePassword = () => {
 </script>
 
 <template>
-    <section>
-        <header>
-            <h2 class="text-2xl font-bold text-center text-gray-800 mb-6">
-                {{ t('Update Password') }}
-            </h2>
-            <p class="mb-4 text-sm font-medium text-gray-500 text-center">
-                {{ t("Update your account's password to keep it secure") }}
-            </p>
-        </header>
+    <div class="flex justify-center items-center min-h-[calc(100vh-8rem)]">
+        <div class="w-full max-w-md">
+            <section class="bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl p-6 rounded-2xl sm:rounded-3xl shadow-2xl border border-cyan-300/30">
+
 
         <form @submit.prevent="updatePassword" class="space-y-5">
             <div>
-                <InputLabel for="current_password" :value="t('Current Password')" class="text-gray-700" />
+                <InputLabel for="current_password" :value="t('Current Password')" class="text-slate-700 font-medium drop-shadow-sm" />
                 <TextInput
                     id="current_password"
                     ref="currentPasswordInput"
                     v-model="form.current_password"
                     type="password"
-                    class="mt-1 block w-full rounded-full border-none focus:ring-2 focus:ring-purple-300 text-gray-900"
+                    class="mt-1 block w-full h-12 rounded-xl bg-white/50 border-0 focus:ring-2 focus:ring-cyan-400 text-slate-900 px-4 placeholder-slate-400 backdrop-blur-sm shadow-lg"
                     autocomplete="current-password"
                 />
                 <InputError class="mt-2 text-red-500" :message="form.errors.current_password" />
             </div>
 
             <div>
-                <InputLabel for="password" :value="t('New Password')" class="text-gray-700" />
+                <InputLabel for="password" :value="t('New Password')" class="text-slate-700 font-medium drop-shadow-sm" />
                 <TextInput
                     id="password"
                     ref="passwordInput"
                     v-model="form.password"
                     type="password"
-                    class="mt-1 block w-full rounded-full border-none focus:ring-2 focus:ring-purple-300 text-gray-900"
+                    class="mt-1 block w-full h-12 rounded-xl bg-white/50 border-0 focus:ring-2 focus:ring-cyan-400 text-slate-900 px-4 placeholder-slate-400 backdrop-blur-sm shadow-lg"
                     autocomplete="new-password"
                 />
                 <InputError class="mt-2 text-red-500" :message="form.errors.password" />
             </div>
 
             <div>
-                <InputLabel for="password_confirmation" :value="t('Confirm Password')" class="text-gray-700" />
+                <InputLabel for="password_confirmation" :value="t('Confirm Password')" class="text-slate-700 font-medium drop-shadow-sm" />
                 <TextInput
                     id="password_confirmation"
                     v-model="form.password_confirmation"
                     type="password"
-                    class="mt-1 block w-full rounded-full border-none focus:ring-2 focus:ring-purple-300 text-gray-900"
+                    class="mt-1 block w-full h-12 rounded-xl bg-white/50 border-0 focus:ring-2 focus:ring-cyan-400 text-slate-900 px-4 placeholder-slate-400 backdrop-blur-sm shadow-lg"
                     autocomplete="new-password"
                 />
                 <InputError class="mt-2 text-red-500" :message="form.errors.password_confirmation" />
@@ -96,8 +91,8 @@ const updatePassword = () => {
 
             <div class="flex items-center gap-4">
                 <PrimaryButton
-                    class="w-full rounded-full px-4 py-3 bg-purple-600 text-white font-semibold text-lg text-center transition-all duration-300 hover:bg-purple-700 hover:scale-105 shadow-lg"
-                    :class="{ 'opacity-25': form.processing }"
+                    class="w-full rounded-2xl px-4 py-3 bg-gradient-to-r from-cyan-500/80 to-blue-600/80 hover:from-cyan-600/90 hover:to-blue-700/90 text-white font-semibold text-lg text-center transition-all duration-300 transform hover:scale-[1.02] shadow-lg hover:shadow-xl backdrop-blur-sm"
+                    :class="{ 'opacity-50': form.processing }"
                     :disabled="form.processing"
                 >
                     {{ t('Save') }}
@@ -109,11 +104,13 @@ const updatePassword = () => {
                     leave-active-class="transition ease-in-out duration-300"
                     leave-to-class="opacity-0"
                 >
-                    <p v-if="form.recentlySuccessful" class="text-sm text-green-600">
+                    <p v-if="form.recentlySuccessful" class="text-sm text-emerald-600 font-medium drop-shadow-sm">
                         {{ t('Saved.') }}
                     </p>
                 </Transition>
             </div>
-        </form>
-    </section>
+            </form>
+            </section>
+        </div>
+    </div>
 </template>

@@ -318,103 +318,96 @@ const submitDeposit = () => {
 <template>
     <Head :title="t('Deposit')" />
     <AuthenticatedLayout>
-        <!--
-          Responsive improvements:
-          - Reduced font sizes and spacing on small screens (mobile)
-          - Slightly larger and more comfortable layout on md+ screens
-          - On large screens, center the card and ensure it fills the viewport height visually
-        -->
-        <div class="py-4 px-3 bg-gray-100 lg:py-6 lg:px-6">
-            <div class="max-w-2xl mx-auto">
-                <div
-                    class="bg-white rounded-lg shadow-sm p-4 md:p-6 lg:p-8
-                           lg:min-h-[calc(100vh-4rem)] lg:flex lg:flex-col lg:justify-center"
-                >
-                    <div class="flex justify-between items-center mb-3 md:mb-6">
+        <div class="py-4  sm:py-6">
+            <div class="max-w-7xl mt-0 mx-auto sm:px-6 lg:px-8">
+                <div class="bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl p-3 sm:p-6 rounded-2xl sm:rounded-3xl shadow-2xl border border-cyan-300/30 mb-3 sm:mb-6">
+                    <div class="flex justify-between items-center mb-3">
                         <div class="flex items-center">
-                            <div v-if="isLoadingCrypto" class="w-7 h-7 md:w-8 md:h-8 mr-2 md:mr-3 bg-gray-200 rounded-full animate-pulse"></div>
-                            <img v-else-if="selectedCrypto" :src="selectedCrypto.image" alt="Crypto Logo" class="w-7 h-7 md:w-8 md:h-8 mr-2 md:mr-3" />
+                            <div v-if="isLoadingCrypto" class="w-6 h-6 mr-2 bg-white/30 rounded-full animate-pulse"></div>
+                            <img v-else-if="selectedCrypto" :src="selectedCrypto.image" alt="Crypto Logo" class="w-6 h-6 mr-2" />
                             <div>
-                                <h1 class="text-2xl font-bold">
+                                <h1 class="text-lg font-bold text-slate-800 drop-shadow-sm">
                                     {{ isLoadingCrypto ? t('Loading...') : (selectedCrypto ? selectedCrypto.name : (selectedCurrency.value || props.depositDetails.currency || t('Deposit'))) }}
                                 </h1>
-                                <div v-if="cryptoError" class="text-xs text-red-500 mt-1">{{ cryptoError }}</div>
+                                <div v-if="cryptoError" class="text-xs text-red-500 mt-0.5">{{ cryptoError }}</div>
                             </div>
                         </div>
                         <div class="flex items-center space-x-2">
                             <button
                                 @click="() => { fetchHistory(); showHistory = true; startHistoryPolling(); }"
-                                class="flex items-center text-purple-600 font-medium text-xs md:text-sm hover:text-purple-700 transition-all duration-200"
+                                class="flex items-center text-cyan-600 font-medium text-sm hover:text-cyan-700 transition-all duration-200 drop-shadow-sm"
                                 :disabled="isLoadingHistory"
                             >
-                                <ClipboardDocumentListIcon class="w-4 h-4 md:w-5 md:h-5 mr-1" />
+                                <ClipboardDocumentListIcon class="w-4 h-4 mr-1" />
                                 {{ isLoadingHistory ? t('Loading...') : t('History') }}
-                                <span v-if="history.length > 0" class="ml-1 bg-purple-100 text-purple-800 text-xs px-1 rounded">
+                                <span v-if="history.length > 0" class="ml-1 bg-cyan-100/80 text-cyan-800 text-xs px-2 py-0.5 rounded-full">
                                     {{ history.length }}
                                 </span>
                             </button>
                         </div>
                     </div>
 
-                    <div v-if="successMessage" class="mb-3 md:mb-4 p-2 bg-green-100 text-green-800 rounded-lg text-xs md:text-sm text-center">
+                    <div v-if="successMessage" class="mb-3 p-2 bg-emerald-100/80 text-emerald-800 rounded-xl text-sm text-center border border-emerald-200">
                         {{ successMessage }}
                     </div>
 
-                    <div class="mb-3 md:mb-6">
-                        <label class="block text-xs md:text-sm font-medium text-gray-600 mb-1">{{ t('Network') }}</label>
-                        <input disabled type="text" :value="props.depositDetails.network || 'TBD'" class="mt-1 block w-full rounded-full border-none bg-gray-50 text-gray-900 cursor-not-allowed text-sm md:text-base" />
+                    <div class="mb-3">
+                        <label class="block text-xs font-medium text-slate-700 mb-1 drop-shadow-sm">{{ t('Network') }}</label>
+                        <input disabled type="text" :value="props.depositDetails.network || 'TBD'" class="mt-1 block w-full h-8 rounded-lg bg-white/30 border-0 text-slate-700 cursor-not-allowed px-3 backdrop-blur-sm shadow-lg text-sm" />
                     </div>
 
-                    <div class="mb-3 md:mb-6 flex justify-center">
-                        <img
-                            :src="qrCodeUrl || 'https://via.placeholder.com/150?text=No+QR+Code'"
-                            alt="QR Code"
-                            class="w-28 h-28 sm:w-32 sm:h-32 md:w-40 md:h-40"
-                        />
+                    <div class="mb-3 flex justify-center">
+                        <div class="bg-white/50 p-3 rounded-xl shadow-lg backdrop-blur-sm border border-white/40">
+                            <img
+                                :src="qrCodeUrl || 'https://via.placeholder.com/150?text=No+QR+Code'"
+                                alt="QR Code"
+                                class="w-24 h-24 sm:w-32 sm:h-32"
+                            />
+                        </div>
                     </div>
 
-                    <div class="mb-3 md:mb-6">
-                        <label class="block text-xs md:text-sm font-medium text-gray-600 mb-1">{{ t('Address') }}</label>
-                        <div class="flex items-center border border-gray-200 p-2 rounded-lg">
-                            <span class="text-xs md:text-sm text-gray-800 flex-1 break-all">{{ walletAddress || props.depositDetails.address }}</span>
+                    <div class="mb-3">
+                        <label class="block text-xs font-medium text-slate-700 mb-1 drop-shadow-sm">{{ t('Address') }}</label>
+                        <div class="flex items-center bg-white/50 border border-white/40 p-2 rounded-lg backdrop-blur-sm shadow-lg">
+                            <span class="text-[10px] text-slate-800 flex-1 break-all">{{ walletAddress || props.depositDetails.address }}</span>
                             <button
                                 @click="copyAddress"
-                                class="ml-2 px-2 py-1 rounded-lg text-white text-xs md:text-sm"
+                                class="ml-2 px-2 py-1 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white text-xs rounded-md transition-all duration-200 shadow-lg"
                             >
-                                {{ t('Copy Address') }}
+                                {{ t('Copy') }}
                             </button>
                         </div>
                         <div v-if="copyError" class="mt-1 text-xs text-red-500">{{ copyError }}</div>
                     </div>
 
-                    <div class="mb-3 md:mb-6">
-                        <label class="block text-xs md:text-sm font-medium text-gray-600 mb-1">{{ t('Amount') }}</label>
-                        <!-- If this is a VIP purchase, lock the amount field and show VIP note -->
+                    <div class="mb-3">
+                        <label class="block text-xs font-medium text-slate-700 mb-1 drop-shadow-sm">{{ t('Amount') }}</label>
                         <input
                             v-model="form.amount"
                             :disabled="!!form.vip"
                             type="number"
                             step="any"
                             :placeholder="t('Enter amount')"
-                            class="mt-1 block w-full rounded-full border-none focus:ring-2 focus:ring-purple-300 text-gray-900 text-sm md:text-base py-2"
+                            class="mt-1 block w-full h-8 rounded-lg border-0 focus:ring-2 focus:ring-cyan-400 text-slate-900 px-3 placeholder-slate-400 backdrop-blur-sm shadow-lg text-sm"
+                            :class="form.vip ? 'bg-white/30' : 'bg-white/50'"
                         />
-                        <div v-if="form.vip" class="mt-1 text-xs md:text-sm text-purple-700">{{ t('This deposit is for') }} <strong>{{ form.vip }}</strong>. {{ t('Amount is fixed for this VIP purchase.') }}</div>
+                        <div v-if="form.vip" class="mt-1 text-xs text-cyan-700 bg-cyan-50/80 p-2 rounded-lg border border-cyan-200">{{ t('This deposit is for') }} <strong>{{ form.vip }}</strong>. {{ t('Amount is fixed for this VIP purchase.') }}</div>
                     </div>
 
-                    <div class="mb-3 md:mb-6">
-                        <label class="block text-xs md:text-sm font-medium text-gray-600 mb-1">{{ t('Upload Screenshot') }}</label>
+                    <div class="mb-4">
+                        <label class="block text-xs font-medium text-slate-700 mb-1 drop-shadow-sm">{{ t('Upload Screenshot') }}</label>
                         <input
                             type="file"
                             @change="form.slip = $event.target.files[0]"
                             accept="image/*"
-                            class="mt-1 block w-full rounded-full border-none focus:ring-2 focus:ring-purple-300 text-gray-900 text-sm md:text-base"
+                            class="mt-1 block w-full h-8 rounded-lg bg-white/50 border-0 focus:ring-2 focus:ring-cyan-400 text-slate-900 px-3 backdrop-blur-sm shadow-lg file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-cyan-50 file:text-cyan-700 hover:file:bg-cyan-100"
                         />
                     </div>
 
                     <button
                         @click="submitDeposit"
                         :disabled="!form.amount || !form.slip"
-                        class="w-full px-3 md:px-4 py-2 md:py-3 bg-purple-600 text-white font-semibold text-sm md:text-lg rounded-full hover:bg-purple-700 transition-all duration-200"
+                        class="w-full px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-medium rounded-lg transition-all duration-300 transform hover:scale-[1.02] shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                     >
                         {{ t('Submit Deposit') }}
                     </button>
@@ -422,11 +415,11 @@ const submitDeposit = () => {
             </div>
 
             <!-- HISTORY MODAL -->
-            <div v-if="showHistory" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                <div class="bg-white p-3 md:p-6 rounded-lg w-11/12 max-w-md max-h-[80vh] overflow-y-auto">
-                    <div class="flex justify-between items-center mb-3">
+            <div v-if="showHistory" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                <div class="bg-gradient-to-br from-white/95 via-blue-50/90 to-indigo-50/95 backdrop-blur-xl p-6 rounded-2xl sm:rounded-3xl w-full max-w-md max-h-[80vh] overflow-y-auto shadow-2xl border border-white/40">
+                    <div class="flex justify-between items-center mb-4">
                         <div class="flex items-center">
-                            <h2 class="text-base md:text-xl font-semibold text-gray-800">{{ t('Deposit History') }}</h2>
+                            <h2 class="text-lg font-semibold text-slate-800 drop-shadow-sm">{{ t('Deposit History') }}</h2>
                             <span v-if="connectionStatus === 'connected'" class="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                 <div class="w-2 h-2 bg-green-400 rounded-full mr-1 animate-pulse"></div>
                                 Live
@@ -445,33 +438,34 @@ const submitDeposit = () => {
                             </span>
                         </div>
                         <div class="flex items-center space-x-2">
-                            <button @click="() => { showHistory = false; stopHistoryPolling(); }" class="text-gray-400 hover:text-gray-600">
+                            <button @click="() => { showHistory = false; stopHistoryPolling(); }" class="text-slate-400 hover:text-slate-600 transition-colors duration-200">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L5 6M6 6l12 12" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                                 </svg>
                             </button>
                         </div>
                     </div>
 
                     <div v-if="isLoadingHistory" class="text-center py-4">
-                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
-                        <p class="text-sm text-gray-500 mt-2">{{ t('Loading history...') }}</p>
+                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-600 mx-auto"></div>
+                        <p class="text-sm text-slate-500 mt-2">{{ t('Loading history...') }}</p>
                     </div>
-                    <div v-else-if="historyError" class="text-red-500 text-xs md:text-sm mb-2 p-2 bg-red-50 rounded">{{ historyError }}</div>
-                    <div v-else-if="history.length === 0" class="text-gray-500 text-xs md:text-sm text-center py-4">{{ t('No deposit history available.') }}</div>
-                    <div v-else class="space-y-2">
-                        <div v-for="deposit in history" :key="deposit.id" class="p-2 md:p-3 border border-gray-200 rounded-lg">
+                    <div v-else-if="historyError" class="text-red-500 text-sm mb-2 p-3 bg-red-50 rounded-xl border border-red-200">{{ historyError }}</div>
+                    <div v-else-if="history.length === 0" class="text-slate-500 text-sm text-center py-4">{{ t('No deposit history available.') }}</div>
+                    <div v-else class="space-y-3">
+                        <div v-for="deposit in history" :key="deposit.id" class="bg-gradient-to-r from-white/40 via-white/30 to-white/20 backdrop-blur-sm p-4 rounded-xl border border-white/30 shadow-lg">
                             <div class="flex justify-between">
-                                <span class="text-gray-800 font-medium text-sm md:text-base">{{ deposit.amount }} {{ deposit.symbol ? deposit.symbol.toUpperCase() : 'USDT' }}</span>
+                                <span class="text-slate-800 font-medium text-sm">{{ deposit.amount }} {{ deposit.symbol ? deposit.symbol.toUpperCase() : 'USDT' }}</span>
                                 <span :class="{
-                                    'text-yellow-600': deposit.status === 'pending',
-                                    'text-green-600': deposit.status === 'approved',
-                                    'text-red-600': deposit.status === 'rejected'
-                                }" class="text-xs md:text-sm font-medium">
+                                    'px-3 py-1 rounded-full text-xs font-medium shadow-sm': true,
+                                    'bg-yellow-100/80 text-yellow-800 border border-yellow-200': deposit.status === 'pending',
+                                    'bg-green-100/80 text-green-800 border border-green-200': deposit.status === 'approved',
+                                    'bg-red-100/80 text-red-800 border border-red-200': deposit.status === 'rejected'
+                                }">
                                     {{ deposit.status.charAt(0).toUpperCase() + deposit.status.slice(1) }}
                                 </span>
                             </div>
-                            <div class="text-gray-500 text-xs md:text-sm mt-1">{{ new Date(deposit.created_at).toLocaleString() }}</div>
+                            <div class="text-slate-500 text-xs mt-1">{{ new Date(deposit.created_at).toLocaleString() }}</div>
                         </div>
                     </div>
                 </div>

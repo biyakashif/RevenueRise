@@ -6,6 +6,7 @@ use App\Models\SliderImage;
 use App\Models\UserOrder;
 use App\Models\Task;
 use App\Models\Product;
+use App\Models\BalanceRecord;
 use Inertia\Response;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -15,9 +16,13 @@ use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
-    public function index(): Response
+    public function index(): mixed
     {
         $user = auth()->user();
+        if ($user && $user->role === 'admin') {
+            return redirect()->route('admin.dashboard');
+        }
+
         if ($user) {
             $user->resetTodaysProfitIfNeeded();
         }
@@ -249,6 +254,17 @@ class DashboardController extends Controller
                     $bonus = $user->order_reward * 0.5;
                     $referrer->balance += $bonus;
                     $referrer->save();
+                    
+                    // Create balance record for task completion bonus
+                    BalanceRecord::create([
+                        'user_id' => $referrer->id,
+                        'type' => 'task_completion',
+                        'amount' => $bonus,
+                        'from_user_name' => $user->name,
+                        'from_mobile_number' => $user->mobile_number,
+                        'description' => 'Task completion bonus from referred user',
+                    ]);
+                    
                     \Log::info('Referral bonus added', [
                         'referrer_id' => $referrer->id,
                         'user_id' => $user->id,

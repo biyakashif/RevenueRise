@@ -185,5 +185,19 @@
     "Pending": "In attesa",
     "Approved": "Approvato",
     "Rejected": "Respinto",
-    "Withdraw History": "Cronologia prelievi"
+    "Withdraw History": "Cronologia prelievi",
+    "Withdraw PIN": "PIN Prelievo",
+    "Confirm PIN": "Conferma PIN",
+    "Enter your name": "Inserisci il tuo nome",
+    "Enter mobile number": "Inserisci numero cellulare",
+    "Enter password": "Inserisci password",
+    "Confirm password": "Conferma password",
+    "6-digit PIN": "PIN a 6 cifre",
+    "Enter invitation code": "Inserisci codice invito",
+    "Creating Account...": "Creazione Account...",
+    "Enter your mobile number": "Inserisci il tuo numero cellulare",
+    "Enter your password": "Inserisci la tua password",
+    "Forgot password?": "Password dimenticata?",
+    "Signing in...": "Accesso in corso...",
+    "Sign In": "Accedi"
 }

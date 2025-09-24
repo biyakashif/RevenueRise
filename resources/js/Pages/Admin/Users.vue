@@ -1,8 +1,8 @@
 <template>
     <AdminLayout>
-        <div class="p-4 sm:p-6 lg:p-8 bg-gray-100 min-h-screen">
+        <div class="p-4 sm:p-6 lg:p-8 bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl min-h-screen">
             <div class="max-w-7xl mx-auto">
-                <h2 class="text-2xl sm:text-3xl font-bold text-gray-800 mb-6">User Management</h2>
+                <h2 class="text-2xl sm:text-3xl font-bold text-white mb-6">User Management</h2>
 
                 <!-- Flash Messages -->
                 <transition
@@ -25,108 +25,108 @@
                         @input="fetchUsers"
                         type="text"
                         placeholder="Search by name, mobile, or invitation code..."
-                        class="w-full p-2 border rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                        class="w-full p-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-md shadow-sm text-white placeholder-white/70 focus:ring-blue-500 focus:border-blue-500"
                     />
                 </div>
 
                 <!-- Users Table -->
-                <div class="bg-white shadow-md rounded-lg overflow-x-auto">
+                <div class="bg-white/10 backdrop-blur-xl shadow-md rounded-lg overflow-x-auto border border-white/20">
                     <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
+                        <thead class="bg-white/5">
                             <tr>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mobile</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">VIP Level</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Balance</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Password</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Withdraw Password</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Referred By</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Register Date</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-white/80 uppercase tracking-wider">Name</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-white/80 uppercase tracking-wider">Mobile</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-white/80 uppercase tracking-wider">VIP Level</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-white/80 uppercase tracking-wider">Balance</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-white/80 uppercase tracking-wider">Password</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-white/80 uppercase tracking-wider">Withdraw Password</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-white/80 uppercase tracking-wider">Role</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-white/80 uppercase tracking-wider">Referred By</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-white/80 uppercase tracking-wider">Register Date</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-white/80 uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
+                        <tbody class="bg-white/5 divide-y divide-white/10">
                             <tr v-for="user in props.users" :key="user.id">
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ user.name }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ user.mobile_number }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ user.vip_level }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ user.balance.toFixed(2) }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ user.password }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ user.withdraw_password }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ user.role }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ user.referred_by || 'N/A' }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ user.register_date }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">{{ user.name }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-white/80">{{ user.mobile_number }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-white/80">{{ user.vip_level }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-white/80">{{ user.balance.toFixed(2) }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-white/80">{{ user.password }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-white/80">{{ user.withdraw_password }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-white/80">{{ user.role }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-white/80">{{ user.referred_by || 'N/A' }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-white/80">{{ user.register_date }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                    <button @click="openEditModal(user)" class="text-indigo-600 hover:text-indigo-900 mr-3">Edit</button>
-                                    <button @click="openDeleteModal(user)" class="text-red-600 hover:text-red-900">Delete</button>
+                                    <button @click="openEditModal(user)" class="text-blue-400 hover:text-blue-300 mr-3">Edit</button>
+                                    <button @click="openDeleteModal(user)" class="text-red-400 hover:text-red-300">Delete</button>
                                 </td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
-                 <p v-if="!props.users.length" class="text-center text-gray-500 text-lg mt-6">No users found.</p>
+                 <p v-if="!props.users.length" class="text-center text-white/70 text-lg mt-6">No users found.</p>
             </div>
         </div>
 
         <!-- Edit User Modal -->
         <div v-if="showEditModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-                <h3 class="text-xl font-bold mb-4">Edit User: {{ form.name }}</h3>
+            <div class="bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl p-6 rounded-lg shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto border border-white/20">
+                <h3 class="text-xl font-bold mb-4 text-white">Edit User: {{ form.name }}</h3>
                 <form @submit.prevent="submitUpdate">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Name</label>
-                            <input v-model="form.name" type="text" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                            <label class="block text-sm font-medium text-white/80">Name</label>
+                            <input v-model="form.name" type="text" class="mt-1 block w-full rounded-md bg-white/10 backdrop-blur-sm border-white/20 text-white placeholder-white/70 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
                             <p v-if="formErrors.name" class="text-xs text-red-600 mt-1">{{ formErrors.name }}</p>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Mobile Number</label>
-                            <input v-model="form.mobile_number" type="text" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                            <label class="block text-sm font-medium text-white/80">Mobile Number</label>
+                            <input v-model="form.mobile_number" type="text" class="mt-1 block w-full rounded-md bg-white/10 backdrop-blur-sm border-white/20 text-white placeholder-white/70 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
                             <p v-if="formErrors.mobile_number" class="text-xs text-red-600 mt-1">{{ formErrors.mobile_number }}</p>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Password (leave blank to keep unchanged)</label>
-                            <input v-model="form.password" type="password" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                            <label class="block text-sm font-medium text-white/80">Password (leave blank to keep unchanged)</label>
+                            <input v-model="form.password" type="password" class="mt-1 block w-full rounded-md bg-white/10 backdrop-blur-sm border-white/20 text-white placeholder-white/70 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
                              <p v-if="formErrors.password" class="text-xs text-red-600 mt-1">{{ formErrors.password }}</p>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Withdraw Password (leave blank to keep unchanged)</label>
-                            <input v-model="form.withdraw_password" type="password" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                            <label class="block text-sm font-medium text-white/80">Withdraw Password (leave blank to keep unchanged)</label>
+                            <input v-model="form.withdraw_password" type="password" class="mt-1 block w-full rounded-md bg-white/10 backdrop-blur-sm border-white/20 text-white placeholder-white/70 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
                              <p v-if="formErrors.withdraw_password" class="text-xs text-red-600 mt-1">{{ formErrors.withdraw_password }}</p>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Invitation Code</label>
-                            <input v-model="form.invitation_code" type="text" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                            <label class="block text-sm font-medium text-white/80">Invitation Code</label>
+                            <input v-model="form.invitation_code" type="text" class="mt-1 block w-full rounded-md bg-white/10 backdrop-blur-sm border-white/20 text-white placeholder-white/70 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
                             <p v-if="formErrors.invitation_code" class="text-xs text-red-600 mt-1">{{ formErrors.invitation_code }}</p>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Balance</label>
-                            <input v-model="form.balance" type="number" step="0.01" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                            <label class="block text-sm font-medium text-white/80">Balance</label>
+                            <input v-model="form.balance" type="number" step="0.01" class="mt-1 block w-full rounded-md bg-white/10 backdrop-blur-sm border-white/20 text-white placeholder-white/70 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
                             <p v-if="formErrors.balance" class="text-xs text-red-600 mt-1">{{ formErrors.balance }}</p>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Role</label>
-                            <select v-model="form.role" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                            <label class="block text-sm font-medium text-white/80">Role</label>
+                            <select v-model="form.role" class="mt-1 block w-full rounded-md bg-white/10 backdrop-blur-sm border-white/20 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
                                 <option value="user">User</option>
                                 <option value="admin">Admin</option>
                             </select>
                              <p v-if="formErrors.role" class="text-xs text-red-600 mt-1">{{ formErrors.role }}</p>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Referred By (Invitation Code)</label>
-                            <input v-model="form.referred_by" type="text" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                            <label class="block text-sm font-medium text-white/80">Referred By (Invitation Code)</label>
+                            <input v-model="form.referred_by" type="text" class="mt-1 block w-full rounded-md bg-white/10 backdrop-blur-sm border-white/20 text-white placeholder-white/70 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
                             <p v-if="formErrors.referred_by" class="text-xs text-red-600 mt-1">{{ formErrors.referred_by }}</p>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">VIP Level</label>
-                            <input v-model="form.vip_level" type="text" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                            <label class="block text-sm font-medium text-white/80">VIP Level</label>
+                            <input v-model="form.vip_level" type="text" class="mt-1 block w-full rounded-md bg-white/10 backdrop-blur-sm border-white/20 text-white placeholder-white/70 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
                             <p v-if="formErrors.vip_level" class="text-xs text-red-600 mt-1">{{ formErrors.vip_level }}</p>
                         </div>
                     </div>
                     <div class="mt-6 flex justify-end space-x-3">
-                        <button type="button" @click="closeEditModal" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300">Cancel</button>
-                        <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700">Update User</button>
+                        <button type="button" @click="closeEditModal" class="bg-white/10 backdrop-blur-sm text-white px-4 py-2 rounded-md hover:bg-white/20 border border-white/20">Cancel</button>
+                        <button type="submit" class="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-md hover:from-blue-600 hover:to-blue-700 transform hover:scale-105 transition-all duration-200">Update User</button>
                     </div>
                 </form>
             </div>
@@ -134,15 +134,15 @@
 
         <!-- Delete Confirmation Modal -->
         <div v-if="showDeleteModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-md">
-                <h3 class="text-lg font-bold text-gray-900">Confirm Deletion</h3>
-                <p class="mt-2 text-sm text-gray-600">
+            <div class="bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl p-6 rounded-lg shadow-xl w-full max-w-md border border-white/20">
+                <h3 class="text-lg font-bold text-white">Confirm Deletion</h3>
+                <p class="mt-2 text-sm text-white/80">
                     Are you sure you want to delete the user
-                    <span class="font-medium">{{ userToDelete.name }}</span>? This action cannot be undone.
+                    <span class="font-medium text-white">{{ userToDelete.name }}</span>? This action cannot be undone.
                 </p>
                 <div class="mt-6 flex justify-end space-x-3">
-                    <button @click="closeDeleteModal" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300">Cancel</button>
-                    <button @click="executeDelete" class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700">Delete User</button>
+                    <button @click="closeDeleteModal" class="bg-white/10 backdrop-blur-sm text-white px-4 py-2 rounded-md hover:bg-white/20 border border-white/20">Cancel</button>
+                    <button @click="executeDelete" class="bg-gradient-to-r from-red-500 to-red-600 text-white px-4 py-2 rounded-md hover:from-red-600 hover:to-red-700 transform hover:scale-105 transition-all duration-200">Delete User</button>
                 </div>
             </div>
         </div>

@@ -163,5 +163,19 @@
     "Withdrawal History": "Istoricul retragerilor",
     "You are receiving this email because we received a password reset request for your account.": "Primiți acest mesaj pentru că a fost înregistrată o solicitare de resetare a parolei pentru contul asociat acestei adrese de e-mail.",
     "You're logged in!": "Ești autentificat!",
-    "Your email address is unverified.": "Adresa de e-mail este neverificată."
+    "Your email address is unverified.": "Adresa de e-mail este neverificată.",
+    "Withdraw PIN": "PIN Retragere",
+    "Confirm PIN": "Confirmă PIN",
+    "Enter your name": "Introduceți numele",
+    "Enter mobile number": "Introduceți numărul de telefon",
+    "Enter password": "Introduceți parola",
+    "Confirm password": "Confirmă parola",
+    "6-digit PIN": "PIN de 6 cifre",
+    "Enter invitation code": "Introduceți codul de invitație",
+    "Creating Account...": "Se creează contul...",
+    "Enter your mobile number": "Introduceți numărul de telefon",
+    "Enter your password": "Introduceți parola",
+    "Forgot password?": "Ați uitat parola?",
+    "Signing in...": "Se conectează...",
+    "Sign In": "Conectare"
 }

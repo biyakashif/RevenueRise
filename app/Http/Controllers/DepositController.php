@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Deposit;
 use App\Models\User;
 use App\Models\CryptoDepositDetail;
+use App\Models\BalanceRecord;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
@@ -117,6 +118,14 @@ class DepositController extends Controller
             $user = User::find($deposit->user_id);
             $user->update(['balance' => $user->balance + $deposit->amount]);
             $deposit->update(['status' => 'approved']);
+
+            // Create balance record for deposit
+            BalanceRecord::create([
+                'user_id' => $user->id,
+                'type' => 'deposit',
+                'amount' => $deposit->amount,
+                'description' => $deposit->title ?: 'Deposit approved',
+            ]);
 
             // If deposit is for VIP upgrade, update VIP level and reassign tasks
             if ($deposit->vip_level) {

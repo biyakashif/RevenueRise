@@ -29,16 +29,6 @@ return new class extends Migration
             $table->string('token');
             $table->timestamp('created_at')->nullable();
         });
-
-        Schema::create('sessions', function (Blueprint $table) {
-            $table->string('id')->primary();
-            // Align sessions with app design: reference users by mobile_number instead of user_id
-            $table->string('mobile_number')->nullable()->index();
-
-
-
-
-        });
     }
 
     /**

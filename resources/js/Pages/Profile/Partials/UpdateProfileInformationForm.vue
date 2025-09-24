@@ -14,14 +14,7 @@ const form = useForm({
 
 <template>
     <section>
-        <header>
-            <h2 class="text-2xl font-bold text-center text-white mb-6">
-                Profile Information
-            </h2>
-            <p class="mb-4 text-sm font-medium text-blue-100 text-center">
-                Update your account's profile information.
-            </p>
-        </header>
+
 
         <form @submit.prevent="form.patch(route('profile.update'))" class="space-y-5">
             <div>
