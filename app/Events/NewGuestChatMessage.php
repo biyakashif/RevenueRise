@@ -36,7 +36,7 @@ class NewGuestChatMessage implements ShouldBroadcast
     public function broadcastOn(): array
     {
         return [
-            new PrivateChannel('chat.' . config('app.admin_user_id', 1)), // Broadcast to admin
+            new PrivateChannel('guest-chat'), // Broadcast to admin guest chat channel
             new Channel('guest-chat.' . $this->guestChat->session_id), // Broadcast to guest
         ];
     }
@@ -49,14 +49,14 @@ class NewGuestChatMessage implements ShouldBroadcast
     public function broadcastWith(): array
     {
         return [
-            'chat' => [
+            'message' => [
                 'id' => $this->guestChatMessage->id,
                 'message' => $this->guestChatMessage->message,
-                'sender_id' => $this->guestChat->id,
-                'recipient_id' => config('app.admin_user_id', 1),
+                'sender_id' => $this->guestChatMessage->is_guest ? $this->guestChat->id : config('app.admin_user_id', 1),
+                'recipient_id' => $this->guestChatMessage->is_guest ? config('app.admin_user_id', 1) : $this->guestChat->id,
                 'created_at' => $this->guestChatMessage->created_at,
-                'is_guest' => $this->guestChatMessage->is_guest,
-                'sender_name' => $this->guestChat->name,
+                'image_path' => null,
+                'video_path' => null,
             ]
         ];
     }

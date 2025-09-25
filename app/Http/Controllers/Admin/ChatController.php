@@ -16,15 +16,38 @@ class ChatController extends Controller
 
     public function getUsers()
     {
-        $users = \App\Models\User::where('role', '!=', 'admin')
-            ->select('id', 'mobile_number', 'name', 'avatar_url')
-            ->withCount(['receivedMessages' => function($query) {
-                $query->where('sender_id', '!=', auth()->id())
-                      ->whereNull('read_at');
-            }])
-            ->get();
+        $adminId = auth()->id();
+        $cacheKey = "admin_chat_users_{$adminId}";
+        
+        return \Cache::remember($cacheKey, 5, function() use ($adminId) { // Cache for 5 seconds
+            $users = \App\Models\User::where('role', '!=', 'admin')
+                ->select('id', 'mobile_number', 'name', 'avatar_url')
+                ->selectRaw('(
+                    SELECT MAX(created_at)
+                    FROM chat_messages
+                    WHERE (sender_id = users.id AND recipient_id = ?) 
+                       OR (sender_id = ? AND recipient_id = users.id)
+                ) as last_message_at', [$adminId, $adminId])
+                ->withCount(['sentMessages as unread_count' => function($query) use ($adminId) {
+                    $query->where('recipient_id', $adminId)
+                          ->whereNull('read_at');
+                }])
+                ->get()
+                ->map(function ($user) {
+                    return [
+                        'id' => $user->id,
+                        'name' => $user->name,
+                        'mobile_number' => $user->mobile_number,
+                        'avatar_url' => $user->avatar_url,
+                        'unread_count' => $user->unread_count,
+                        'last_message_at' => $user->last_message_at,
+                    ];
+                })
+                ->sortByDesc('last_message_at')
+                ->values();
 
-        return response()->json($users);
+            return response()->json($users);
+        });
     }
 
     public function getMessages($userId)
@@ -47,12 +70,21 @@ class ChatController extends Controller
             ->whereNull('read_at')
             ->update(['read_at' => now()]);
 
+        // Clear cache after marking as read
+        \Cache::forget("admin_chat_users_{$adminId}");
+
+        // Broadcast user status update for real-time UI updates
+        broadcast(new \App\Events\UserChatStatusUpdated($userId, false, 'message_read', [
+            'unread_count' => 0,
+        ]))->toOthers();
+
         return response()->json($messages);
     }
 
     public function sendMessage(Request $request, $userId)
     {
         try {
+            $adminId = auth()->id();
             $request->validate([
                 'message' => 'required_without_all:image,video',
                 'image' => 'nullable|image|max:2048',
@@ -80,8 +112,18 @@ class ChatController extends Controller
 
             $message->save();
 
+            // Clear cache for both admin and recipient
+            \Cache::forget("admin_chat_users_{$adminId}");
+            \Cache::forget("admin_chat_users_{$userId}");
+
             // Broadcast event
             broadcast(new \App\Events\NewChatMessage($message))->toOthers();
+
+            // Broadcast user status update for real-time UI updates
+            broadcast(new \App\Events\UserChatStatusUpdated($userId, false, 'new_message', [
+                'unread_count' => 1,
+                'last_message_at' => $message->created_at,
+            ]))->toOthers();
 
             return response()->json($message);
         } catch (\Exception $e) {
@@ -132,6 +174,9 @@ class ChatController extends Controller
 
             // Broadcast the deletion event
             broadcast(new ChatHistoryDeleted($userId, $adminId));
+
+            // Broadcast user status update for real-time UI updates
+            broadcast(new \App\Events\UserChatStatusUpdated($userId, false, 'chat_deleted'))->toOthers();
 
             return response()->json(['message' => 'Chat history and associated files deleted successfully.']);
         } catch (\Exception $e) {

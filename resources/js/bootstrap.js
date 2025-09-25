@@ -47,58 +47,58 @@ window.axios.interceptors.response.use(
     }
 );
 
-document.addEventListener('DOMContentLoaded', function() {
-
-    // Only setup Echo if user is authenticated
-    if (window.Laravel && window.Laravel.user && window.Laravel.user.id) {
-        const token = document.head.querySelector('meta[name="csrf-token"]') || 
-                      (window.Laravel && window.Laravel.csrfToken ? { content: window.Laravel.csrfToken } : null);
-        window.Echo = new Echo({
+// Initialize Echo immediately when Laravel config is available
+function initializeEcho() {
+    if (window.Laravel && window.Laravel.pusher && !window.Echo) {
+        const token = document.head.querySelector('meta[name="csrf-token"]');
+        
+        const echoConfig = {
             broadcaster: 'pusher',
             key: window.Laravel.pusher.key,
             cluster: window.Laravel.pusher.cluster,
             forceTLS: true,
             encrypted: true,
             disableStats: true,
-            auth: {
+        };
+        
+        // Add auth headers for authenticated users
+        if (window.Laravel.user && token) {
+            echoConfig.auth = {
                 headers: {
                     'X-CSRF-TOKEN': token.content,
                     'X-Requested-With': 'XMLHttpRequest',
                 }
-            }
-        });
-
-        // Add connection state monitoring
-        if (window.Echo && window.Echo.connector && window.Echo.connector.pusher) {
-            window.Echo.connector.pusher.connection.bind('connected', () => {
-                console.log('✅ Pusher connected successfully - Live mode active');
-            });
-
-            window.Echo.connector.pusher.connection.bind('disconnected', () => {
-                console.log('⚠️ Pusher disconnected - Switching to polling');
-            });
-
-            window.Echo.connector.pusher.connection.bind('failed', () => {
-                console.log('❌ Pusher connection failed - Using polling fallback');
-                // Disable WebSocket connections on failure
-                window.Echo = null;
-            });
-
-            window.Echo.connector.pusher.connection.bind('error', (error) => {
-                console.log('❌ Pusher connection error:', error);
-            });
+            };
         }
-    } else if (window.Laravel && window.Laravel.pusher) {
-        // Setup Echo for guest users (public channels only)
-        window.Echo = new Echo({
-            broadcaster: 'pusher',
-            key: window.Laravel.pusher.key,
-            cluster: window.Laravel.pusher.cluster,
-            forceTLS: true,
-            encrypted: true,
-            disableStats: true
-        });
         
-        console.log('✅ Echo initialized for guest users');
+        try {
+            window.Echo = new Echo(echoConfig);
+            
+            // Add connection state monitoring
+            if (window.Echo.connector && window.Echo.connector.pusher) {
+                window.Echo.connector.pusher.connection.bind('connected', () => {
+                    console.log('✅ Pusher connected - Real-time chat active');
+                });
+
+                window.Echo.connector.pusher.connection.bind('disconnected', () => {
+                    console.log('⚠️ Pusher disconnected - Using polling fallback');
+                });
+
+                window.Echo.connector.pusher.connection.bind('failed', () => {
+                    console.log('❌ Pusher failed - Chat will use polling only');
+                });
+            }
+            
+            console.log('✅ Echo initialized successfully');
+        } catch (error) {
+            console.error('❌ Echo initialization failed:', error);
+            window.Echo = null;
+        }
     }
-});
+}
+
+// Try to initialize immediately
+initializeEcho();
+
+// Also try on DOM ready as fallback
+document.addEventListener('DOMContentLoaded', initializeEcho);

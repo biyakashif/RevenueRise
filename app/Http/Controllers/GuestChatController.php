@@ -26,6 +26,9 @@ class GuestChatController extends Controller
         
         // Clear captcha from session
         session()->forget('captcha_code');
+        
+        // Touch the guest chat to update timestamp
+        $guestChat->touch();
 
         return response()->json([
             'session_id' => $guestChat->session_id,
@@ -35,7 +38,11 @@ class GuestChatController extends Controller
 
     public function getMessages($sessionId)
     {
-        $guestChat = GuestChat::where('session_id', $sessionId)->firstOrFail();
+        $guestChat = GuestChat::where('session_id', $sessionId)->first();
+        
+        if (!$guestChat) {
+            return response()->json(['error' => 'Chat session not found'], 404);
+        }
         
         $messages = GuestChatMessage::where('guest_chat_id', $guestChat->id)
             ->orderBy('created_at', 'asc')
@@ -58,7 +65,11 @@ class GuestChatController extends Controller
             'message' => 'required|string|max:1000',
         ]);
 
-        $guestChat = GuestChat::where('session_id', $sessionId)->firstOrFail();
+        $guestChat = GuestChat::where('session_id', $sessionId)->first();
+        
+        if (!$guestChat) {
+            return response()->json(['error' => 'Chat session not found'], 404);
+        }
 
         if ($guestChat->is_blocked) {
             return response()->json(['error' => 'You are blocked from sending messages'], 403);
@@ -70,7 +81,12 @@ class GuestChatController extends Controller
             'is_guest' => true,
         ]);
 
-        // Broadcast the message to admin
+        $guestChat->touch(); // Update the updated_at timestamp
+
+        // Clear admin cache
+        \Cache::forget("admin_guest_chat_users");
+
+        // Broadcast the guest chat message
         broadcast(new NewGuestChatMessage($message, $guestChat));
 
         return response()->json([

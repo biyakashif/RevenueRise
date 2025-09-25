@@ -67,7 +67,9 @@ class ChatController extends Controller
             $message = new ChatMessage();
             $message->sender_id = $sender->id;
             $message->recipient_id = $admin ? $admin->id : 1; // Assuming admin id is 1 or handle properly
-            $message->message = $request->message;            if ($request->hasFile('image')) {
+            $message->message = $request->message;
+            
+            if ($request->hasFile('image')) {
                 $path = $request->file('image')->store('chat-images', 'public');
                 $message->image_path = '/storage/' . $path;
             }
@@ -80,6 +82,12 @@ class ChatController extends Controller
             $message->save();
 
             broadcast(new NewChatMessage($message))->toOthers();
+
+            // Broadcast user status update for real-time admin UI updates
+            broadcast(new \App\Events\UserChatStatusUpdated($sender->id, false, 'new_message', [
+                'unread_count' => 1,
+                'last_message_at' => $message->created_at,
+            ]))->toOthers();
 
             return response()->json($message);
         } catch (\Exception $e) {

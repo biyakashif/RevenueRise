@@ -48,6 +48,7 @@ class NewChatMessage implements ShouldBroadcastNow
                 'id' => $this->chat->id,
                 'message' => $this->chat->message,
                 'image_path' => $this->chat->image_path,
+                'video_path' => $this->chat->video_path,
                 'created_at' => $this->chat->created_at,
                 'sender_id' => $this->chat->sender_id,
                 'recipient_id' => $this->chat->recipient_id

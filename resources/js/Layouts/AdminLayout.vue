@@ -186,6 +186,7 @@ onMounted(() => {
     // Subscribe to admin private channel and toggle the sidebar dot on new messages
     const adminId = page.props.auth?.user?.id;
     if (adminId && window?.Echo) {
+        // Listen for regular chat messages
         window.Echo.private(`chat.${adminId}`)
             .listen('NewChatMessage', (e) => {
                 // If user isn't on the support page, show a dot
@@ -196,6 +197,8 @@ onMounted(() => {
                     }
                 }
             });
+
+
     }
 });
 </script>

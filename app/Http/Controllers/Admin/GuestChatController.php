@@ -12,24 +12,35 @@ class GuestChatController extends Controller
 {
     public function getUsers()
     {
-        $guestChats = GuestChat::withCount(['messages as unread_count' => function ($query) {
-            $query->where('is_guest', true)->where('is_read', false);
-        }])
-        ->orderBy('updated_at', 'desc')
-        ->get()
-        ->map(function ($guest) {
-            return [
-                'id' => $guest->id,
-                'name' => $guest->name,
-                'mobile_number' => $guest->mobile_number,
-                'unread_count' => $guest->unread_count,
-                'is_guest' => true,
-                'is_blocked' => $guest->is_blocked,
-                'avatar_url' => null,
-            ];
-        });
+        $cacheKey = "admin_guest_chat_users";
+        
+        return \Cache::remember($cacheKey, 5, function() { // Cache for 5 seconds
+            $guestChats = GuestChat::withCount(['messages as unread_count' => function ($query) {
+                $query->where('is_guest', true)->where('is_read', false);
+            }])
+            ->with(['messages' => function($query) {
+                $query->select('created_at', 'guest_chat_id')
+                      ->latest()
+                      ->limit(1);
+            }])
+            ->get()
+            ->map(function ($guest) {
+                return [
+                    'id' => $guest->id,
+                    'name' => $guest->name,
+                    'mobile_number' => $guest->mobile_number,
+                    'unread_count' => $guest->unread_count,
+                    'is_guest' => true,
+                    'is_blocked' => $guest->is_blocked,
+                    'avatar_url' => null,
+                    'last_message_at' => $guest->messages->first()?->created_at,
+                ];
+            })
+            ->sortByDesc('last_message_at')
+            ->values();
 
-        return response()->json($guestChats);
+            return response()->json($guestChats);
+        });
     }
 
     public function getMessages($guestId)
@@ -56,6 +67,14 @@ class GuestChatController extends Controller
             ->where('is_read', false)
             ->update(['is_read' => true]);
 
+        // Clear cache after marking as read
+        \Cache::forget("admin_guest_chat_users");
+
+        // Broadcast user status update for real-time UI updates
+        broadcast(new \App\Events\UserChatStatusUpdated($guestChat->id, true, 'message_read', [
+            'unread_count' => 0,
+        ]))->toOthers();
+
         return response()->json($messages);
     }
 
@@ -75,7 +94,10 @@ class GuestChatController extends Controller
 
         $guestChat->touch(); // Update the updated_at timestamp
 
-        // Broadcast the message
+        // Clear cache
+        \Cache::forget("admin_guest_chat_users");
+
+        // Broadcast guest chat message
         broadcast(new NewGuestChatMessage($message, $guestChat));
 
         return response()->json([
@@ -91,9 +113,19 @@ class GuestChatController extends Controller
     public function deleteChatHistory($guestId)
     {
         $guestChat = GuestChat::findOrFail($guestId);
+        $sessionId = $guestChat->session_id;
         
+        // Delete all messages first
         GuestChatMessage::where('guest_chat_id', $guestChat->id)->delete();
+        
+        // Delete the guest chat record
         $guestChat->delete();
+
+        // Clear cache
+        \Cache::forget("admin_guest_chat_users");
+
+        // Broadcast to guest that chat was deleted
+        broadcast(new \App\Events\GuestChatDeleted($sessionId))->toOthers();
 
         return response()->json(['message' => 'Chat history deleted successfully']);
     }

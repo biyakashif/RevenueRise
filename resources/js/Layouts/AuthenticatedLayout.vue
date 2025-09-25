@@ -61,7 +61,7 @@ onMounted(() => {
         });
 
         // Listen for chat history deletion
-    window.Echo.private(`chat.${page.props.auth.user.id}`)
+        window.Echo.private(`chat.${page.props.auth.user.id}`)
             .listen('ChatHistoryDeleted', (e) => {
                 console.log('ChatHistoryDeleted event received in layout:', e);
                 if (e.userId === page.props.auth.user.id) {

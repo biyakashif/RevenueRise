@@ -84,7 +84,8 @@
                 <input v-model="newMessage" 
                        type="text" 
                        :placeholder="t('Type your message...')" 
-                       class="flex-1 px-3 py-2 rounded-full bg-white/50 backdrop-blur-sm border border-white/30 focus:outline-none focus:ring-2 focus:ring-cyan-400 text-slate-900 placeholder-slate-500 text-sm">
+                       class="flex-1 px-3 py-2 rounded-full bg-white/50 backdrop-blur-sm border border-white/30 focus:outline-none focus:ring-2 focus:ring-cyan-400 text-slate-900 placeholder-slate-500 text-sm"
+                       @keydown.enter.exact.prevent="sendMessage">
                 <button type="button" 
                         @click="sendMessage"
                         class="p-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-full shadow-md focus:outline-none transition-all duration-200">
@@ -155,9 +156,32 @@ const sendMessage = async () => {
     try {
         if (!newMessage.value.trim() && !imageInput.value?.files[0] && !videoInput.value?.files[0]) return;
 
+        const messageText = newMessage.value;
+        newMessage.value = ''; // Clear immediately for optimistic update
+        
+        // Add optimistic message
+        const tempMessage = {
+            id: Date.now(),
+            message: messageText,
+            image_path: null,
+            video_path: null,
+            created_at: new Date().toISOString(),
+            sender_id: page.props.auth.user.id,
+            recipient_id: null
+        };
+        messages.value.push(tempMessage);
+        
+        // Scroll to bottom immediately
+        setTimeout(() => {
+            const chatArea = document.querySelector('.overflow-y-auto');
+            if (chatArea) {
+                chatArea.scrollTop = chatArea.scrollHeight;
+            }
+        }, 50);
+
         const formData = new FormData();
-        if (newMessage.value.trim()) {
-            formData.append('message', newMessage.value);
+        if (messageText.trim()) {
+            formData.append('message', messageText);
         }
         
         if (imageInput.value?.files[0]) {
@@ -168,8 +192,8 @@ const sendMessage = async () => {
             formData.append('video', videoInput.value.files[0]);
         }
 
-        await axios.post('/chat/send', formData);
-        newMessage.value = '';
+        const { data } = await axios.post('/chat/send', formData);
+        
         if (imageInput.value) {
             imageInput.value.value = '';
         }
@@ -177,9 +201,23 @@ const sendMessage = async () => {
             videoInput.value.value = '';
         }
         
-        // Reload messages to show the sent message immediately
-        await loadMessages();
+        // Replace temp message with real one
+        const tempIndex = messages.value.findIndex(m => m.id === tempMessage.id);
+        if (tempIndex !== -1) {
+            messages.value[tempIndex] = {
+                id: data.id,
+                message: data.message,
+                image_path: data.image_path,
+                video_path: data.video_path,
+                created_at: data.created_at,
+                sender_id: data.sender_id,
+                recipient_id: data.recipient_id
+            };
+        }
     } catch (error) {
+        // Remove temp message on error and restore input
+        messages.value = messages.value.filter(m => m.id !== tempMessage.id);
+        newMessage.value = messageText;
         console.error('Error sending message:', error);
         alert(error.response?.data?.error || t('Error sending message. Please try again.'));
     }
@@ -191,11 +229,27 @@ const handleImageUpload = async (event) => {
 
     const formData = new FormData();
     formData.append('image', file);
-    await axios.post('/chat/send', formData);
+    const { data } = await axios.post('/chat/send', formData);
     event.target.value = '';
     
-    // Reload messages to show the sent image immediately
-    await loadMessages();
+    // Add sent image immediately (optimistic update)
+    messages.value.push({
+        id: data.id,
+        message: data.message,
+        image_path: data.image_path,
+        video_path: data.video_path,
+        created_at: data.created_at,
+        sender_id: data.sender_id,
+        recipient_id: data.recipient_id
+    });
+    
+    // Scroll to bottom
+    setTimeout(() => {
+        const chatArea = document.querySelector('.overflow-y-auto');
+        if (chatArea) {
+            chatArea.scrollTop = chatArea.scrollHeight;
+        }
+    }, 50);
 };
 
 const handleVideoUpload = async (event) => {
@@ -209,11 +263,27 @@ const handleVideoUpload = async (event) => {
 
     const formData = new FormData();
     formData.append('video', file);
-    await axios.post('/chat/send', formData);
+    const { data } = await axios.post('/chat/send', formData);
     event.target.value = '';
     
-    // Reload messages to show the sent video immediately
-    await loadMessages();
+    // Add sent video immediately (optimistic update)
+    messages.value.push({
+        id: data.id,
+        message: data.message,
+        image_path: data.image_path,
+        video_path: data.video_path,
+        created_at: data.created_at,
+        sender_id: data.sender_id,
+        recipient_id: data.recipient_id
+    });
+    
+    // Scroll to bottom
+    setTimeout(() => {
+        const chatArea = document.querySelector('.overflow-y-auto');
+        if (chatArea) {
+            chatArea.scrollTop = chatArea.scrollHeight;
+        }
+    }, 50);
 };
 
 const handleAvatarError = (e) => {
@@ -245,76 +315,44 @@ const goBack = () => {
 onMounted(() => {
     loadMessages();
 
-    // Listen for new messages only if Echo is available
-    const userId = page.props.auth.user.id;
-    if (!userId) {
-        console.error('User id not found in auth props:', page.props.auth);
-        return;
-    }
 
+
+    // Real-time with Echo
     if (window.Echo) {
-        console.log('Subscribing to private channel:', `chat.${userId}`);
-        const channel = window.Echo.private(`chat.${userId}`);
-
-        // Log successful subscription
-        channel.subscribed(() => {
-            console.log('Successfully subscribed to channel:', `chat.${userId}`);
-        });
-
-        // Log connection errors
-        channel.error((error) => {
-            console.error('Echo connection error:', error);
-        });
-
-        // Listen for new messages
-        channel.listen('NewChatMessage', (e) => {
-            console.log('Received message:', e);
-            if (e.chat) {
-                // Play notification if message is from support (not this user)
-                if (e.chat.sender_id !== userId) {
-                    notificationSound.play().catch(() => {/* autoplay blocked until user gesture */});
-                }
-                // Add the new message to the list
-                messages.value.push({
-                    id: e.chat.id,
-                    message: e.chat.message,
-                    image_path: e.chat.image_path,
-                    video_path: e.chat.video_path,
-                    created_at: e.chat.created_at,
-                    sender_id: e.chat.sender_id,
-                    recipient_id: e.chat.recipient_id
-                });
-                // Sort messages by date
-                messages.value.sort((a, b) => 
-                    new Date(a.created_at) - new Date(b.created_at)
-                );
-                
-                // Scroll to bottom when new message arrives
-                setTimeout(() => {
-                    const chatArea = document.querySelector('.overflow-y-auto');
-                    if (chatArea) {
-                        chatArea.scrollTop = chatArea.scrollHeight;
+        window.Echo.private(`chat.${page.props.auth.user.id}`)
+            .listen('NewChatMessage', (e) => {
+                // Add the message if not already in messages
+                const exists = messages.value.some(m => m.id === e.chat.id);
+                if (!exists) {
+                    messages.value.push({
+                        id: e.chat.id,
+                        message: e.chat.message,
+                        image_path: e.chat.image_path,
+                        video_path: e.chat.video_path,
+                        created_at: e.chat.created_at,
+                        sender_id: e.chat.sender_id,
+                        recipient_id: e.chat.recipient_id,
+                    });
+                    // Sort messages
+                    messages.value.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+                    // Scroll to bottom
+                    setTimeout(() => {
+                        const chatArea = document.querySelector('.overflow-y-auto');
+                        if (chatArea) {
+                            chatArea.scrollTop = chatArea.scrollHeight;
+                        }
+                    }, 50);
+                    // Play sound if from support
+                    if (e.chat.sender_id !== page.props.auth.user.id) {
+                        notificationSound.play().catch(() => {});
                     }
-                }, 100);
-                // Reading in the chat view should clear unread badge
-                window.dispatchEvent(new CustomEvent('chat:read'));
-            }
-        });
-
-        // Listen for chat history deletion
-        channel.listen('ChatHistoryDeleted', (e) => {
-            console.log('ChatHistoryDeleted event received:', e);
-            console.log('Current user id:', page.props.auth.user.id);
-            if (e.userId === page.props.auth.user.id) {
-                console.log('Clearing messages for user:', e.userId);
-                messages.value = []; // Clear messages
-            } else {
-                console.log('Event not relevant for this user.');
-            }
-        });
+                    // Clear unread badge
+                    window.dispatchEvent(new CustomEvent('chat:read'));
+                }
+            });
     }
 
-    // Prime audio on first user interaction to satisfy autoplay policies
+    // Prime audio on first user interaction
     const primeAudio = () => {
         notificationSound.play().then(() => {
             notificationSound.pause();

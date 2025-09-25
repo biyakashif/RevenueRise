@@ -25,6 +25,9 @@ const newMessage = ref('');
 const guestSessionId = ref(null);
 const messagesContainer = ref(null);
 const notificationSound = new Audio('/notification.mp3');
+const showCaptchaError = ref('');
+const isBlocked = ref(false);
+const blockedSessions = ref(new Set());
 
 function scrollToSection(id) {
     const el = document.getElementById(id);
@@ -50,6 +53,7 @@ const closeGuestChat = () => {
     guestForm.value = { name: '', mobile_number: '', captcha: '' };
     messages.value = [];
     newMessage.value = '';
+    isBlocked.value = false;
     guestSessionId.value = null;
 };
 
@@ -60,11 +64,12 @@ const startGuestChat = async () => {
         });
         
         if (!captchaResponse.data.valid) {
-            alert('Incorrect captcha. Please try again.');
+            showCaptchaError.value = 'Incorrect captcha. Please try again.';
             generateCaptcha();
             guestForm.value.captcha = '';
             return;
         }
+        showCaptchaError.value = '';
 
         const response = await axios.post('/guest-chat/start', {
             name: guestForm.value.name,
@@ -72,6 +77,7 @@ const startGuestChat = async () => {
         });
         
         guestSessionId.value = response.data.session_id;
+        isBlocked.value = blockedSessions.value.has(response.data.session_id);
         showChatForm.value = false;
         loadGuestMessages();
         startRealTimeChat();
@@ -85,12 +91,23 @@ const loadGuestMessages = async () => {
     
     try {
         const response = await axios.get(`/guest-chat/${guestSessionId.value}/messages`);
-        const oldLength = messages.value.length;
-        messages.value = response.data.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+        const serverMessages = response.data.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
         
-        if (messages.value.length > oldLength) {
-            const newMessages = messages.value.slice(oldLength);
-            const hasAdminMessage = newMessages.some(msg => !msg.is_guest);
+        // Preserve temp messages and merge with server messages
+        const tempMessages = messages.value.filter(m => m.isTemp);
+        
+        // Only add new messages from server that don't exist yet
+        const currentIds = new Set(messages.value.filter(m => !m.isTemp).map(m => m.id));
+        const newServerMessages = serverMessages.filter(m => !currentIds.has(m.id));
+        
+        if (newServerMessages.length > 0) {
+            // Check for admin messages for notification
+            const hasAdminMessage = newServerMessages.some(msg => !msg.is_guest);
+            
+            // Merge: existing non-temp + new server + temp messages
+            const nonTempExisting = messages.value.filter(m => !m.isTemp);
+            messages.value = [...nonTempExisting, ...newServerMessages, ...tempMessages]
+                .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
             
             if (hasAdminMessage) {
                 notificationSound.play().catch(() => {});
@@ -103,89 +120,144 @@ const loadGuestMessages = async () => {
             }, 100);
         }
     } catch (error) {
-        console.error('Error loading messages:', error);
+        // If chat is deleted (404), stop polling and close chat
+        if (error.response?.status === 404) {
+            stopRealTimeChat();
+            closeGuestChat();
+        }
     }
 };
 
 const sendGuestMessage = async () => {
     if (!newMessage.value.trim() || !guestSessionId.value) return;
     
+    const messageText = newMessage.value;
+    newMessage.value = '';
+    
+    // Add message optimistically with unique temp ID
+    const tempId = `temp-${Date.now()}`;
+    const tempMessage = {
+        id: tempId,
+        message: messageText,
+        is_guest: true,
+        created_at: new Date().toISOString(),
+        isTemp: true
+    };
+    messages.value.push(tempMessage);
+    
+    setTimeout(() => {
+        if (messagesContainer.value) {
+            messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
+        }
+    }, 50);
+    
     try {
-        await axios.post(`/guest-chat/${guestSessionId.value}/send`, {
-            message: newMessage.value
+        const response = await axios.post(`/guest-chat/${guestSessionId.value}/send`, {
+            message: messageText
         });
         
-        newMessage.value = '';
-        loadGuestMessages();
+        // Replace temp message with real one
+        const index = messages.value.findIndex(m => m.id === tempId);
+        if (index !== -1) {
+            messages.value[index] = {
+                id: response.data.id,
+                message: response.data.message,
+                is_guest: response.data.is_guest,
+                created_at: response.data.created_at
+            };
+        }
+        
+        isBlocked.value = false;
+        blockedSessions.value.delete(guestSessionId.value);
     } catch (error) {
-        alert('Error sending message. Please try again.');
+        messages.value = messages.value.filter(m => m.id !== tempId);
+        newMessage.value = messageText;
+        
+        if (error.response?.status === 403) {
+            isBlocked.value = true;
+            blockedSessions.value.add(guestSessionId.value);
+            // Silently handle 403 - no console logging
+        }
     }
 };
 
+// Real-time chat with Echo + polling fallback
+let pollInterval = null;
 let echoChannel = null;
 
 const startRealTimeChat = () => {
     if (!guestSessionId.value) return;
     
+    // Set up Echo listener for real-time messages
     if (window.Echo) {
-        console.log('Setting up Echo for guest chat:', guestSessionId.value);
-        echoChannel = window.Echo.channel(`guest-chat.${guestSessionId.value}`);
-        
-        echoChannel.listen('NewGuestChatMessage', (e) => {
-            console.log('Received message:', e);
-            if (!e.chat.is_guest) {
-                messages.value.push({
-                    id: e.chat.id,
-                    message: e.chat.message,
-                    is_guest: e.chat.is_guest,
-                    created_at: e.chat.created_at
-                });
-                
-                notificationSound.play().catch(() => {});
-                
-                setTimeout(() => {
-                    if (messagesContainer.value) {
-                        messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
+        try {
+            echoChannel = window.Echo.channel(`guest-chat.${guestSessionId.value}`);
+            echoChannel.listen('NewGuestChatMessage', (e) => {
+                console.log('📨 Guest received NewGuestChatMessage:', e);
+                if (e.message && e.message.sender_id !== guestSessionId.value) {
+                    // Admin message received
+                    const newMessage = {
+                        id: e.message.id,
+                        message: e.message.message,
+                        is_guest: false,
+                        created_at: e.message.created_at
+                    };
+                    
+                    // Check if message already exists
+                    const exists = messages.value.some(m => m.id === newMessage.id);
+                    if (!exists) {
+                        messages.value.push(newMessage);
+                        messages.value.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+                        
+                        // Play notification and scroll
+                        notificationSound.play().catch(() => {});
+                        setTimeout(() => {
+                            if (messagesContainer.value) {
+                                messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
+                            }
+                        }, 100);
                     }
-                }, 100);
-            }
-        });
-    } else {
-        console.log('Echo not available, using polling fallback');
-        // Fallback to polling if Echo is not available
-        const pollInterval = setInterval(() => {
-            if (guestSessionId.value) {
-                loadGuestMessages();
-            } else {
-                clearInterval(pollInterval);
-            }
-        }, 3000);
+                }
+            });
+            
+            // Listen for chat deletion
+            echoChannel.listen('GuestChatDeleted', (e) => {
+                console.log('🗑️ Guest chat deleted:', e);
+                if (e.session_id === guestSessionId.value) {
+                    alert('Your chat session has been ended by the administrator.');
+                    closeGuestChat();
+                }
+            });
+        } catch (error) {
+            console.log('Echo setup failed, using polling only');
+        }
     }
+    
+    // Polling fallback every 3 seconds
+    pollInterval = setInterval(() => {
+        if (guestSessionId.value) {
+            loadGuestMessages();
+        } else {
+            clearInterval(pollInterval);
+        }
+    }, 3000);
 };
 
 const stopRealTimeChat = () => {
     if (echoChannel) {
-        window.Echo?.leaveChannel(`guest-chat.${guestSessionId.value}`);
+        echoChannel.stopListening('NewGuestChatMessage');
+        echoChannel.stopListening('GuestChatDeleted');
+        if (window.Echo) {
+            window.Echo.leaveChannel(`guest-chat.${guestSessionId.value}`);
+        }
         echoChannel = null;
     }
-};
-
-onMounted(() => {
-    if (!window.Echo && window.Pusher && window.Laravel?.pusher) {
-        try {
-            window.Echo = new window.LaravelEcho({
-                broadcaster: 'pusher',
-                key: window.Laravel.pusher.key,
-                cluster: window.Laravel.pusher.cluster,
-                forceTLS: true,
-                encrypted: true,
-                disableStats: true
-            });
-        } catch (error) {
-            console.log('Echo not available for guest chat');
-        }
+    
+    if (pollInterval) {
+        clearInterval(pollInterval);
+        pollInterval = null;
     }
-});
+};
 </script>
 
 <template>
@@ -689,6 +761,7 @@ onMounted(() => {
                                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                 placeholder="Enter the code shown above"
                             >
+                            <div v-if="showCaptchaError" class="text-red-500 text-sm mt-1">{{ showCaptchaError }}</div>
                         </div>
                         <button 
                             type="submit" 
@@ -712,15 +785,15 @@ onMounted(() => {
                                      ? 'bg-blue-500 text-white' 
                                      : 'bg-gray-100 text-gray-800'">
                                 <p>{{ message.message }}</p>
-                                <div class="text-xs mt-1 opacity-70">
-                                    {{ new Date(message.created_at).toLocaleTimeString() }}
-                                </div>
                             </div>
                         </div>
                     </div>
 
                     <div class="border-t p-4">
-                        <form @submit.prevent="sendGuestMessage" class="flex space-x-2">
+                        <div v-if="isBlocked" class="text-center py-4 text-red-600 bg-red-50 rounded-lg mb-4">
+                            You have been blocked by admin. You cannot send messages.
+                        </div>
+                        <form v-else @submit.prevent="sendGuestMessage" class="flex space-x-2">
                             <input 
                                 v-model="newMessage" 
                                 type="text" 

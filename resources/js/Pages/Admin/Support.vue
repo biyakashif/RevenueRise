@@ -22,7 +22,10 @@
                                            placeholder="Search by name or mobile number" 
                                            class="w-full h-12 rounded-xl bg-white/50 border-0 focus:ring-2 focus:ring-cyan-400 text-slate-900 px-4 placeholder-slate-400 backdrop-blur-sm shadow-lg" />
                                 </div>
-                                <div v-for="user in filteredUsers" :key="user.id" 
+                                
+
+                                
+                                <div v-for="user in filteredUsers" :key="`${user.is_guest ? 'guest' : 'user'}-${user.id}`" 
                                      @click="selectUser(user)"
                                      class="relative p-4 hover:bg-white/10 cursor-pointer transition-all duration-200 rounded-xl mx-2 mb-2"
                                      :class="{
@@ -101,6 +104,8 @@
                                 </div>
 
                                 <div v-if="selectedUser" ref="chatContainer" class="flex-1 overflow-y-auto p-3">
+
+                                    
                                     <div v-for="message in messages" :key="message.id" 
                                          class="mb-3 flex"
                                          :class="{'justify-end': message.sender_id === page.props.auth.user.id, 'justify-start': message.sender_id !== page.props.auth.user.id}">
@@ -203,18 +208,18 @@ const page = usePage();
 const users = ref([]);
 const selectedUser = ref(null);
 const messages = ref([]);
-const isFetchingMessages = ref(false);
+
 const newMessage = ref('');
 const imageInput = ref(null);
 const videoInput = ref(null);
 const chatContainer = ref(null);
-const notificationSound = new Audio('/notification.mp3'); // Default system notification sound
-const showNotification = ref(false);
-// Track received message IDs to guard against duplicates
-const receivedMessageIds = new Set();
+const notificationSound = new Audio('/notification.mp3');
+
 const showSoundPrompt = ref(false);
 const soundEnabled = ref(false);
 const searchQuery = ref('');
+const lastUsersUpdate = ref(0);
+const lastMessagesUpdate = ref(0);
 const filteredUsers = computed(() => {
     const query = searchQuery.value.toLowerCase();
     return users.value
@@ -224,14 +229,10 @@ const filteredUsers = computed(() => {
             return name.includes(query) || mobile.includes(query);
         })
         .sort((a, b) => {
-            // Sort by unread count first, then by guest status (guests first), then by update time
-            if (b.unread_count !== a.unread_count) {
-                return b.unread_count - a.unread_count;
-            }
-            if (a.is_guest !== b.is_guest) {
-                return a.is_guest ? -1 : 1;
-            }
-            return new Date(b.updated_at || b.created_at) - new Date(a.updated_at || a.created_at);
+            // Sort by last message time descending (most recent first)
+            const aTime = new Date(a.last_message_at || 0);
+            const bTime = new Date(b.last_message_at || 0);
+            return bTime - aTime;
         });
 });
 
@@ -247,8 +248,13 @@ const playNotification = () => {
     });
 };
 
-const loadUsers = async (opts = { preserveCounts: true }) => {
+const loadUsers = async (force = false) => {
+    const now = Date.now();
+    if (!force && now - lastUsersUpdate.value < 1000) return;
+    
     try {
+        lastUsersUpdate.value = now;
+        
         const [chatResponse, guestResponse] = await Promise.all([
             axios.get('/admin/chat/users'),
             axios.get('/admin/guest-chat/users')
@@ -257,33 +263,46 @@ const loadUsers = async (opts = { preserveCounts: true }) => {
         const chatUsers = (chatResponse.data || []).map(u => ({
             ...u,
             mobile_number: u.mobile_number != null ? String(u.mobile_number) : u.mobile_number,
-            unread_count: u.unread_count ?? u.sent_messages_count ?? 0,
-            is_guest: false
+            unread_count: u.unread_count ?? 0,
+            is_guest: false,
         }));
         
         const guestUsers = (guestResponse.data || []).map(u => ({
             ...u,
             mobile_number: u.mobile_number != null ? String(u.mobile_number) : u.mobile_number,
             unread_count: u.unread_count ?? 0,
-            is_guest: true
+            is_guest: true,
+            last_message_at: u.last_message_at,
         }));
         
-        const serverUsers = [...chatUsers, ...guestUsers];
-        if (opts.preserveCounts) {
-            const localMap = new Map(users.value.map(u => [String(u.id), u.unread_count || 0]));
-            users.value = serverUsers.map(u => {
-                const local = localMap.get(String(u.id)) || 0;
-                return { ...u, unread_count: Math.max(u.unread_count || 0, local) };
+        const newUsers = [...chatUsers, ...guestUsers];
+        
+        // Check for new messages by comparing with previous state
+        if (users.value.length > 0) {
+            newUsers.forEach(newUser => {
+                const oldUser = users.value.find(u => u.id === newUser.id && u.is_guest === newUser.is_guest);
+                if (oldUser && (newUser.unread_count || 0) > (oldUser.unread_count || 0)) {
+                    // New message detected
+                    playNotification();
+                    
+                    if ('Notification' in window && Notification.permission === 'granted') {
+                        new Notification('New Support Message', {
+                            body: `New message from ${newUser.name || 'User'}`,
+                            icon: '/favicon.ico'
+                        });
+                    }
+                }
             });
-        } else {
-            users.value = serverUsers;
         }
+        
+        users.value = newUsers;
     } catch (error) {
         console.error('Error loading users:', error);
     }
 };
 
-// We rely solely on the admin's private channel (set up in onMounted)
+// Track received message IDs to prevent duplicates
+const receivedMessageIds = new Set();
 
 const scrollToBottom = () => {
     nextTick(() => {
@@ -296,47 +315,74 @@ const scrollToBottom = () => {
 const selectUser = async (user) => {
     try {
         selectedUser.value = user;
-        isFetchingMessages.value = true;
+        lastMessagesUpdate.value = Date.now();
+        receivedMessageIds.clear(); // Clear to allow new messages
         
-        const endpoint = user.is_guest 
-            ? `/admin/guest-chat/${user.id}/messages`
-            : `/admin/chat/${user.id}/messages`;
-        
-        const response = await axios.get(endpoint);
-        messages.value = response.data.sort((a, b) => 
-            new Date(a.created_at) - new Date(b.created_at)
-        );
-    // No per-user channel subscription needed; admin receives all on their private channel
-        // Clear unread badge locally for this user
-        const idx = users.value.findIndex(u => u.id === user.id);
+        // Clear unread badge immediately for instant UI feedback
+        const idx = users.value.findIndex(u => u.id === user.id && u.is_guest === user.is_guest);
         if (idx !== -1) {
             const u = users.value[idx];
             u.unread_count = 0;
             users.value.splice(idx, 1, { ...u });
         }
-        // Force scroll to bottom after messages are loaded and DOM is updated
-    nextTick(() => {
-            if (chatContainer.value) {
-                setTimeout(() => {
-                    chatContainer.value.scrollTop = chatContainer.value.scrollHeight;
-                }, 50);
+        
+        // Load messages in parallel without blocking UI
+        const endpoint = user.is_guest 
+            ? `/admin/guest-chat/${user.id}/messages`
+            : `/admin/chat/${user.id}/messages`;
+        
+        // Don't await - load messages asynchronously
+        axios.get(endpoint).then(response => {
+            // Only update if this user is still selected
+            if (selectedUser.value?.id === user.id && selectedUser.value?.is_guest === user.is_guest) {
+                messages.value = response.data.sort((a, b) => 
+                    new Date(a.created_at) - new Date(b.created_at)
+                );
+                
+                // Immediate scroll to bottom
+                nextTick(() => {
+                    if (chatContainer.value) {
+                        chatContainer.value.scrollTop = chatContainer.value.scrollHeight;
+                    }
+                });
+            }
+        }).catch(error => {
+            console.error('Error loading messages:', error);
+            if (selectedUser.value?.id === user.id) {
+                alert('Error loading messages. Please try again.');
             }
         });
-    isFetchingMessages.value = false;
+        
     } catch (error) {
-        console.error('Error loading messages:', error);
-        alert('Error loading messages. Please try again.');
-    isFetchingMessages.value = false;
+        console.error('Error selecting user:', error);
     }
 };
 
 const sendMessage = async () => {
+    let tempMessage = null;
+    const messageText = newMessage.value;
+    
     try {
         if (!newMessage.value.trim() && !imageInput.value?.files[0] && !videoInput.value?.files[0]) return;
         if (selectedUser.value.is_blocked) return;
 
+        newMessage.value = ''; // Clear immediately
+        
+        // Add optimistic message
+        tempMessage = {
+            id: Date.now(),
+            message: messageText,
+            image_path: null,
+            video_path: null,
+            created_at: new Date().toISOString(),
+            sender_id: page.props.auth.user.id,
+            recipient_id: selectedUser.value.id,
+        };
+        messages.value.push(tempMessage);
+        scrollToBottom();
+
         const formData = new FormData();
-        formData.append('message', newMessage.value);
+        formData.append('message', messageText);
         
         if (imageInput.value?.files[0]) {
             formData.append('image', imageInput.value.files[0]);
@@ -351,28 +397,37 @@ const sendMessage = async () => {
             : `/admin/chat/${selectedUser.value.id}/send`;
         
         const { data } = await axios.post(endpoint, formData);
-        newMessage.value = '';
+        
         if (imageInput.value) {
             imageInput.value.value = '';
         }
         if (videoInput.value) {
             videoInput.value.value = '';
         }
-        // Optimistically append sent message and mark as seen to avoid event duplicate
+        
+        // Replace temp message with real one
+        const tempIndex = messages.value.findIndex(m => m.id === tempMessage.id);
+        if (tempIndex !== -1) {
+            messages.value[tempIndex] = {
+                id: data.id,
+                message: data.message,
+                image_path: data.image_path,
+                video_path: data.video_path,
+                created_at: data.created_at,
+                sender_id: data.sender_id,
+                recipient_id: data.recipient_id,
+            };
+        }
+        
         if (data && data.id) {
             receivedMessageIds.add(String(data.id));
         }
-        messages.value.push({
-            id: data.id,
-            message: data.message,
-            image_path: data.image_path,
-            video_path: data.video_path,
-            created_at: data.created_at,
-            sender_id: data.sender_id,
-            recipient_id: data.recipient_id,
-        });
-        scrollToBottom();
     } catch (error) {
+        // Remove temp message on error
+        if (tempMessage) {
+            messages.value = messages.value.filter(m => m.id !== tempMessage.id);
+        }
+        newMessage.value = messageText; // Restore message
         console.error('Error sending message:', error);
         alert('Error sending message. Please try again.');
     }
@@ -468,115 +523,184 @@ const handleAvatarError = (e) => {
     }
 };
 
-const handleNewMessage = async (e) => {
-    // De-dup guard: ignore same message multiple times
-    const dedupKey = e?.chat?.id ? String(e.chat.id) : [e?.chat?.sender_id, e?.chat?.recipient_id, e?.chat?.created_at, e?.chat?.message, e?.chat?.image_path].join('|');
-    if (dedupKey && receivedMessageIds.has(dedupKey)) {
-        return;
-    }
-    if (dedupKey) receivedMessageIds.add(dedupKey);
-    // Play notification sound for new messages from users
-    if (e.chat.sender_id !== page.props.auth.user.id) {
-    playNotification();
-        
-        // Request notification permission if not granted
-        if ('Notification' in window && Notification.permission === 'default') {
-            Notification.requestPermission();
-        }
-        
-        // Show browser notification if permitted
-        if ('Notification' in window && Notification.permission === 'granted') {
-            new Notification('New Support Message', {
-                body: `New message from ${e.chat.sender_name || 'User'}`,
-                icon: '/favicon.ico'
-            });
-        }
 
-        // Update title with notification
-        const originalTitle = document.title;
-        document.title = '(New Message) ' + originalTitle;
-        setTimeout(() => {
-            document.title = originalTitle;
-        }, 5000);
-    }
-
-    // Handle both regular user and guest messages
-    const isGuestMessage = e.chat.is_guest !== undefined;
-    const senderId = isGuestMessage ? e.chat.sender_id : e.chat.sender_id;
-    
-    // Update messages if the current chat is open
-    if (selectedUser.value?.id === senderId) {
-        messages.value.push({
-            id: e.chat.id,
-            message: e.chat.message,
-            image_path: e.chat.image_path,
-            video_path: e.chat.video_path,
-            created_at: e.chat.created_at,
-            sender_id: e.chat.sender_id,
-            recipient_id: e.chat.recipient_id,
-            is_guest: e.chat.is_guest || false
-        });
-        scrollToBottom();
-    } else {
-        // Increment unread badge for sender
-        let idx = users.value.findIndex(u => String(u.id) === String(senderId));
-        if (idx !== -1) {
-            const u = users.value[idx];
-            u.unread_count = (u.unread_count || 0) + 1;
-            users.value.splice(idx, 1, { ...u });
-        } else if (isGuestMessage) {
-            // Add new guest user to list
-            users.value.unshift({
-                id: senderId,
-                mobile_number: 'Guest',
-                name: e.chat.sender_name || `Guest ${senderId}`,
-                avatar_url: null,
-                unread_count: 1,
-                is_guest: true,
-                is_blocked: false
-            });
-        }
-    }
-
-    // Refresh users while preserving any local increments
-    await loadUsers({ preserveCounts: true });
-};
 
 onMounted(() => {
-    // Setup default notification sound
     notificationSound.src = '/notification.mp3';
     notificationSound.load();
 
-    // Check stored preference
     if (localStorage.getItem('soundEnabled') === '1') {
         soundEnabled.value = true;
     } else {
         showSoundPrompt.value = true;
     }
 
-    // Request notification permission
     if ('Notification' in window && Notification.permission === 'default') {
         Notification.requestPermission();
     }
 
-    // Initial load of users
-    loadUsers();
+    // Initial load
+    loadUsers(true);
 
-    // Subscribe admin to their own private channel to receive relevant messages
-    const adminId = page.props.auth.user?.id;
-    if (adminId) {
-        window.Echo.private(`chat.${adminId}`)
-            .listen('NewChatMessage', (e) => {
-                handleNewMessage(e);
-            })
-            .listen('ChatHistoryDeleted', (e) => {
-                if (selectedUser.value?.id === e.userId) {
+    // Polling for users every 4 seconds
+    const usersInterval = setInterval(() => {
+        loadUsers();
+    }, 4000);
+
+    // Polling for messages in selected chat every 3 seconds
+    const messagesInterval = setInterval(async () => {
+        if (selectedUser.value) {
+            try {
+                const endpoint = selectedUser.value.is_guest 
+                    ? `/admin/guest-chat/${selectedUser.value.id}/messages`
+                    : `/admin/chat/${selectedUser.value.id}/messages`;
+                
+                const response = await axios.get(endpoint);
+                const newMessages = response.data.sort((a, b) => 
+                    new Date(a.created_at) - new Date(b.created_at)
+                );
+                
+                // Only update if there are actually new messages
+                if (newMessages.length !== messages.value.length) {
+                    const hasNewMessages = newMessages.some(newMsg => 
+                        !messages.value.some(existingMsg => existingMsg.id === newMsg.id)
+                    );
+                    
+                    if (hasNewMessages) {
+                        messages.value = newMessages;
+                        scrollToBottom();
+                    }
+                }
+            } catch (error) {
+                // If chat was deleted (404), clear selection
+                if (error.response?.status === 404) {
                     selectedUser.value = null;
                     messages.value = [];
+                    loadUsers(true);
                 }
-                loadUsers();
+            }
+        }
+    }, 3000);
+
+    // Real-time with Echo for admin chat
+    if (window.Echo) {
+        console.log('🔄 Setting up Echo listeners for admin chat...');
+        
+        window.Echo.private(`chat.${page.props.auth.user.id}`)
+            .listen('NewChatMessage', (e) => {
+                console.log('📨 Received NewChatMessage event:', e);
+                // Only handle messages not from admin (incoming from users)
+                if (e.chat.sender_id !== page.props.auth.user.id) {
+                    // Play notification sound
+                    playNotification();
+                    
+                    // Show browser notification
+                    if ('Notification' in window && Notification.permission === 'granted') {
+                        new Notification('New Support Message', {
+                            body: `New message from user`,
+                            icon: '/favicon.ico'
+                        });
+                    }
+                    
+                    // Update users list
+                    const userIndex = users.value.findIndex(u => u.id === e.chat.sender_id && !u.is_guest);
+                    if (userIndex !== -1) {
+                        const user = users.value[userIndex];
+                        user.last_message_at = e.chat.created_at; // Update last message time
+                        if (!selectedUser.value || selectedUser.value.id !== user.id) {
+                            // Increment unread count
+                            user.unread_count = (user.unread_count || 0) + 1;
+                            users.value.splice(userIndex, 1, { ...user });
+                        } else {
+                            // If selected, add to messages and mark as read
+                            if (!receivedMessageIds.has(String(e.chat.id))) {
+                                messages.value.push({
+                                    id: e.chat.id,
+                                    message: e.chat.message,
+                                    image_path: e.chat.image_path,
+                                    video_path: e.chat.video_path,
+                                    created_at: e.chat.created_at,
+                                    sender_id: e.chat.sender_id,
+                                    recipient_id: e.chat.recipient_id,
+                                });
+                                messages.value.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+                                scrollToBottom();
+                                receivedMessageIds.add(String(e.chat.id));
+                            }
+                            // Clear unread for this user
+                            user.unread_count = 0;
+                            users.value.splice(userIndex, 1, { ...user });
+                        }
+                    }
+                }
             });
+
+        // Listen for guest chat messages
+        window.Echo.private('guest-chat')
+            .listen('NewGuestChatMessage', (e) => {
+                console.log('📨 Received NewGuestChatMessage event:', e);
+                if (e.message.sender_id !== page.props.auth.user.id) {
+                    // If this message is for the currently selected user, add it to messages
+                    if (selectedUser.value && selectedUser.value.is_guest && selectedUser.value.id === e.message.sender_id) {
+                        if (!receivedMessageIds.has(String(e.message.id))) {
+                            messages.value.push({
+                                id: e.message.id,
+                                message: e.message.message,
+                                image_path: e.message.image_path,
+                                video_path: e.message.video_path,
+                                created_at: e.message.created_at,
+                                sender_id: e.message.sender_id,
+                                recipient_id: e.message.recipient_id,
+                            });
+                            messages.value.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+                            scrollToBottom();
+                            receivedMessageIds.add(String(e.message.id));
+                        }
+                    }
+                    
+                    // Update user list
+                    const userIndex = users.value.findIndex(u => u.id === e.message.sender_id && u.is_guest);
+                    if (userIndex !== -1) {
+                        const user = users.value[userIndex];
+                        user.last_message_at = e.message.created_at;
+                        if (!selectedUser.value || selectedUser.value.id !== user.id || !selectedUser.value.is_guest) {
+                            user.unread_count = (user.unread_count || 0) + 1;
+                        }
+                        users.value.splice(userIndex, 1, { ...user });
+                        
+                        playNotification();
+                        if ('Notification' in window && Notification.permission === 'granted') {
+                            new Notification('New Support Message', {
+                                body: `New message from ${user.name || 'Guest'}`,
+                                icon: '/favicon.ico'
+                            });
+                        }
+                    }
+                }
+            });
+            
+        console.log('✅ Echo listeners set up successfully');
+    } else {
+        console.log('❌ Echo not available, using polling fallback only');
     }
+
+    const primeAudio = () => {
+        notificationSound.play().then(() => {
+            notificationSound.pause();
+            notificationSound.currentTime = 0;
+        }).catch(() => {});
+        window.removeEventListener('click', primeAudio);
+        window.removeEventListener('keydown', primeAudio);
+        window.removeEventListener('touchstart', primeAudio);
+    };
+    window.addEventListener('click', primeAudio);
+    window.addEventListener('keydown', primeAudio);
+    window.addEventListener('touchstart', primeAudio);
+
+    return () => {
+        clearInterval(usersInterval);
+        clearInterval(messagesInterval);
+    };
 });
 
 // Explicit user gesture to enable/prime audio
@@ -615,13 +739,28 @@ const confirmDelete = async () => {
             : `/admin/chat/${userToDelete.value.id}/delete-history`;
         
         await axios.delete(endpoint);
-        console.log('Chat history deleted successfully.');
-        loadUsers();
-        if (selectedUser.value?.id === userToDelete.value.id) {
+        
+        // Remove user from list immediately
+        users.value = users.value.filter(u => {
+            if (userToDelete.value.is_guest) {
+                return !(u.id === userToDelete.value.id && u.is_guest);
+            } else {
+                return !(u.id === userToDelete.value.id && !u.is_guest);
+            }
+        });
+        
+        // Clear selected user if it was deleted
+        if (selectedUser.value?.id === userToDelete.value.id && 
+            selectedUser.value?.is_guest === userToDelete.value.is_guest) {
             selectedUser.value = null;
             messages.value = [];
         }
+        
         showDeleteModal.value = false;
+        userToDelete.value = null;
+        
+        // Refresh users list
+        setTimeout(() => loadUsers(true), 500);
     } catch (error) {
         console.error('Error deleting chat history:', error);
         alert('Failed to delete chat history. Please try again.');

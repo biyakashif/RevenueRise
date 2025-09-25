@@ -18,12 +18,19 @@ Broadcast::channel('chat.{id}', function ($user, $id) {
     return true;
 });
 
+Broadcast::channel('admin.{id}', function ($user, $id) {
+    return $user->role === 'admin' && (int) $user->id === (int) $id;
+});
+
 Broadcast::channel('sliders', function ($user) {
     // Allow all authenticated users to listen to slider updates
     return $user !== null;
 });
 
-// Public channel for guest chat (no authentication required)
-Broadcast::channel('guest-chat.{sessionId}', function () {
-    return true;
+Broadcast::channel('admin-chat-updates', function ($user) {
+    return $user->role === 'admin';
+});
+
+Broadcast::channel('guest-chat', function ($user) {
+    return $user->role === 'admin';
 });
