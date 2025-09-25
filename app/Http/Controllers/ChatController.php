@@ -25,33 +25,27 @@ class ChatController extends Controller
 
     public function getMessages(Request $request)
     {
-        $userId = auth()->id();
+        $admin = \App\Models\User::where('role', 'admin')->first();
+        $adminId = $admin ? $admin->id : 1;
         
-        $messages = ChatMessage::where(function($query) use ($userId) {
-            $query->where('sender_id', $userId)
-                ->orWhere('recipient_id', $userId);
-        })
-        ->with('sender:id,mobile_number,name,avatar_url')
+        $messages = \App\Models\ChatMessage::where(function($query) use ($adminId) {
+            $query->where('sender_id', auth()->id())->where('recipient_id', $adminId);
+        })->orWhere(function($query) use ($adminId) {
+            $query->where('sender_id', $adminId)->where('recipient_id', auth()->id());
+        })->where('sender_type', '!=', 'guest')
         ->orderBy('created_at', 'asc')
         ->get();
-
-        // Mark messages as read
-        ChatMessage::where('recipient_id', auth()->id())
-            ->whereNull('read_at')
-            ->update(['read_at' => now()]);
-
+        
         return response()->json($messages);
     }
 
     public function sendMessage(Request $request)
     {
         try {
-            \Log::info('Chat message request:', $request->all());
-            
             $request->validate([
                 'message' => 'required_without_all:image,video',
                 'image' => 'nullable|image|max:2048',
-                'video' => 'nullable|mimetypes:video/mp4,video/x-matroska|max:30720' // Updated max size to 30MB
+                'video' => 'nullable|mimetypes:video/mp4,video/x-matroska|max:30720'
             ]);
 
             if ($request->hasFile('video') && $request->file('video')->getSize() > 30720 * 1024) {
@@ -60,40 +54,85 @@ class ChatController extends Controller
 
             $sender = auth()->user();
             $admin = \App\Models\User::where('role', 'admin')->first();
-
-            \Log::info('Sender:', ['id' => $sender->id]);
-            \Log::info('Admin:', $admin ? ['id' => $admin->id] : 'No admin found');
-
-            $message = new ChatMessage();
-            $message->sender_id = $sender->id;
-            $message->recipient_id = $admin ? $admin->id : 1; // Assuming admin id is 1 or handle properly
-            $message->message = $request->message;
+            $adminId = $admin ? $admin->id : 1;
             
+            $messageId = 'user_' . time() . '_' . rand(1000, 9999);
+            $imagePath = null;
+            $videoPath = null;
+
+            // Handle file uploads
             if ($request->hasFile('image')) {
                 $path = $request->file('image')->store('chat-images', 'public');
-                $message->image_path = '/storage/' . $path;
+                $imagePath = '/storage/' . $path;
             }
 
             if ($request->hasFile('video')) {
                 $path = $request->file('video')->store('chat-videos', 'public');
-                $message->video_path = '/storage/' . $path;
+                $videoPath = '/storage/' . $path;
             }
 
-            $message->save();
+            // Save to database
+            $chatMessage = \App\Models\ChatMessage::create([
+                'message_id' => $messageId,
+                'sender_id' => $sender->id,
+                'recipient_id' => $adminId,
+                'message' => $request->message,
+                'image_path' => $imagePath,
+                'video_path' => $videoPath,
+                'sender_type' => 'user'
+            ]);
 
-            broadcast(new NewChatMessage($message))->toOthers();
+            $messageData = [
+                'id' => $chatMessage->id,
+                'sender_id' => $chatMessage->sender_id,
+                'recipient_id' => $chatMessage->recipient_id,
+                'message' => $chatMessage->message,
+                'image_path' => $chatMessage->image_path,
+                'video_path' => $chatMessage->video_path,
+                'created_at' => $chatMessage->created_at->toISOString(),
+            ];
 
-            // Broadcast user status update for real-time admin UI updates
-            broadcast(new \App\Events\UserChatStatusUpdated($sender->id, false, 'new_message', [
-                'unread_count' => 1,
-                'last_message_at' => $message->created_at,
-            ]))->toOthers();
+            // Broadcast immediately for real-time delivery
+            broadcast(new NewChatMessage((object)$messageData));
 
-            return response()->json($message);
+            return response()->json($messageData);
         } catch (\Exception $e) {
             \Log::error('Error in ChatController@sendMessage: ' . $e->getMessage());
             return response()->json(['error' => $e->getMessage()], 500);
         }
+    }
+
+    // Direct broadcast method for instant messaging
+    public function broadcastMessage(Request $request)
+    {
+        $request->validate([
+            'message' => 'required|string|max:1000'
+        ]);
+
+        $admin = \App\Models\User::where('role', 'admin')->first();
+        $adminId = $admin ? $admin->id : 1;
+        
+        // Save to database
+        $chatMessage = \App\Models\ChatMessage::create([
+            'message_id' => 'user_' . time() . '_' . rand(1000, 9999),
+            'sender_id' => auth()->id(),
+            'recipient_id' => $adminId,
+            'message' => $request->message,
+            'sender_type' => 'user'
+        ]);
+
+        $messageData = [
+            'id' => $chatMessage->id,
+            'sender_id' => $chatMessage->sender_id,
+            'recipient_id' => $chatMessage->recipient_id,
+            'message' => $chatMessage->message,
+            'created_at' => $chatMessage->created_at->toISOString(),
+        ];
+
+        // Broadcast instantly
+        broadcast(new NewChatMessage((object)$messageData));
+
+        return response()->json($messageData);
     }
 
     public function uploadImage(Request $request)
@@ -120,10 +159,7 @@ class ChatController extends Controller
 
     public function unreadCount()
     {
-        $count = ChatMessage::where('recipient_id', auth()->id())
-            ->whereNull('read_at')
-            ->count();
-
-        return response()->json(['count' => $count]);
+        // Return 0 for pure real-time chat
+        return response()->json(['count' => 0]);
     }
 }

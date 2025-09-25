@@ -46,15 +46,18 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->name('admin.')->group(fun
     Route::get('/chat/users', [\App\Http\Controllers\Admin\ChatController::class, 'getUsers'])->name('chat.users');
     Route::get('/chat/{userId}/messages', [\App\Http\Controllers\Admin\ChatController::class, 'getMessages'])->name('chat.messages');
     Route::post('/chat/{userId}/send', [\App\Http\Controllers\Admin\ChatController::class, 'sendMessage'])->name('chat.send');
+    Route::post('/chat/{userId}/broadcast', [\App\Http\Controllers\Admin\ChatController::class, 'broadcastMessage'])->name('chat.broadcast');
     Route::delete('/chat/{userId}/delete-history', [\App\Http\Controllers\Admin\ChatController::class, 'deleteChatHistory'])->name('chat.delete-history');
     
     // Admin Guest Chat Routes
     Route::get('/guest-chat/users', [\App\Http\Controllers\Admin\GuestChatController::class, 'getUsers'])->name('guest-chat.users');
-    Route::get('/guest-chat/{guestId}/messages', [\App\Http\Controllers\Admin\GuestChatController::class, 'getMessages'])->name('guest-chat.messages');
-    Route::post('/guest-chat/{guestId}/send', [\App\Http\Controllers\Admin\GuestChatController::class, 'sendMessage'])->name('guest-chat.send');
-    Route::delete('/guest-chat/{guestId}/delete-history', [\App\Http\Controllers\Admin\GuestChatController::class, 'deleteChatHistory'])->name('guest-chat.delete-history');
-    Route::post('/guest-chat/{guestId}/block', [\App\Http\Controllers\Admin\GuestChatController::class, 'blockUser'])->name('guest-chat.block');
-    Route::post('/guest-chat/{guestId}/unblock', [\App\Http\Controllers\Admin\GuestChatController::class, 'unblockUser'])->name('guest-chat.unblock');
+    Route::get('/guest-chat/blocked', [\App\Http\Controllers\Admin\GuestChatController::class, 'getBlockedGuests'])->name('guest-chat.blocked');
+    Route::get('/guest-chat/{sessionId}/messages', [\App\Http\Controllers\Admin\GuestChatController::class, 'getMessages'])->name('guest-chat.messages');
+    Route::post('/guest-chat/{sessionId}/send', [\App\Http\Controllers\Admin\GuestChatController::class, 'sendMessage'])->name('guest-chat.send');
+    Route::post('/guest-chat/{sessionId}/broadcast', [\App\Http\Controllers\Admin\GuestChatController::class, 'broadcastMessage'])->name('guest-chat.broadcast');
+    Route::delete('/guest-chat/{sessionId}/delete-history', [\App\Http\Controllers\Admin\GuestChatController::class, 'deleteChatHistory'])->name('guest-chat.delete-history');
+    Route::post('/guest-chat/{sessionId}/block', [\App\Http\Controllers\Admin\GuestChatController::class, 'blockUser'])->name('guest-chat.block');
+    Route::post('/guest-chat/{sessionId}/unblock', [\App\Http\Controllers\Admin\GuestChatController::class, 'unblockUser'])->name('guest-chat.unblock');
     
     // Deposit Management
     Route::get('/deposit-clients', [AdminController::class, 'depositClients'])->name('deposit-clients');
@@ -107,6 +110,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/chat/messages', [\App\Http\Controllers\ChatController::class, 'getMessages'])->name('chat.messages');
     Route::get('/chat/unread-count', [\App\Http\Controllers\ChatController::class, 'unreadCount'])->name('chat.unread-count');
     Route::post('/chat/send', [\App\Http\Controllers\ChatController::class, 'sendMessage'])->name('chat.send');
+    Route::post('/chat/broadcast', [\App\Http\Controllers\ChatController::class, 'broadcastMessage'])->name('chat.broadcast');
     Route::post('/chat/upload-image', [\App\Http\Controllers\ChatController::class, 'uploadImage'])->name('chat.upload-image');
 
     // Balance Route
@@ -207,7 +211,9 @@ Route::post('/captcha/verify', [\App\Http\Controllers\CaptchaController::class, 
 // ================= GUEST CHAT ROUTES =================
 Route::post('/guest-chat/start', [\App\Http\Controllers\GuestChatController::class, 'startChat'])->name('guest-chat.start');
 Route::get('/guest-chat/{sessionId}/messages', [\App\Http\Controllers\GuestChatController::class, 'getMessages'])->name('guest-chat.messages');
-Route::post('/guest-chat/{sessionId}/send', [\App\Http\Controllers\GuestChatController::class, 'sendMessage'])->name('guest-chat.send');
+Route::post('/guest-chat/{sessionId}/broadcast', [\App\Http\Controllers\GuestChatController::class, 'broadcastMessage'])->name('guest-chat.broadcast');
+Route::post('/guest-chat/{sessionId}/send', [\App\Http\Controllers\GuestChatController::class, 'sendFile'])->name('guest-chat.send');
+Route::get('/guest-chat/{sessionId}/block-status', [\App\Http\Controllers\GuestChatController::class, 'checkBlockStatus'])->name('guest-chat.block-status');
 
 // CSRF token refresh
 Route::get('/csrf-token', function () {

@@ -13,8 +13,9 @@ class VerifyCsrfToken extends Middleware
      */
     protected $except = [
         'broadcasting/auth',
-    'broadcasting/*',
-    'chat/*',
-    'admin/chat/*/send'
+        'broadcasting/*',
+        'chat/*',
+        'admin/chat/*/send',
+        'guest-chat/*'
     ];
 }

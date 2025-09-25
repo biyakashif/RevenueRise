@@ -28,6 +28,11 @@ const notificationSound = new Audio('/notification.mp3');
 const showCaptchaError = ref('');
 const isBlocked = ref(false);
 const blockedSessions = ref(new Set());
+const imageInput = ref(null);
+const videoInput = ref(null);
+const showMediaModal = ref(false);
+const modalMediaSrc = ref('');
+const modalMediaType = ref('');
 
 function scrollToSection(id) {
     const el = document.getElementById(id);
@@ -76,7 +81,17 @@ const startGuestChat = async () => {
             mobile_number: guestForm.value.mobile_number
         });
         
+        if (response.data.blocked) {
+            showCaptchaError.value = 'You have been blocked. You cannot send messages.';
+            return;
+        }
+        
         guestSessionId.value = response.data.session_id;
+        // Store guest info for later use
+        window.guestInfo = {
+            name: guestForm.value.name,
+            mobile_number: guestForm.value.mobile_number
+        };
         isBlocked.value = blockedSessions.value.has(response.data.session_id);
         showChatForm.value = false;
         loadGuestMessages();
@@ -87,96 +102,52 @@ const startGuestChat = async () => {
 };
 
 const loadGuestMessages = async () => {
-    if (!guestSessionId.value) return;
+    // Pure real-time chat - no database polling needed
+    return;
+};
+
+const sendGuestMessage = async () => {
+    if (!newMessage.value.trim() || !guestSessionId.value || isBlocked.value) return;
+    
+    const messageText = newMessage.value;
+    newMessage.value = '';
     
     try {
-        const response = await axios.get(`/guest-chat/${guestSessionId.value}/messages`);
-        const serverMessages = response.data.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+        const response = await axios.post(`/guest-chat/${guestSessionId.value}/broadcast`, {
+            message: messageText,
+            guest_name: window.guestInfo?.name,
+            guest_mobile: window.guestInfo?.mobile_number
+        });
         
-        // Preserve temp messages and merge with server messages
-        const tempMessages = messages.value.filter(m => m.isTemp);
+        // Add message immediately to UI
+        const messageData = {
+            id: response.data.id,
+            message: messageText,
+            is_guest: true,
+            created_at: response.data.created_at,
+        };
         
-        // Only add new messages from server that don't exist yet
-        const currentIds = new Set(messages.value.filter(m => !m.isTemp).map(m => m.id));
-        const newServerMessages = serverMessages.filter(m => !currentIds.has(m.id));
-        
-        if (newServerMessages.length > 0) {
-            // Check for admin messages for notification
-            const hasAdminMessage = newServerMessages.some(msg => !msg.is_guest);
-            
-            // Merge: existing non-temp + new server + temp messages
-            const nonTempExisting = messages.value.filter(m => !m.isTemp);
-            messages.value = [...nonTempExisting, ...newServerMessages, ...tempMessages]
-                .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
-            
-            if (hasAdminMessage) {
-                notificationSound.play().catch(() => {});
-            }
+        // Check if message doesn't already exist
+        const exists = messages.value.some(m => m.id === messageData.id);
+        if (!exists) {
+            messages.value.push(messageData);
+            messages.value.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
             
             setTimeout(() => {
                 if (messagesContainer.value) {
                     messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
                 }
-            }, 100);
-        }
-    } catch (error) {
-        // If chat is deleted (404), stop polling and close chat
-        if (error.response?.status === 404) {
-            stopRealTimeChat();
-            closeGuestChat();
-        }
-    }
-};
-
-const sendGuestMessage = async () => {
-    if (!newMessage.value.trim() || !guestSessionId.value) return;
-    
-    const messageText = newMessage.value;
-    newMessage.value = '';
-    
-    // Add message optimistically with unique temp ID
-    const tempId = `temp-${Date.now()}`;
-    const tempMessage = {
-        id: tempId,
-        message: messageText,
-        is_guest: true,
-        created_at: new Date().toISOString(),
-        isTemp: true
-    };
-    messages.value.push(tempMessage);
-    
-    setTimeout(() => {
-        if (messagesContainer.value) {
-            messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
-        }
-    }, 50);
-    
-    try {
-        const response = await axios.post(`/guest-chat/${guestSessionId.value}/send`, {
-            message: messageText
-        });
-        
-        // Replace temp message with real one
-        const index = messages.value.findIndex(m => m.id === tempId);
-        if (index !== -1) {
-            messages.value[index] = {
-                id: response.data.id,
-                message: response.data.message,
-                is_guest: response.data.is_guest,
-                created_at: response.data.created_at
-            };
+            }, 50);
         }
         
         isBlocked.value = false;
         blockedSessions.value.delete(guestSessionId.value);
     } catch (error) {
-        messages.value = messages.value.filter(m => m.id !== tempId);
         newMessage.value = messageText;
         
         if (error.response?.status === 403) {
             isBlocked.value = true;
             blockedSessions.value.add(guestSessionId.value);
-            // Silently handle 403 - no console logging
         }
     }
 };
@@ -195,22 +166,25 @@ const startRealTimeChat = () => {
             echoChannel.listen('NewGuestChatMessage', (e) => {
                 console.log('📨 Guest received NewGuestChatMessage:', e);
                 if (e.message && e.message.sender_id !== guestSessionId.value) {
-                    // Admin message received
                     const newMessage = {
                         id: e.message.id,
                         message: e.message.message,
-                        is_guest: false,
-                        created_at: e.message.created_at
+                        is_guest: e.message.is_guest || false,
+                        created_at: e.message.created_at,
+                        is_image: e.message.is_image || false,
+                        image_path: e.message.image_path || null,
+                        video_path: e.message.video_path || null
                     };
                     
-                    // Check if message already exists
                     const exists = messages.value.some(m => m.id === newMessage.id);
                     if (!exists) {
                         messages.value.push(newMessage);
                         messages.value.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
                         
-                        // Play notification and scroll
-                        notificationSound.play().catch(() => {});
+                        if (!newMessage.is_guest) {
+                            notificationSound.play().catch(() => {});
+                        }
+                        
                         setTimeout(() => {
                             if (messagesContainer.value) {
                                 messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
@@ -233,14 +207,17 @@ const startRealTimeChat = () => {
         }
     }
     
-    // Polling fallback every 3 seconds
-    pollInterval = setInterval(() => {
+    // Check block status more frequently
+    pollInterval = setInterval(async () => {
         if (guestSessionId.value) {
-            loadGuestMessages();
-        } else {
-            clearInterval(pollInterval);
+            try {
+                const response = await axios.get(`/guest-chat/${guestSessionId.value}/block-status`);
+                isBlocked.value = response.data.is_blocked;
+            } catch (error) {
+                console.error('Error checking block status:', error);
+            }
         }
-    }, 3000);
+    }, 2000);
 };
 
 const stopRealTimeChat = () => {
@@ -256,6 +233,54 @@ const stopRealTimeChat = () => {
     if (pollInterval) {
         clearInterval(pollInterval);
         pollInterval = null;
+    }
+};
+
+const handleImageUpload = async (event) => {
+    try {
+        const file = event.target.files[0];
+        if (!file || isBlocked.value) return;
+
+        const formData = new FormData();
+        formData.append('image', file);
+
+        await axios.post(`/guest-chat/${guestSessionId.value}/send`, formData);
+        event.target.value = '';
+    } catch (error) {
+        console.error('Error uploading image:', error);
+        if (error.response?.status === 403) {
+            isBlocked.value = true;
+            alert('You have been blocked and cannot send messages.');
+        } else {
+            alert('Error uploading image. Please try again.');
+        }
+    }
+};
+
+const handleVideoUpload = async (event) => {
+    try {
+        const file = event.target.files[0];
+        if (!file || isBlocked.value) return;
+
+        if (file.size > 30 * 1024 * 1024) {
+            alert('Video file size must not exceed 30MB.');
+            event.target.value = '';
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('video', file);
+
+        await axios.post(`/guest-chat/${guestSessionId.value}/send`, formData);
+        event.target.value = '';
+    } catch (error) {
+        console.error('Error uploading video:', error);
+        if (error.response?.status === 403) {
+            isBlocked.value = true;
+            alert('You have been blocked by the administrator and cannot send messages.');
+        } else {
+            alert('Error uploading video. Please try again.');
+        }
     }
 };
 </script>
@@ -784,28 +809,60 @@ const stopRealTimeChat = () => {
                                  :class="message.is_guest 
                                      ? 'bg-blue-500 text-white' 
                                      : 'bg-gray-100 text-gray-800'">
-                                <p>{{ message.message }}</p>
+                                <div v-if="message.image_path" class="mb-2">
+                                    <img :src="message.image_path" alt="chat image" class="max-w-full rounded">
+                                </div>
+                                <div v-if="message.video_path" class="mb-2">
+                                    <video controls class="max-w-full rounded">
+                                        <source :src="message.video_path" type="video/mp4">
+                                        Your browser does not support the video tag.
+                                    </video>
+                                </div>
+                                <p v-if="message.message">{{ message.message }}</p>
                             </div>
                         </div>
                     </div>
 
                     <div class="border-t p-4">
                         <div v-if="isBlocked" class="text-center py-4 text-red-600 bg-red-50 rounded-lg mb-4">
-                            You have been blocked by admin. You cannot send messages.
+                            You have been blocked. You cannot send messages.
                         </div>
-                        <form v-else @submit.prevent="sendGuestMessage" class="flex space-x-2">
-                            <input 
-                                v-model="newMessage" 
-                                type="text" 
-                                placeholder="Type your message..." 
-                                class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            >
-                            <button 
-                                type="submit" 
-                                class="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-4 py-2 rounded-lg transition-all duration-200"
-                            >
-                                <i class="fas fa-paper-plane"></i>
-                            </button>
+                        <form v-else @submit.prevent="sendGuestMessage" class="space-y-2">
+                            <div class="flex space-x-2">
+                                <input type="file" 
+                                       ref="imageInput" 
+                                       class="hidden" 
+                                       @change="handleImageUpload"
+                                       accept="image/*">
+                                <button type="button" 
+                                        @click="$refs.imageInput.click()"
+                                        class="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-all duration-200">
+                                    <i class="fas fa-image text-gray-600"></i>
+                                </button>
+                                <input type="file" 
+                                       ref="videoInput" 
+                                       class="hidden" 
+                                       @change="handleVideoUpload"
+                                       accept="video/mp4,video/x-matroska">
+                                <button type="button" 
+                                        @click="$refs.videoInput.click()"
+                                        class="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-all duration-200">
+                                    <i class="fas fa-video text-gray-600"></i>
+                                </button>
+                                <input 
+                                    v-model="newMessage" 
+                                    type="text" 
+                                    placeholder="Type your message..." 
+                                    class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    @keydown.enter.exact.prevent="sendGuestMessage"
+                                >
+                                <button 
+                                    type="submit" 
+                                    class="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-4 py-2 rounded-lg transition-all duration-200"
+                                >
+                                    <i class="fas fa-paper-plane"></i>
+                                </button>
+                            </div>
                         </form>
                     </div>
                 </div>
@@ -891,3 +948,41 @@ const stopRealTimeChat = () => {
         </section>
     </div>
 </template>
+const handleVideoUpload = async (event) => {
+    try {
+        const file = event.target.files[0];
+        if (!file || isBlocked.value) return;
+
+        if (file.size > 30 * 1024 * 1024) {
+            alert('Video file size must not exceed 30MB.');
+            event.target.value = '';
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('video', file);
+
+        await axios.post(`/guest-chat/${guestSessionId.value}/send`, formData);
+        event.target.value = '';
+    } catch (error) {
+        console.error('Error uploading video:', error);
+        if (error.response?.status === 403) {
+            isBlocked.value = true;
+            alert('You have been blocked by the administrator and cannot send messages.');
+        } else {
+            alert('Error uploading video. Please try again.');
+        }
+    }
+};
+
+const openMediaModal = (src, type) => {
+    modalMediaSrc.value = src;
+    modalMediaType.value = type;
+    showMediaModal.value = true;
+};
+
+const closeMediaModal = () => {
+    showMediaModal.value = false;
+    modalMediaSrc.value = '';
+    modalMediaType.value = '';
+};

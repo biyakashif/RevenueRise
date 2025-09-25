@@ -18,7 +18,7 @@ class NewChatMessage implements ShouldBroadcastNow
     /**
      * Create a new event instance.
      */
-    public function __construct(public ChatMessage $chat)
+    public function __construct(public $chat)
     {
     }
 
@@ -29,11 +29,23 @@ class NewChatMessage implements ShouldBroadcastNow
      */
     public function broadcastOn(): array
     {
-        // Broadcast to both sender and recipient channels
-        return [
-            new PrivateChannel('chat.' . $this->chat->sender_id),
-            new PrivateChannel('chat.' . $this->chat->recipient_id),
-        ];
+        $channels = [];
+        
+        // Always broadcast to sender channel
+        $channels[] = new PrivateChannel('chat.' . $this->chat->sender_id);
+        
+        // Always broadcast to recipient channel
+        if ($this->chat->recipient_id && $this->chat->recipient_id != $this->chat->sender_id) {
+            $channels[] = new PrivateChannel('chat.' . $this->chat->recipient_id);
+        }
+        
+        // If this is a user message to admin, also broadcast to admin channel
+        $admin = \App\Models\User::where('role', 'admin')->first();
+        if ($admin && $this->chat->recipient_id == $admin->id && $this->chat->sender_id != $admin->id) {
+            $channels[] = new PrivateChannel('chat.' . $admin->id);
+        }
+        
+        return $channels;
     }
 
     /**
@@ -43,16 +55,16 @@ class NewChatMessage implements ShouldBroadcastNow
      */
     public function broadcastWith(): array
     {
-        return [
-            'chat' => [
-                'id' => $this->chat->id,
-                'message' => $this->chat->message,
-                'image_path' => $this->chat->image_path,
-                'video_path' => $this->chat->video_path,
-                'created_at' => $this->chat->created_at,
-                'sender_id' => $this->chat->sender_id,
-                'recipient_id' => $this->chat->recipient_id
-            ],
-        ];
+        $chatData = is_object($this->chat) ? [
+            'id' => $this->chat->id,
+            'message' => $this->chat->message,
+            'image_path' => $this->chat->image_path ?? null,
+            'video_path' => $this->chat->video_path ?? null,
+            'created_at' => $this->chat->created_at,
+            'sender_id' => $this->chat->sender_id,
+            'recipient_id' => $this->chat->recipient_id
+        ] : $this->chat;
+        
+        return ['chat' => $chatData];
     }
 }

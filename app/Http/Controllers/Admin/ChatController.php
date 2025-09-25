@@ -16,68 +16,52 @@ class ChatController extends Controller
 
     public function getUsers()
     {
-        $adminId = auth()->id();
-        $cacheKey = "admin_chat_users_{$adminId}";
-        
-        return \Cache::remember($cacheKey, 5, function() use ($adminId) { // Cache for 5 seconds
-            $users = \App\Models\User::where('role', '!=', 'admin')
-                ->select('id', 'mobile_number', 'name', 'avatar_url')
-                ->selectRaw('(
-                    SELECT MAX(created_at)
-                    FROM chat_messages
-                    WHERE (sender_id = users.id AND recipient_id = ?) 
-                       OR (sender_id = ? AND recipient_id = users.id)
-                ) as last_message_at', [$adminId, $adminId])
-                ->withCount(['sentMessages as unread_count' => function($query) use ($adminId) {
-                    $query->where('recipient_id', $adminId)
-                          ->whereNull('read_at');
-                }])
-                ->get()
-                ->map(function ($user) {
-                    return [
-                        'id' => $user->id,
-                        'name' => $user->name,
-                        'mobile_number' => $user->mobile_number,
-                        'avatar_url' => $user->avatar_url,
-                        'unread_count' => $user->unread_count,
-                        'last_message_at' => $user->last_message_at,
-                    ];
-                })
-                ->sortByDesc('last_message_at')
-                ->values();
+        // Get regular users for real-time chat
+        $users = \App\Models\User::where('role', '!=', 'admin')
+            ->select('id', 'mobile_number', 'name', 'avatar_url')
+            ->get()
+            ->map(function ($user) {
+                return [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'mobile_number' => $user->mobile_number,
+                    'avatar_url' => $user->avatar_url,
+                    'unread_count' => 0,
+                    'last_message_at' => null,
+                ];
+            });
 
-            return response()->json($users);
-        });
+        // Get guest users from chat messages
+        $guestUsers = \App\Models\ChatMessage::where('sender_type', 'guest')
+            ->select('guest_session_id', 'guest_name', 'guest_mobile')
+            ->distinct()
+            ->get()
+            ->map(function ($guest) {
+                return [
+                    'id' => 'guest_' . $guest->guest_session_id,
+                    'name' => $guest->guest_name,
+                    'mobile_number' => $guest->guest_mobile,
+                    'avatar_url' => null,
+                    'unread_count' => 0,
+                    'last_message_at' => null,
+                    'is_guest' => true,
+                    'session_id' => $guest->guest_session_id
+                ];
+            });
+
+        return response()->json($users->concat($guestUsers));
     }
 
     public function getMessages($userId)
     {
-        $adminId = auth()->id();
-        
-        $messages = \App\Models\ChatMessage::where(function($query) use ($userId, $adminId) {
-            $query->where('sender_id', $userId)
-                  ->where('recipient_id', $adminId);
-        })->orWhere(function($query) use ($userId, $adminId) {
-            $query->where('sender_id', $adminId)
-                  ->where('recipient_id', $userId);
-        })
+        $messages = \App\Models\ChatMessage::where(function($query) use ($userId) {
+            $query->where('sender_id', auth()->id())->where('recipient_id', $userId);
+        })->orWhere(function($query) use ($userId) {
+            $query->where('sender_id', $userId)->where('recipient_id', auth()->id());
+        })->where('sender_type', '!=', 'guest')
         ->orderBy('created_at', 'asc')
         ->get();
-
-        // Mark messages as read
-        \App\Models\ChatMessage::where('sender_id', $userId)
-            ->where('recipient_id', $adminId)
-            ->whereNull('read_at')
-            ->update(['read_at' => now()]);
-
-        // Clear cache after marking as read
-        \Cache::forget("admin_chat_users_{$adminId}");
-
-        // Broadcast user status update for real-time UI updates
-        broadcast(new \App\Events\UserChatStatusUpdated($userId, false, 'message_read', [
-            'unread_count' => 0,
-        ]))->toOthers();
-
+        
         return response()->json($messages);
     }
 
@@ -88,100 +72,103 @@ class ChatController extends Controller
             $request->validate([
                 'message' => 'required_without_all:image,video',
                 'image' => 'nullable|image|max:2048',
-                'video' => 'nullable|mimetypes:video/mp4,video/x-matroska|max:30720' // Updated max size to 30MB
+                'video' => 'nullable|mimetypes:video/mp4,video/x-matroska|max:30720'
             ]);
 
             if ($request->hasFile('video') && $request->file('video')->getSize() > 30720 * 1024) {
                 return response()->json(['error' => 'The video file size must not exceed 30MB.'], 400);
             }
 
-            $message = new \App\Models\ChatMessage();
-            $message->sender_id = auth()->id();
-            $message->recipient_id = $userId;
-            $message->message = $request->message;
+            $messageId = 'msg_' . time() . '_' . rand(1000, 9999);
+            $imagePath = null;
+            $videoPath = null;
 
+            // Handle file uploads
             if ($request->hasFile('image')) {
                 $path = $request->file('image')->store('chat-images', 'public');
-                $message->image_path = '/storage/' . $path;
+                $imagePath = '/storage/' . $path;
             }
 
             if ($request->hasFile('video')) {
                 $path = $request->file('video')->store('chat-videos', 'public');
-                $message->video_path = '/storage/' . $path;
+                $videoPath = '/storage/' . $path;
             }
 
-            $message->save();
+            // Save to database
+            $chatMessage = \App\Models\ChatMessage::create([
+                'message_id' => $messageId,
+                'sender_id' => $adminId,
+                'recipient_id' => $userId,
+                'message' => $request->message,
+                'image_path' => $imagePath,
+                'video_path' => $videoPath,
+                'sender_type' => 'admin'
+            ]);
 
-            // Clear cache for both admin and recipient
-            \Cache::forget("admin_chat_users_{$adminId}");
-            \Cache::forget("admin_chat_users_{$userId}");
+            $messageData = [
+                'id' => $chatMessage->id,
+                'sender_id' => $chatMessage->sender_id,
+                'recipient_id' => $chatMessage->recipient_id,
+                'message' => $chatMessage->message,
+                'image_path' => $chatMessage->image_path,
+                'video_path' => $chatMessage->video_path,
+                'created_at' => $chatMessage->created_at->toISOString(),
+            ];
 
-            // Broadcast event
-            broadcast(new \App\Events\NewChatMessage($message))->toOthers();
+            // Broadcast immediately for real-time delivery
+            broadcast(new \App\Events\NewChatMessage((object)$messageData));
 
-            // Broadcast user status update for real-time UI updates
-            broadcast(new \App\Events\UserChatStatusUpdated($userId, false, 'new_message', [
-                'unread_count' => 1,
-                'last_message_at' => $message->created_at,
-            ]))->toOthers();
-
-            return response()->json($message);
+            return response()->json($messageData);
         } catch (\Exception $e) {
             \Log::error('Error in admin sendMessage: ' . $e->getMessage());
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
 
+    // Direct broadcast method for instant messaging
+    public function broadcastMessage(Request $request, $userId)
+    {
+        $request->validate([
+            'message' => 'required|string|max:1000'
+        ]);
+
+        $messageId = 'msg_' . time() . '_' . rand(1000, 9999);
+        
+        // Save to database
+        $chatMessage = \App\Models\ChatMessage::create([
+            'message_id' => $messageId,
+            'sender_id' => auth()->id(),
+            'recipient_id' => $userId,
+            'message' => $request->message,
+            'sender_type' => 'admin'
+        ]);
+
+        $messageData = [
+            'id' => $chatMessage->id,
+            'sender_id' => $chatMessage->sender_id,
+            'recipient_id' => $chatMessage->recipient_id,
+            'message' => $chatMessage->message,
+            'created_at' => $chatMessage->created_at->toISOString(),
+        ];
+
+        // Broadcast instantly
+        broadcast(new \App\Events\NewChatMessage((object)$messageData));
+
+        return response()->json($messageData);
+    }
+
     public function deleteChatHistory($userId)
     {
-        try {
-            $adminId = auth()->id();
-
-            // Fetch all messages between the admin and the user
-            $messages = \App\Models\ChatMessage::where(function($query) use ($userId, $adminId) {
-                $query->where('sender_id', $userId)
-                      ->where('recipient_id', $adminId);
-            })->orWhere(function($query) use ($userId, $adminId) {
-                $query->where('sender_id', $adminId)
-                      ->where('recipient_id', $userId);
-            })->get();
-
-            // Delete associated files (images and videos)
-            foreach ($messages as $message) {
-                if ($message->image_path) {
-                    $imagePath = public_path(str_replace('/storage', 'storage', $message->image_path));
-                    if (file_exists($imagePath)) {
-                        unlink($imagePath);
-                    }
-                }
-
-                if ($message->video_path) {
-                    $videoPath = public_path(str_replace('/storage', 'storage', $message->video_path));
-                    if (file_exists($videoPath)) {
-                        unlink($videoPath);
-                    }
-                }
-            }
-
-            // Delete all messages between the admin and the user
-            \App\Models\ChatMessage::where(function($query) use ($userId, $adminId) {
-                $query->where('sender_id', $userId)
-                      ->where('recipient_id', $adminId);
-            })->orWhere(function($query) use ($userId, $adminId) {
-                $query->where('sender_id', $adminId)
-                      ->where('recipient_id', $userId);
-            })->delete();
-
-            // Broadcast the deletion event
-            broadcast(new ChatHistoryDeleted($userId, $adminId));
-
-            // Broadcast user status update for real-time UI updates
-            broadcast(new \App\Events\UserChatStatusUpdated($userId, false, 'chat_deleted'))->toOthers();
-
-            return response()->json(['message' => 'Chat history and associated files deleted successfully.']);
-        } catch (\Exception $e) {
-            \Log::error('Error deleting chat history: ' . $e->getMessage());
-            return response()->json(['error' => 'Failed to delete chat history.'], 500);
-        }
+        // Delete from database
+        \App\Models\ChatMessage::where(function($query) use ($userId) {
+            $query->where('sender_id', auth()->id())->where('recipient_id', $userId);
+        })->orWhere(function($query) use ($userId) {
+            $query->where('sender_id', $userId)->where('recipient_id', auth()->id());
+        })->where('sender_type', '!=', 'guest')->delete();
+        
+        // Broadcast chat deletion event
+        broadcast(new \App\Events\ChatDeleted($userId, false));
+        
+        return response()->json(['message' => 'Chat cleared successfully.']);
     }
 }

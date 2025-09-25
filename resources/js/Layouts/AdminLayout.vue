@@ -198,7 +198,17 @@ onMounted(() => {
                 }
             });
 
-
+        // Listen for guest chat messages
+        window.Echo.private('guest-chat')
+            .listen('NewGuestChatMessage', (e) => {
+                // If user isn't on the support page, show notification
+                if (!route().current('admin.support')) {
+                    // Only mark when message originated from guest (not admin self)
+                    if (e?.message?.sender_id && String(e.message.sender_id) !== String(adminId)) {
+                        supportHasNewMessage.value = true;
+                    }
+                }
+            });
     }
 });
 </script>

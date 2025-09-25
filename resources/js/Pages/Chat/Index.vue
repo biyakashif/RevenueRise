@@ -38,14 +38,17 @@
                             <div v-if="message.image_path" class="mb-2">
                                 <img :src="message.image_path" 
                                      alt="chat image" 
-                                     class="max-h-48 w-auto rounded cursor-pointer"
-                                     @click="openImage(message.image_path)">
+                                     class="w-32 h-32 object-cover rounded cursor-pointer hover:opacity-80 transition-opacity"
+                                     @click="openMediaModal(message.image_path, 'image')">
                             </div>
-                            <div v-if="message.video_path" class="mb-2">
-                                <video controls class="max-w-full rounded">
+                            <div v-if="message.video_path" class="mb-2 relative">
+                                <video class="w-32 h-32 object-cover rounded cursor-pointer hover:opacity-80 transition-opacity"
+                                       @click="openMediaModal(message.video_path, 'video')">
                                     <source :src="message.video_path" type="video/mp4">
-                                    Your browser does not support the video tag.
                                 </video>
+                                <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                    <i class="fas fa-play-circle text-white text-2xl opacity-80"></i>
+                                </div>
                             </div>
                             <p class="text-sm text-slate-800">{{ message.message }}</p>
                         </div>
@@ -97,18 +100,22 @@
         </div>
     </AuthenticatedLayout>
 
-    <!-- Image Viewer Modal -->
-    <div v-if="showImageViewer" 
-         class="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center"
-         @click="closeImageViewer">
-        <div class="relative w-full h-full flex items-center justify-center p-4">
-            <button @click="closeImageViewer" 
-                    class="absolute top-4 right-4 text-white text-xl p-2">
+    <!-- Media Modal -->
+    <div v-if="showMediaModal" class="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50" @click="closeMediaModal">
+        <div class="relative max-w-4xl max-h-4xl">
+            <button @click="closeMediaModal" class="absolute -top-10 right-0 text-white text-2xl hover:text-gray-300">
                 <i class="fas fa-times"></i>
             </button>
-            <img :src="selectedImage" 
+            <img v-if="modalMediaType === 'image'" 
+                 :src="modalMediaSrc" 
                  alt="Full size image" 
-                 class="max-w-full max-h-full object-contain">
+                 class="max-w-full max-h-screen object-contain">
+            <video v-if="modalMediaType === 'video'" 
+                   :src="modalMediaSrc" 
+                   controls 
+                   autoplay 
+                   class="max-w-full max-h-screen">
+            </video>
         </div>
     </div>
 </template>
@@ -125,8 +132,9 @@ const t = (key) => page.props.translations[key] || key;
 const newMessage = ref('');
 const imageInput = ref(null);
 const videoInput = ref(null);
-const showImageViewer = ref(false);
-const selectedImage = ref('');
+const showMediaModal = ref(false);
+const modalMediaSrc = ref('');
+const modalMediaType = ref('');
 const notificationSound = new Audio('/notification.mp3');
 const videoError = ref('');
 
@@ -135,21 +143,25 @@ axios.defaults.headers.common['X-CSRF-TOKEN'] = document.querySelector('meta[nam
 axios.defaults.withCredentials = true;
 
 const loadMessages = async () => {
-    const response = await axios.get('/chat/messages');
-    // Sort messages by created_at in ascending order
-    messages.value = response.data.sort((a, b) => 
-        new Date(a.created_at) - new Date(b.created_at)
-    );
-    
-    // Scroll to bottom after messages are loaded
-    setTimeout(() => {
-        const chatArea = document.querySelector('.overflow-y-auto');
-        if (chatArea) {
-            chatArea.scrollTop = chatArea.scrollHeight;
-        }
-    }, 100);
-    // Notify layout that messages have been read
-    window.dispatchEvent(new CustomEvent('chat:read'));
+    try {
+        const response = await axios.get('/chat/messages');
+        // Sort messages by created_at in ascending order
+        messages.value = response.data.sort((a, b) => 
+            new Date(a.created_at) - new Date(b.created_at)
+        );
+        
+        // Scroll to bottom after messages are loaded
+        setTimeout(() => {
+            const chatArea = document.querySelector('.overflow-y-auto');
+            if (chatArea) {
+                chatArea.scrollTop = chatArea.scrollHeight;
+            }
+        }, 100);
+        // Notify layout that messages have been read
+        window.dispatchEvent(new CustomEvent('chat:read'));
+    } catch (error) {
+        console.error('Error loading messages:', error);
+    }
 };
 
 const sendMessage = async () => {
@@ -157,42 +169,38 @@ const sendMessage = async () => {
         if (!newMessage.value.trim() && !imageInput.value?.files[0] && !videoInput.value?.files[0]) return;
 
         const messageText = newMessage.value;
-        newMessage.value = ''; // Clear immediately for optimistic update
+        newMessage.value = ''; // Clear immediately
+
+        const response = await axios.post('/chat/broadcast', { message: messageText });
+        const data = response.data;
         
-        // Add optimistic message
-        const tempMessage = {
-            id: Date.now(),
-            message: messageText,
-            image_path: null,
-            video_path: null,
-            created_at: new Date().toISOString(),
-            sender_id: page.props.auth.user.id,
-            recipient_id: null
-        };
-        messages.value.push(tempMessage);
-        
-        // Scroll to bottom immediately
-        setTimeout(() => {
-            const chatArea = document.querySelector('.overflow-y-auto');
-            if (chatArea) {
-                chatArea.scrollTop = chatArea.scrollHeight;
+        // Add message immediately to UI (Echo will handle real-time for admin)
+        if (data && data.id) {
+            const userMessage = {
+                id: data.id,
+                message: messageText,
+                image_path: null,
+                video_path: null,
+                created_at: data.created_at,
+                sender_id: page.props.auth.user.id,
+                recipient_id: null
+            };
+            
+            // Check if message doesn't already exist
+            const exists = messages.value.some(m => m.id === userMessage.id);
+            if (!exists) {
+                messages.value.push(userMessage);
+                messages.value.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+                
+                // Scroll to bottom
+                setTimeout(() => {
+                    const chatArea = document.querySelector('.overflow-y-auto');
+                    if (chatArea) {
+                        chatArea.scrollTop = chatArea.scrollHeight;
+                    }
+                }, 50);
             }
-        }, 50);
-
-        const formData = new FormData();
-        if (messageText.trim()) {
-            formData.append('message', messageText);
         }
-        
-        if (imageInput.value?.files[0]) {
-            formData.append('image', imageInput.value.files[0]);
-        }
-
-        if (videoInput.value?.files[0]) {
-            formData.append('video', videoInput.value.files[0]);
-        }
-
-        const { data } = await axios.post('/chat/send', formData);
         
         if (imageInput.value) {
             imageInput.value.value = '';
@@ -200,23 +208,7 @@ const sendMessage = async () => {
         if (videoInput.value) {
             videoInput.value.value = '';
         }
-        
-        // Replace temp message with real one
-        const tempIndex = messages.value.findIndex(m => m.id === tempMessage.id);
-        if (tempIndex !== -1) {
-            messages.value[tempIndex] = {
-                id: data.id,
-                message: data.message,
-                image_path: data.image_path,
-                video_path: data.video_path,
-                created_at: data.created_at,
-                sender_id: data.sender_id,
-                recipient_id: data.recipient_id
-            };
-        }
     } catch (error) {
-        // Remove temp message on error and restore input
-        messages.value = messages.value.filter(m => m.id !== tempMessage.id);
         newMessage.value = messageText;
         console.error('Error sending message:', error);
         alert(error.response?.data?.error || t('Error sending message. Please try again.'));
@@ -229,32 +221,13 @@ const handleImageUpload = async (event) => {
 
     const formData = new FormData();
     formData.append('image', file);
-    const { data } = await axios.post('/chat/send', formData);
+    await axios.post('/chat/send', formData);
     event.target.value = '';
-    
-    // Add sent image immediately (optimistic update)
-    messages.value.push({
-        id: data.id,
-        message: data.message,
-        image_path: data.image_path,
-        video_path: data.video_path,
-        created_at: data.created_at,
-        sender_id: data.sender_id,
-        recipient_id: data.recipient_id
-    });
-    
-    // Scroll to bottom
-    setTimeout(() => {
-        const chatArea = document.querySelector('.overflow-y-auto');
-        if (chatArea) {
-            chatArea.scrollTop = chatArea.scrollHeight;
-        }
-    }, 50);
 };
 
 const handleVideoUpload = async (event) => {
     const file = event.target.files[0];
-    if (file && file.size > 30 * 1024 * 1024) { // 30MB limit
+    if (file && file.size > 30 * 1024 * 1024) {
         videoError.value = t('The video file size must not exceed 30MB.');
         event.target.value = '';
         return;
@@ -263,27 +236,8 @@ const handleVideoUpload = async (event) => {
 
     const formData = new FormData();
     formData.append('video', file);
-    const { data } = await axios.post('/chat/send', formData);
+    await axios.post('/chat/send', formData);
     event.target.value = '';
-    
-    // Add sent video immediately (optimistic update)
-    messages.value.push({
-        id: data.id,
-        message: data.message,
-        image_path: data.image_path,
-        video_path: data.video_path,
-        created_at: data.created_at,
-        sender_id: data.sender_id,
-        recipient_id: data.recipient_id
-    });
-    
-    // Scroll to bottom
-    setTimeout(() => {
-        const chatArea = document.querySelector('.overflow-y-auto');
-        if (chatArea) {
-            chatArea.scrollTop = chatArea.scrollHeight;
-        }
-    }, 50);
 };
 
 const handleAvatarError = (e) => {
@@ -298,14 +252,16 @@ const handleAvatarError = (e) => {
     }
 };
 
-const openImage = (imagePath) => {
-    selectedImage.value = imagePath;
-    showImageViewer.value = true;
+const openMediaModal = (src, type) => {
+    modalMediaSrc.value = src;
+    modalMediaType.value = type;
+    showMediaModal.value = true;
 };
 
-const closeImageViewer = () => {
-    showImageViewer.value = false;
-    selectedImage.value = '';
+const closeMediaModal = () => {
+    showMediaModal.value = false;
+    modalMediaSrc.value = '';
+    modalMediaType.value = '';
 };
 
 const goBack = () => {
