@@ -148,11 +148,13 @@ const openChat = () => {
             </aside>
 
             <!-- Main Content -->
-            <main class="flex-1 min-h-0 p-2 sm:p-6 lg:p-8 bg-gradient-to-br from-white/95 via-blue-50/90 to-indigo-50/95 backdrop-blur-xl mx-2 sm:mx-4 mt-2 sm:mt-4 mb-2 sm:mb-0 rounded-2xl sm:rounded-3xl shadow-2xl border border-white/40">
-                <div v-if="$slots.header" class="mb-2 sm:mb-6">
-                    <slot name="header" />
+            <main class="flex-1 min-h-[calc(100vh-4rem)] sm:min-h-screen bg-gradient-to-br from-white/95 via-blue-50/90 to-indigo-50/95 backdrop-blur-xl mx-2 sm:mx-4 mt-2 sm:mt-4 mb-2 sm:mb-0 rounded-2xl sm:rounded-3xl shadow-2xl border border-white/40 overflow-auto">
+                <div class="h-full">
+                    <div v-if="$slots.header" class="mb-2 sm:mb-6">
+                        <slot name="header" />
+                    </div>
+                    <slot />
                 </div>
-                <slot />
                     <!-- Chat Notification -->
                                     <transition name="slide-right">
                                     <div v-if="showChatNotification" class="fixed top-1/2 right-0 z-50 flex items-center bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl shadow-2xl rounded-l-2xl px-3 py-2 border border-cyan-300/30" style="transform: translateY(-50%);">
@@ -165,7 +167,7 @@ const openChat = () => {
             </main>
 
             <!-- Bottom Bar (visible on small screens) -->
-            <nav v-if="!hideBottomNav" class="sm:hidden fixed bottom-0 left-0 right-0 bg-white/10 backdrop-blur-xl border-t border-white/20 shadow-2xl z-10 rounded-t-2xl">
+            <nav v-if="!hideBottomNav" class="sm:hidden fixed bottom-0 left-0 right-0 bg-gradient-to-br from-white/60 via-blue-50/50 to-indigo-50/50 backdrop-blur-xl border-t border-white/20 shadow-2xl z-10 rounded-t-2xl">
                 <div class="flex justify-around items-center pb-[env(safe-area-inset-bottom)]">
                     <Link
                         href="/dashboard"

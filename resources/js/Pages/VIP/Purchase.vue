@@ -31,18 +31,18 @@ const displayPrice = computed(() => (levelPrice.value !== null ? Number(levelPri
 <template>
   <Head :title="t('Purchase VIP')" />
   <AuthenticatedLayout>
-    <div class="py-6 px-4 bg-gray-100">
-      <div class="max-w-md mx-auto">
-        <div class="bg-white p-6 rounded-lg shadow-sm text-center">
-          <h1 class="text-2xl font-bold mb-4">{{ t('Upgrade to') }} {{ (props.level || urlLevel) }}</h1>
+    <div class="bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-2xl border border-cyan-300/30 h-full overflow-y-auto flex items-center justify-center">
+      <div class="w-full max-w-md mx-auto">
+        <div class="backdrop-blur-xl p-6 rounded-lg shadow-sm text-center border border-white/50 bg-gradient-to-br from-white/10 to-white/5">
+          <h1 class="text-2xl font-bold mb-4 bg-gradient-to-r from-cyan-500 to-blue-600 bg-clip-text text-transparent">{{ t('Upgrade to') }} {{ (props.level || urlLevel) }}</h1>
 
-          <div class="mb-6 text-lg text-purple-600 font-semibold">
-            {{ t('Price') }}: <span class="ml-2">{{ displayPrice }}</span>
+          <div class="mb-6 text-lg text-blue-600 font-semibold">
+            {{ t('Price') }}: <span class="ml-2 text-gray-900">{{ displayPrice }}</span>
           </div>
 
           <p class="text-sm text-gray-600 mb-6">{{ t('Click the button below to proceed to deposit. The amount will be prefilled and locked on the deposit page.') }}</p>
 
-          <Link :href="route('deposit.index', { vip: props.level || urlLevel, amount: levelPrice })" class="inline-block px-6 py-3 bg-purple-600 text-white rounded-full hover:bg-purple-700">
+          <Link :href="route('deposit.index', { vip: props.level || urlLevel, amount: levelPrice })" class="inline-block px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-full hover:from-cyan-600 hover:to-blue-700 transition duration-150 ease-in-out shadow-lg">
             {{ t('Upgrade to') }} {{ (props.level || urlLevel) }}
           </Link>
         </div>

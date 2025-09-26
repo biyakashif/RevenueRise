@@ -2,7 +2,7 @@
   <AuthenticatedLayout>
     <Head :title="t('My Orders')" />
 
-    <div class="py-4 sm:py-6">
+    <div class="bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-2xl border border-cyan-300/30 h-full overflow-y-auto">
       <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
         <!-- User Info Section -->
         <div class="bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-2xl border border-cyan-300/30 mb-4 sm:mb-6">
@@ -16,39 +16,37 @@
           </div>
 
           <!-- Stats Cards -->
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div class="bg-gradient-to-r from-white/40 via-white/30 to-white/20 backdrop-blur-sm p-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border border-white/30">
-              <transition name="fade" mode="out-in">
-                <p v-if="balanceErrorMessage" key="error" class="text-xs text-red-600 font-medium w-full text-center">
-                  {{ balanceErrorMessage }}
+          <div class="grid grid-cols-1 sm:grid-cols-4 gap-2">
+            <div class="bg-gradient-to-r from-white/40 via-white/30 to-white/20 backdrop-blur-sm p-2 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border border-white/30">
+              <div class="flex justify-between w-full items-center">
+                <p class="text-xs text-slate-600 font-medium">{{ t('Total Balance') }}</p>
+                <p class="text-sm font-bold text-slate-800 flex items-center gap-1">
+                  {{ (user.balance || 0).toFixed(2) }}
+                  <span class="text-xs text-slate-500">USDT</span>
                 </p>
-                <div v-else key="balance" class="flex justify-between w-full items-center">
-                  <p class="text-xs text-slate-600 font-medium">{{ t('Total Balance') }}</p>
-                  <p class="text-lg font-bold text-slate-800 flex items-center gap-1">
-                    {{ (user.balance || 0).toFixed(2) }}
-                    <span class="text-xs text-slate-500">USDT</span>
-                  </p>
-                </div>
-              </transition>
+              </div>
             </div>
-            <div class="bg-gradient-to-r from-white/40 via-white/30 to-white/20 backdrop-blur-sm p-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border border-white/30">
+            <div class="bg-gradient-to-r from-white/40 via-white/30 to-white/20 backdrop-blur-sm p-2 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border border-white/30">
               <div class="flex justify-between w-full items-center">
                 <p class="text-xs text-slate-600 font-medium">{{ t('Frozen Balance') }}</p>
-                <p class="text-lg font-bold text-slate-800 flex items-center gap-1">
+                <p class="text-sm font-bold text-slate-800 flex items-center gap-1">
                   {{ Number(user.frozen_balance ?? 0).toFixed(2) }}
                   <span class="text-xs text-slate-500">USDT</span>
                 </p>
               </div>
             </div>
-            <div class="bg-gradient-to-r from-white/40 via-white/30 to-white/20 backdrop-blur-sm p-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border border-white/30">
+            <div class="bg-gradient-to-r from-white/40 via-white/30 to-white/20 backdrop-blur-sm p-2 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border border-white/30">
               <div class="flex justify-between w-full items-center">
                 <p class="text-xs text-slate-600 font-medium">{{ t("Today's Profit") }}</p>
-                <p class="text-lg font-bold text-slate-800 flex items-center gap-1">
+                <p class="text-sm font-bold text-slate-800 flex items-center gap-1">
                   {{ (user.todays_profit || 0).toFixed(2) }}
                   <span class="text-xs text-slate-500">USDT</span>
                 </p>
               </div>
             </div>
+            <Link href="/balance/records" class="bg-gradient-to-r from-white/40 via-white/30 to-white/20 backdrop-blur-sm p-2 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border border-white/30 flex items-center justify-center cursor-pointer">
+              <p class="text-xs text-slate-600 font-medium">{{ t('Balance Details') }}</p>
+            </Link>
           </div>
         </div>
 
@@ -73,6 +71,7 @@
         >
           <div class="text-center mb-4">
             <h2 class="text-xl font-bold text-slate-800 drop-shadow-sm mb-2">{{ t('Order Task Set') }}</h2>
+            <p v-if="balanceErrorMessage" class="text-xs text-red-600 font-medium text-center mb-2">{{ balanceErrorMessage }}</p>
             <p class="text-sm text-slate-600 font-medium">{{ activeTask.name }}</p>
           </div>
 
@@ -119,8 +118,7 @@
       <div v-if="showModal && currentTaskProduct" class="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50 p-4 pb-20 sm:pb-4">
         <div class="bg-gradient-to-br from-slate-800/95 via-blue-900/95 to-indigo-900/95 backdrop-blur-xl rounded-3xl shadow-2xl max-w-sm w-full max-h-[90vh] overflow-y-auto animate-scale border border-cyan-300/20">
           <div class="bg-gradient-to-r from-cyan-400/60 via-blue-500/50 to-indigo-600/60 text-white p-4 rounded-t-3xl backdrop-blur-sm">
-            <h3 class="text-sm font-semibold text-center">{{ t('Ebay - Order') }} ({{ currentTaskProduct.commission_percentage }}%)</h3>
-            <p v-if="currentTaskProduct?.type === 'Lucky Order'" class="mt-2 text-yellow-300 font-bold text-xs text-center">🎉 {{ t('Congratulations! You got a Lucky Order') }}</p>
+            <h3 class="text-sm font-semibold text-center">{{ currentMarketplace }} - Order ({{ currentTaskProduct.commission_percentage }}%)</h3>
           </div>
           <div class="p-4">
             <div class="mb-3 text-xs">
@@ -210,7 +208,7 @@
 
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, router, usePage } from '@inertiajs/vue3';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
 import { debounce } from 'lodash';
 
@@ -234,6 +232,22 @@ const modalErrorMessage = ref(''); // New state for modal-specific error message
 
 // Cache reward; keep in sync with server including zero
 const lastReward = ref(props.user.order_reward ?? 0);
+
+// Marketplace names for random selection
+const marketplaces = ['Ebay', 'Walmart', 'Etsy', 'Shopify', 'Alibaba', 'Aliexpress', 'Amazon'];
+
+// Current marketplace for the modal
+const currentMarketplace = ref('');
+
+// Function to get random marketplace name
+const getRandomMarketplace = () => {
+  return marketplaces[Math.floor(Math.random() * marketplaces.length)];
+};
+
+// Function to set random marketplace for current order
+const setRandomMarketplace = () => {
+  currentMarketplace.value = getRandomMarketplace();
+};
 
 watch(() => props.user.order_reward, (newReward) => {
   if (typeof newReward === 'number') {
@@ -350,6 +364,7 @@ const clearModalState = () => {
   modalProduct.value = null;
   showModal.value = false;
   modalErrorMessage.value = '';
+  currentMarketplace.value = '';
 };
 
 // Reserve / grab (use Inertia router.post to keep session cookies)
@@ -391,6 +406,7 @@ const grabOrders = debounce(() => {
       if (currentProduct.status === 'pending') {
         modalProduct.value = currentProduct;
         saveModalState(modalProduct.value);
+        setRandomMarketplace();
         showModal.value = true;
         isGrabbing.value = false;
         return;
@@ -416,6 +432,7 @@ const grabOrders = debounce(() => {
                 updateFromProps();
                 modalProduct.value = activeTask.value.products[currentTaskProductIndex.value];
                 saveModalState(modalProduct.value);
+                setRandomMarketplace();
                 showModal.value = true;
                 isGrabbing.value = false;
               },
@@ -509,6 +526,7 @@ const updateFromProps = () => {
     if (pendingOrder) {
       modalProduct.value = pendingOrder;
       saveModalState(modalProduct.value);
+      setRandomMarketplace();
       showModal.value = true;
     } else if (props.user?.balance >= 0 && !modalErrorMessage.value) {
       clearModalState();

@@ -318,9 +318,9 @@ const submitDeposit = () => {
 <template>
     <Head :title="t('Deposit')" />
     <AuthenticatedLayout>
-        <div class="py-4  sm:py-6">
-            <div class="max-w-7xl mt-0 mx-auto sm:px-6 lg:px-8">
-                <div class="bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl p-3 sm:p-6 rounded-2xl sm:rounded-3xl shadow-2xl border border-cyan-300/30 mb-3 sm:mb-6">
+        <div class="bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-2xl border border-cyan-300/30 h-full overflow-y-auto">
+            <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+                <div class="bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-none sm:shadow-2xl border-none sm:border sm:border-cyan-300/30 w-full flex flex-col justify-between">
                     <div class="flex justify-between items-center mb-3">
                         <div class="flex items-center">
                             <div v-if="isLoadingCrypto" class="w-6 h-6 mr-2 bg-white/30 rounded-full animate-pulse"></div>
@@ -357,19 +357,17 @@ const submitDeposit = () => {
                     </div>
 
                     <div class="mb-3 flex justify-center">
-                        <div class="bg-white/50 p-3 rounded-xl shadow-lg backdrop-blur-sm border border-white/40">
-                            <img
-                                :src="qrCodeUrl || 'https://via.placeholder.com/150?text=No+QR+Code'"
-                                alt="QR Code"
-                                class="w-24 h-24 sm:w-32 sm:h-32"
-                            />
-                        </div>
+                        <img
+                            :src="qrCodeUrl || 'https://via.placeholder.com/150?text=No+QR+Code'"
+                            alt="QR Code"
+                            class="w-24 h-24 sm:w-32 sm:h-32"
+                        />
                     </div>
 
                     <div class="mb-3">
                         <label class="block text-xs font-medium text-slate-700 mb-1 drop-shadow-sm">{{ t('Address') }}</label>
-                        <div class="flex items-center bg-white/50 border border-white/40 p-2 rounded-lg backdrop-blur-sm shadow-lg">
-                            <span class="text-[10px] text-slate-800 flex-1 break-all">{{ walletAddress || props.depositDetails.address }}</span>
+                        <div class="flex items-center bg-white/50 border border-white/40 p-1 sm:p-2 rounded-lg backdrop-blur-sm shadow-lg">
+                            <span class="text-[11px] sm:text-[10px] md:text-xs lg:text-sm text-slate-800 flex-1 break-all">{{ walletAddress || props.depositDetails.address }}</span>
                             <button
                                 @click="copyAddress"
                                 class="ml-2 px-2 py-1 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white text-xs rounded-md transition-all duration-200 shadow-lg"

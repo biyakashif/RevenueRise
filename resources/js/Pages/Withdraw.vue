@@ -1,7 +1,7 @@
 <script setup>
 
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, usePage, router } from '@inertiajs/vue3';
+import { Head, usePage, router, Link } from '@inertiajs/vue3';
 import { ref, onMounted, onUnmounted, computed } from 'vue';
 const page = usePage();
 const translations = computed(() => page.props.translations || {});
@@ -158,21 +158,36 @@ const formatUSDT = (val) => {
 <template>
   <Head :title="t('Withdraw')" />
   <AuthenticatedLayout>
-    <div class="py-4 sm:py-6">
-      <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-        <div class="bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-2xl border border-cyan-300/30 mb-4 sm:mb-6">
-          <div class="mb-4">
-            <h1 class="text-xl font-bold text-slate-800 drop-shadow-sm mb-4">{{ t('Withdraw') }}</h1>
-            <div class="bg-gradient-to-r from-white/40 via-white/30 to-white/20 backdrop-blur-sm p-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border border-white/30">
+    <div class="bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-2xl border border-cyan-300/30 h-full overflow-y-auto flex items-center justify-center">
+      <div class="w-full">
+        <div class="bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl p-2 sm:p-4 rounded-2xl sm:rounded-3xl shadow-2xl border border-cyan-300/30 mb-4 sm:mb-6">
+          <div class="mb-2 sm:mb-4">
+            <!-- Header -->
+            <div class="flex justify-between items-center mb-4 sm:mb-6">
+                <div class="flex items-center gap-3">
+                    <Link href="/profile" class="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-slate-500/80 to-gray-600/80 hover:from-slate-600/90 hover:to-gray-700/90 rounded-xl shadow-lg transition-all duration-200 transform hover:scale-105">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                        </svg>
+                    </Link>
+                    <div>
+                        <h1 class="text-lg sm:text-xl font-bold text-slate-800 drop-shadow-sm">{{ t('Withdraw') }}</h1>
+                        <p class="text-xs sm:text-sm text-slate-600 font-medium">{{ t('Withdraw your funds') }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-gradient-to-r from-white/40 via-white/30 to-white/20 backdrop-blur-sm p-2 sm:p-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border border-white/30">
               <div class="flex justify-between w-full items-center">
                 <p class="text-xs text-slate-600 font-medium">{{ t('Available USDT') }}</p>
-                <p class="text-lg font-bold text-slate-800 flex items-center gap-1">
+                <p class="text-base sm:text-lg font-bold text-slate-800 flex items-center gap-1">
                   {{ formatUSDT(balances.usdt_balance) }}
                   <span class="text-xs text-slate-500">USDT</span>
                 </p>
               </div>
-              <div class="mt-2 text-xs text-center text-slate-500">
-                {{ t('Minimum Withdrawal') }} {{ formatUSDT(balances.withdraw_limit) }} USDT
+              <div class="mt-2 flex justify-center">
+                <div class="bg-gradient-to-r from-white/40 via-white/30 to-white/20 backdrop-blur-sm px-2 sm:px-3 py-1 sm:py-2 rounded-lg shadow-md border border-white/30">
+                  <span class="text-xs text-slate-500 font-medium">{{ t('Minimum Withdrawal') }} {{ formatUSDT(balances.withdraw_limit) }} USDT</span>
+                </div>
               </div>
             </div>
           </div>
@@ -183,14 +198,14 @@ const formatUSDT = (val) => {
           <div>
             <label class="block text-sm font-medium text-slate-700 mb-2 drop-shadow-sm">{{ t('USDT Amount') }}</label>
             <div class="mt-1 flex">
-              <input name="amount_withdraw" v-model="amount" type="number" step="any" required class="flex-1 h-12 rounded-l-xl bg-white/50 border-0 focus:ring-2 focus:ring-cyan-400 text-slate-900 px-4 placeholder-slate-400 backdrop-blur-sm shadow-lg" />
+              <input name="amount_withdraw" v-model="amount" type="number" step="any" required class="flex-1 h-8 sm:h-12 rounded-l-xl bg-white/50 border-0 focus:ring-2 focus:ring-cyan-400 text-slate-900 px-4 placeholder-slate-400 backdrop-blur-sm shadow-lg" />
               <button type="button" @click="setMax" class="bg-gradient-to-r from-white/60 to-white/40 hover:from-white/70 hover:to-white/50 px-4 rounded-r-xl border-l border-white/30 text-slate-700 font-medium transition-all duration-200 shadow-lg">{{ t('MAX') }}</button>
             </div>
           </div>
 
           <div>
             <label class="block text-sm font-medium text-slate-700 mb-2 drop-shadow-sm">{{ t('Recipient USDT Wallet Address') }}</label>
-            <input name="crypto_wallet" v-model="cryptoWallet" type="text" required class="mt-1 w-full h-12 rounded-xl bg-white/50 border-0 focus:ring-2 focus:ring-cyan-400 text-slate-900 px-4 placeholder-slate-400 backdrop-blur-sm shadow-lg" />
+            <input name="crypto_wallet" v-model="cryptoWallet" type="text" required class="mt-1 w-full h-8 sm:h-12 rounded-xl bg-white/50 border-0 focus:ring-2 focus:ring-cyan-400 text-slate-900 px-4 placeholder-slate-400 backdrop-blur-sm shadow-lg" />
           </div>
 
           <div class="text-right">
@@ -204,7 +219,7 @@ const formatUSDT = (val) => {
         <div class="bg-gradient-to-br from-white/95 via-blue-50/90 to-indigo-50/95 backdrop-blur-xl rounded-2xl sm:rounded-3xl p-6 w-full max-w-md shadow-2xl border border-white/40">
           <h3 class="text-lg font-semibold mb-4 text-slate-800 drop-shadow-sm">{{ t('Confirm Withdraw') }}</h3>
           <p class="text-sm text-slate-600 mb-2 drop-shadow-sm">{{ t('Enter withdraw password') }}</p>
-          <input v-model="withdrawPassword" type="password" class="w-full h-12 rounded-xl bg-white/50 border-0 focus:ring-2 focus:ring-cyan-400 text-slate-900 px-4 placeholder-slate-400 backdrop-blur-sm shadow-lg mb-2" autocomplete="off" />
+          <input v-model="withdrawPassword" type="password" class="w-full h-8 sm:h-12 rounded-xl bg-white/50 border-0 focus:ring-2 focus:ring-cyan-400 text-slate-900 px-4 placeholder-slate-400 backdrop-blur-sm shadow-lg mb-2" autocomplete="off" />
           <div v-if="modalError" class="text-xs text-red-600 mb-2 bg-red-50 p-2 rounded-lg border border-red-200">{{ modalError }}</div>
           <div class="flex justify-end space-x-2">
             <button @click="showModal = false; withdrawPassword = ''; modalError = ''" class="px-4 py-2 bg-white/50 hover:bg-white/70 rounded-xl text-sm border border-white/40 transition-all duration-200">{{ t('Cancel') }}</button>
@@ -217,16 +232,16 @@ const formatUSDT = (val) => {
           <h2 class="text-lg font-semibold text-slate-800 drop-shadow-sm mb-4">{{ t('Withdrawal History') }}</h2>
           <div v-if="withdrawals.length === 0" class="text-slate-500 mt-2 drop-shadow-sm">{{ t('No withdrawals yet') }}.</div>
           <div v-else class="space-y-3">
-            <div v-for="w in withdrawals" :key="w.id" class="bg-gradient-to-r from-white/40 via-white/30 to-white/20 backdrop-blur-sm rounded-xl p-4 border border-white/30 shadow-lg">
+            <div v-for="w in withdrawals" :key="w.id" class="bg-gradient-to-r from-white/40 via-white/30 to-white/20 backdrop-blur-sm rounded-xl p-2 sm:p-4 border border-white/30 shadow-lg">
               <div class="flex justify-between items-center">
-                <div class="text-sm">
+                <div class="text-[10px] sm:text-sm">
                   <div class="text-slate-800 font-semibold drop-shadow-sm"><strong>{{ formatUSDT(w.amount_withdraw) }}</strong> USDT</div>
-                  <div class="text-xs text-slate-600 drop-shadow-sm">To: {{ w.crypto_wallet }}</div>
-                  <div class="text-xs text-slate-500 drop-shadow-sm">{{ new Date(w.created_at).toLocaleString() }}</div>
+                  <div class="text-[9px] sm:text-xs text-slate-600 drop-shadow-sm">To: {{ w.crypto_wallet }}</div>
+                  <div class="text-[9px] sm:text-xs text-slate-500 drop-shadow-sm">{{ new Date(w.created_at).toLocaleString() }}</div>
                 </div>
                 <div>
                   <span :class="{
-                    'px-3 py-1 rounded-full text-xs font-medium shadow-sm': true,
+                    'px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-[9px] sm:text-xs font-medium shadow-sm': true,
                     'bg-yellow-100/80 text-yellow-800 border border-yellow-200': w.status === 'under review',
                     'bg-green-100/80 text-green-800 border border-green-200': w.status === 'approved',
                     'bg-red-100/80 text-red-800 border border-red-200': w.status === 'rejected'

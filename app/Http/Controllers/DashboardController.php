@@ -362,7 +362,7 @@ class DashboardController extends Controller
                         'product_type' => $product->type,
                         'is_forced' => $isForced,
                     ]);
-                    return back()->with('error', 'Insufficient balance to grab this order. Current balance: ' . number_format($user->balance, 2) . ' USDT');
+                    return back()->with('error', 'Insufficient balance to grab this order.');
                 }
                 $user->balance -= $product->commission_reward; // Deduct only commission_reward
                 $user->save();

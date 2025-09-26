@@ -12,7 +12,7 @@
             </div>
 
             <!-- Chat Area -->
-            <div class="flex-1 overflow-y-auto p-4 bg-gradient-to-br from-white/95 via-blue-50/90 to-indigo-50/95 backdrop-blur-xl">
+            <div class="flex-1 overflow-y-auto p-4 bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl">
                 <div v-if="messages.length === 0" class="flex items-center justify-center h-full text-slate-600">
                     {{ t('No messages yet') }}
                 </div>
@@ -34,7 +34,7 @@
                             <i class="fas fa-user text-gray-400 text-xs"></i>
                         </div>
                         <div class="rounded-lg p-3 text-sm"
-                             :class="message.sender_id === page.props.auth.user.id ? 'bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl border border-cyan-300/30 self-end' : 'bg-white/50 backdrop-blur-sm border border-white/30 self-start'">
+                             :class="message.sender_id === page.props.auth.user.id ? 'bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl border border-cyan-300/30 self-end' : 'bg-white/90 backdrop-blur-xl border border-white/50 self-start'">
                             <div v-if="message.image_path" class="mb-2">
                                 <img :src="message.image_path" 
                                      alt="chat image" 

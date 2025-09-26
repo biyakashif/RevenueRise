@@ -1,16 +1,20 @@
 <template>
   <AuthenticatedLayout>
-    <div class="min-h-screen bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl p-4 pb-20">
+    <div class="bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-2xl border border-cyan-300/30 h-full overflow-y-auto">
       <div class="max-w-md mx-auto">
         <!-- Header -->
-        <div class="flex items-center justify-between mb-6">
-          <Link :href="route('profile.index')" class="p-2 rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-all">
-            <svg class="w-5 h-5 text-slate-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-            </svg>
-          </Link>
-          <h1 class="text-xl font-bold text-slate-800">{{ t('Balance Record') }}</h1>
-          <div class="w-9"></div>
+        <div class="flex justify-between items-center mb-4 sm:mb-6">
+            <div class="flex items-center gap-3">
+                <Link href="/profile" class="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-slate-500/80 to-gray-600/80 hover:from-slate-600/90 hover:to-gray-700/90 rounded-xl shadow-lg transition-all duration-200 transform hover:scale-105">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                    </svg>
+                </Link>
+                <div>
+                    <h1 class="text-lg sm:text-xl font-bold text-slate-800 drop-shadow-sm">{{ t('Balance Record') }}</h1>
+                    <p class="text-xs sm:text-sm text-slate-600 font-medium">{{ t('View your balance history') }}</p>
+                </div>
+            </div>
         </div>
 
         <!-- Balance Records -->
@@ -24,7 +28,7 @@
 
           <div v-for="(record, index) in records" :key="record.id" class="flex items-center justify-between p-2 border-b border-white/20 last:border-b-0">
             <span 
-              class="px-2 py-1 rounded-full text-xs font-medium"
+              class="px-1 py-0.5 rounded-full text-[10px] sm:text-xs font-medium"
               :class="{
                 'bg-green-100 text-green-800': record.type === 'invitation',
                 'bg-blue-100 text-blue-800': record.type === 'task_completion',
@@ -35,11 +39,11 @@
               {{ getTypeText(record.type) }}
             </span>
             
-            <div class="flex-1 text-center text-xs text-slate-600">
+            <div class="flex-1 text-center text-[10px] sm:text-xs text-slate-600">
               <span v-if="record.from_user_name">{{ record.from_user_name }} ({{ record.from_mobile_number }}) • </span>{{ formatDate(record.created_at) }}
             </div>
             
-            <p class="text-sm font-semibold text-green-600">+{{ record.amount }}</p>
+            <p class="text-xs sm:text-sm font-semibold text-green-600">+{{ record.amount }}</p>
           </div>
         </div>
       </div>
