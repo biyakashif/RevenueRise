@@ -9,20 +9,37 @@ const translations = computed(() => page.props.translations || {});
 const t = (key) => translations.value[key] || key;
 
 const props = defineProps({
-    depositDetails: { type: Object, required: true },
+    cryptos: { type: Array, required: true },
     vip: { type: [String, null], default: null },
     prefillAmount: { type: [Number, String, null], default: null },
 });
 
-const selectedCrypto = ref(null);
+const cryptos = ref([...props.cryptos]);
+
+const cryptoDetails = ref({});
 const isLoadingCrypto = ref(false);
 const cryptoError = ref(null);
 const isLoadingHistory = ref(false);
+const activeTab = ref(0);
+const scrollPosition = ref(0);
+const showLeftArrow = ref(false);
+const showRightArrow = ref(false);
+const tabContainer = ref(null);
 
-// Reactive variables for deposit details
-const selectedCurrency = ref('');
-const walletAddress = ref('');
-const qrCodeUrl = ref('');
+// Computed property for current crypto details
+const selectedCrypto = computed(() => {
+    const currentCurrency = currentCrypto.value?.currency;
+    return currentCurrency ? cryptoDetails.value[currentCurrency] : null;
+});
+
+// Computed properties for current crypto
+const currentCrypto = computed(() => {
+    return cryptos.value[activeTab.value] || null;
+});
+
+const selectedCurrency = computed(() => currentCrypto.value?.currency || '');
+const walletAddress = computed(() => currentCrypto.value?.address || '');
+const qrCodeUrl = computed(() => currentCrypto.value?.qr_code ? `/storage/${currentCrypto.value.qr_code}` : '');
 
 // History polling interval (only when modal is open)
 let historyPollingInterval = null;
@@ -53,7 +70,7 @@ const fetchCryptoDetails = async (symbol, showLoading = true) => {
             'AVAX': 'avalanche-2',
             'LINK': 'chainlink',
             'USDC': 'usd-coin',
-            'XRP': 'ripple',
+            'XRP': 'xrp',
             'SHIB': 'shiba-inu',
             'MATIC': 'matic-network',
             'LTC': 'litecoin',
@@ -67,7 +84,7 @@ const fetchCryptoDetails = async (symbol, showLoading = true) => {
         }
 
         const data = await response.json();
-        selectedCrypto.value = {
+        cryptoDetails.value[symbol] = {
             name: data.name,
             image: data.image,
             symbol: symbol,
@@ -77,23 +94,23 @@ const fetchCryptoDetails = async (symbol, showLoading = true) => {
 
         // Fallback to static data
         const fallback = {
-            'BTC': { name: 'Bitcoin', image: 'https://cryptologos.cc/logos/bitcoin-btc-logo.png' },
-            'ETH': { name: 'Ethereum', image: 'https://cryptologos.cc/logos/ethereum-eth-logo.png' },
-            'USDT': { name: 'Tether', image: 'https://cryptologos.cc/logos/tether-usdt-logo.png' },
-            'BNB': { name: 'Binance Coin', image: 'https://cryptologos.cc/logos/binance-coin-bnb-logo.png' },
-            'ADA': { name: 'Cardano', image: 'https://cryptologos.cc/logos/cardano-ada-logo.png' },
-            'SOL': { name: 'Solana', image: 'https://cryptologos.cc/logos/solana-sol-logo.png' },
-            'DOT': { name: 'Polkadot', image: 'https://cryptologos.cc/logos/polkadot-new-dot-logo.png' },
-            'DOGE': { name: 'Dogecoin', image: 'https://cryptologos.cc/logos/dogecoin-doge-logo.png' },
-            'AVAX': { name: 'Avalanche', image: 'https://cryptologos.cc/logos/avalanche-avax-logo.png' },
-            'LINK': { name: 'Chainlink', image: 'https://cryptologos.cc/logos/chainlink-link-logo.png' },
-            'USDC': { name: 'USD Coin', image: 'https://cryptologos.cc/logos/usd-coin-usdc-logo.png' },
-            'XRP': { name: 'XRP', image: 'https://cryptologos.cc/logos/xrp-xrp-logo.png' },
-            'SHIB': { name: 'Shiba Inu', image: 'https://cryptologos.cc/logos/shiba-inu-shib-logo.png' },
-            'MATIC': { name: 'Polygon', image: 'https://cryptologos.cc/logos/polygon-matic-logo.png' },
-            'LTC': { name: 'Litecoin', image: 'https://cryptologos.cc/logos/litecoin-ltc-logo.png' },
+            'BTC': { name: 'Bitcoin', image: 'https://assets.coingecko.com/coins/images/1/large/bitcoin.png' },
+            'ETH': { name: 'Ethereum', image: 'https://assets.coingecko.com/coins/images/279/large/ethereum.png' },
+            'USDT': { name: 'Tether', image: 'https://assets.coingecko.com/coins/images/325/large/Tether.png' },
+            'BNB': { name: 'Binance Coin', image: 'https://assets.coingecko.com/coins/images/825/large/bnb-icon2_2x.png' },
+            'ADA': { name: 'Cardano', image: 'https://assets.coingecko.com/coins/images/975/large/cardano.png' },
+            'SOL': { name: 'Solana', image: 'https://assets.coingecko.com/coins/images/4128/large/solana.png' },
+            'DOT': { name: 'Polkadot', image: 'https://assets.coingecko.com/coins/images/12171/large/polkadot.png' },
+            'DOGE': { name: 'Dogecoin', image: 'https://assets.coingecko.com/coins/images/5/large/dogecoin.png' },
+            'AVAX': { name: 'Avalanche', image: 'https://assets.coingecko.com/coins/images/12559/large/coin-round-red.png' },
+            'LINK': { name: 'Chainlink', image: 'https://assets.coingecko.com/coins/images/877/large/chainlink-new-logo.png' },
+            'USDC': { name: 'USD Coin', image: 'https://assets.coingecko.com/coins/images/6319/large/USD_Coin_icon.png' },
+            'XRP': { name: 'XRP', image: 'https://assets.coingecko.com/coins/images/44/large/xrp-symbol-white-128.png' },
+            'SHIB': { name: 'Shiba Inu', image: 'https://assets.coingecko.com/coins/images/11939/large/shiba.png' },
+            'MATIC': { name: 'Polygon', image: 'https://assets.coingecko.com/coins/images/4713/large/matic-token-icon.png' },
+            'LTC': { name: 'Litecoin', image: 'https://assets.coingecko.com/coins/images/2/large/litecoin.png' },
         };
-        selectedCrypto.value = {
+        cryptoDetails.value[symbol] = {
             ...fallback[symbol],
             symbol: symbol,
         };
@@ -126,15 +143,44 @@ const fetchHistory = async (showLoading = true) => {
 };
 
 onMounted(() => {
-    // If we have initial data from the server, use it
-    if (props.depositDetails && props.depositDetails.currency) {
-        selectedCurrency.value = props.depositDetails.currency;
-        walletAddress.value = props.depositDetails.address;
-        // Construct full QR code URL if qr_code path exists
-        if (props.depositDetails.qr_code) {
-            qrCodeUrl.value = `/storage/${props.depositDetails.qr_code}`;
-        }
-        fetchCryptoDetails(props.depositDetails.currency);
+    // Initialize with first crypto if available and preload all crypto details
+    if (cryptos.value.length > 0) {
+        form.value.crypto_id = cryptos.value[0].id;
+        // Preload crypto details for all available cryptos
+        cryptos.value.forEach(crypto => {
+            fetchCryptoDetails(crypto.currency, false);
+        });
+    }
+    
+    // Initialize arrows after mount
+    setTimeout(() => updateArrows(), 100);
+
+    // Listen for crypto updates from admin
+    if (window.Echo) {
+        console.log('Setting up crypto updates listener');
+        window.Echo.channel('crypto-updates')
+            .listen('.crypto.updated', (e) => {
+                console.log('Received crypto update:', e);
+                cryptos.value = [...e.cryptos];
+                // Reset active tab if current crypto no longer exists
+                if (!cryptos.value[activeTab.value]) {
+                    activeTab.value = 0;
+                }
+                // Update form crypto_id
+                if (cryptos.value[activeTab.value]) {
+                    form.value.crypto_id = cryptos.value[activeTab.value].id;
+                    // Preload new crypto details
+                    cryptos.value.forEach(crypto => {
+                        fetchCryptoDetails(crypto.currency, false);
+                    });
+                }
+                updateArrows();
+            })
+            .error((error) => {
+                console.error('Echo channel error:', error);
+            });
+    } else {
+        console.log('Echo not available');
     }
 
     // Listen for real-time deposit status updates
@@ -188,6 +234,10 @@ onUnmounted(() => {
         window.Echo.private(`user.${userId}`)
             .stopListening('.App\\Events\\DepositStatusUpdated');
     }
+    // Clean up crypto updates listener
+    if (window.Echo) {
+        window.Echo.leaveChannel('crypto-updates');
+    }
     // Stop history polling if running
     stopHistoryPolling();
 });
@@ -204,27 +254,45 @@ const form = ref({
     amount: props.prefillAmount || '',
     slip: null,
     vip: props.vip || null,
+    crypto_id: null,
 });
 
-// Watch for currency changes and update crypto details
-watch(() => props.depositDetails.currency, (newCurrency, oldCurrency) => {
-    if (newCurrency && newCurrency !== oldCurrency) {
-        fetchCryptoDetails(newCurrency);
+const switchTab = (index) => {
+    activeTab.value = index;
+    if (cryptos.value[index]) {
+        form.value.crypto_id = cryptos.value[index].id;
+        fetchCryptoDetails(cryptos.value[index].currency, false);
+    }
+};
+
+const scrollLeft = () => {
+    scrollPosition.value = Math.max(0, scrollPosition.value - 100);
+    updateArrows();
+};
+
+const scrollRight = () => {
+    const maxScroll = (cryptos.value.length * 80) - (tabContainer.value?.offsetWidth || 300);
+    scrollPosition.value = Math.min(maxScroll, scrollPosition.value + 100);
+    updateArrows();
+};
+
+const updateArrows = () => {
+    if (!tabContainer.value) return;
+    const containerWidth = tabContainer.value.offsetWidth;
+    const contentWidth = cryptos.value.length * 80;
+    const maxScroll = contentWidth - containerWidth;
+    showLeftArrow.value = scrollPosition.value > 0;
+    showRightArrow.value = scrollPosition.value < maxScroll && maxScroll > 0;
+};
+
+// Watch for active tab changes and update crypto_id
+watch(activeTab, (newTab) => {
+    if (cryptos.value[newTab]) {
+        form.value.crypto_id = cryptos.value[newTab].id;
     }
 });
 
-// Watch for depositDetails changes (in case the entire object changes)
-watch(() => props.depositDetails, (newDetails, oldDetails) => {
-    if (newDetails && newDetails.currency && (!oldDetails || newDetails.currency !== oldDetails.currency)) {
-        selectedCurrency.value = newDetails.currency;
-        walletAddress.value = newDetails.address;
-        // Construct full QR code URL if qr_code path exists
-        if (newDetails.qr_code) {
-            qrCodeUrl.value = `/storage/${newDetails.qr_code}`;
-        }
-        fetchCryptoDetails(newDetails.currency);
-    }
-}, { deep: true });
+
 
 // Watch for prefill amount changes
 watch(() => props.prefillAmount, (newAmount) => {
@@ -241,7 +309,7 @@ watch(() => props.vip, (newVip) => {
 });
 
 const copyAddress = async () => {
-    const address = walletAddress.value || props.depositDetails.address;
+    const address = walletAddress.value;
     copyError.value = null;
     if (navigator.clipboard && navigator.clipboard.writeText) {
         try {
@@ -290,9 +358,15 @@ const stopHistoryPolling = () => {
 };
 
 const submitDeposit = () => {
+    if (!form.value.crypto_id) {
+        alert('Please select a cryptocurrency');
+        return;
+    }
+    
     const formData = new FormData();
     formData.append('amount', form.value.amount);
     formData.append('slip', form.value.slip);
+    formData.append('crypto_id', form.value.crypto_id);
     if (form.value.vip) {
         formData.append('vip', form.value.vip);
     }
@@ -302,7 +376,12 @@ const submitDeposit = () => {
         onSuccess: () => {
             successMessage.value = 'Deposit submitted successfully! Awaiting approval.';
             setTimeout(() => (successMessage.value = null), 3000);
-            form.value = { amount: props.prefillAmount || '', slip: null, vip: props.vip || null };
+            form.value = { 
+                amount: props.prefillAmount || '', 
+                slip: null, 
+                vip: props.vip || null,
+                crypto_id: cryptos.value[activeTab.value]?.id || null
+            };
             // Refresh history if modal is open to show the new deposit
             if (showHistory.value) {
                 fetchHistory(false);
@@ -321,13 +400,58 @@ const submitDeposit = () => {
         <div class="bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-2xl border border-cyan-300/30 h-full overflow-y-auto">
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
                 <div class="bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-none sm:shadow-2xl border-none sm:border sm:border-cyan-300/30 w-full flex flex-col justify-between">
+                    
+                    <!-- No Cryptocurrencies Available -->
+                    <div v-if="cryptos.length === 0" class="text-center py-8">
+                        <div class="text-slate-600 mb-4">
+                            <svg class="w-16 h-16 mx-auto mb-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                            </svg>
+                        </div>
+                        <h2 class="text-lg font-semibold text-slate-700 mb-2">{{ t('No Cryptocurrencies Available') }}</h2>
+                        <p class="text-slate-500 text-sm">{{ t('Please contact admin to add cryptocurrency options.') }}</p>
+                    </div>
+                    
+                    <!-- Cryptocurrency Content -->
+                    <div v-else>
+                    <!-- Crypto Tabs -->
+                    <div v-if="cryptos.length > 1" class="mb-3 relative">
+                        <div ref="tabContainer" class="flex space-x-1 bg-white/20 p-1 rounded-lg overflow-hidden">
+                            <div class="flex space-x-1 transition-transform duration-300" :style="{ transform: `translateX(-${scrollPosition}px)` }">
+                                <button
+                                    v-for="(crypto, index) in cryptos"
+                                    :key="crypto.id"
+                                    @click="switchTab(index)"
+                                    :class="{
+                                        'bg-white/80 text-slate-800 shadow-lg': activeTab === index,
+                                        'text-slate-600 hover:text-slate-800 hover:bg-white/40': activeTab !== index
+                                    }"
+                                    class="flex items-center px-2 py-1 rounded-md text-xs font-medium transition-all duration-200 whitespace-nowrap flex-shrink-0"
+                                >
+                                    <div v-if="isLoadingCrypto && activeTab === index" class="w-4 h-4 mr-1 bg-white/30 rounded-full animate-pulse"></div>
+                                    <img v-else-if="cryptoDetails[crypto.currency]" :src="cryptoDetails[crypto.currency].image" alt="Crypto Logo" class="w-4 h-4 mr-1" />
+                                    <div v-else class="w-4 h-4 bg-gradient-to-r from-cyan-400 to-blue-500 rounded-full flex items-center justify-center text-white font-bold text-[8px] mr-1">
+                                        {{ crypto.currency.substring(0, 2) }}
+                                    </div>
+                                    {{ crypto.currency }}
+                                </button>
+                            </div>
+                        </div>
+                        <button v-if="showLeftArrow" @click="scrollLeft" class="absolute left-0 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/30 text-slate-700 w-5 h-5 flex items-center justify-center backdrop-blur-sm z-10 text-xs">
+                            ‹
+                        </button>
+                        <button v-if="showRightArrow" @click="scrollRight" class="absolute right-0 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/30 text-slate-700 w-5 h-5 flex items-center justify-center backdrop-blur-sm z-10 text-xs">
+                            ›
+                        </button>
+                    </div>
+                    
                     <div class="flex justify-between items-center mb-3">
                         <div class="flex items-center">
-                            <div v-if="isLoadingCrypto" class="w-6 h-6 mr-2 bg-white/30 rounded-full animate-pulse"></div>
-                            <img v-else-if="selectedCrypto" :src="selectedCrypto.image" alt="Crypto Logo" class="w-6 h-6 mr-2" />
+                            <div v-if="isLoadingCrypto" class="w-5 h-5 mr-2 bg-white/30 rounded-full animate-pulse"></div>
+                            <img v-else-if="selectedCrypto" :src="selectedCrypto.image" alt="Crypto Logo" class="w-5 h-5 mr-2" />
                             <div>
-                                <h1 class="text-lg font-bold text-slate-800 drop-shadow-sm">
-                                    {{ isLoadingCrypto ? t('Loading...') : (selectedCrypto ? selectedCrypto.name : (selectedCurrency.value || props.depositDetails.currency || t('Deposit'))) }}
+                                <h1 class="text-md font-bold text-slate-800 drop-shadow-sm">
+                                    {{ isLoadingCrypto ? t('Loading...') : (selectedCrypto ? selectedCrypto.name : (selectedCurrency || t('Deposit'))) }}
                                 </h1>
                                 <div v-if="cryptoError" class="text-xs text-red-500 mt-0.5">{{ cryptoError }}</div>
                             </div>
@@ -353,10 +477,10 @@ const submitDeposit = () => {
 
                     <div class="mb-3">
                         <label class="block text-xs font-medium text-slate-700 mb-1 drop-shadow-sm">{{ t('Network') }}</label>
-                        <input disabled type="text" :value="props.depositDetails.network || 'TBD'" class="mt-1 block w-full h-8 rounded-lg bg-white/30 border-0 text-slate-700 cursor-not-allowed px-3 backdrop-blur-sm shadow-lg text-sm" />
+                        <input disabled type="text" :value="currentCrypto?.network || 'TBD'" class="mt-1 block w-full h-8 rounded-lg bg-white/30 border-0 text-slate-700 cursor-not-allowed px-3 backdrop-blur-sm shadow-lg text-sm" />
                     </div>
 
-                    <div class="mb-3 flex justify-center">
+                    <div class="flex justify-center">
                         <img
                             :src="qrCodeUrl || 'https://via.placeholder.com/150?text=No+QR+Code'"
                             alt="QR Code"
@@ -364,10 +488,10 @@ const submitDeposit = () => {
                         />
                     </div>
 
-                    <div class="mb-3">
+                    <div class="mb-2">
                         <label class="block text-xs font-medium text-slate-700 mb-1 drop-shadow-sm">{{ t('Address') }}</label>
                         <div class="flex items-center bg-white/50 border border-white/40 p-1 sm:p-2 rounded-lg backdrop-blur-sm shadow-lg">
-                            <span class="text-[11px] sm:text-[10px] md:text-xs lg:text-sm text-slate-800 flex-1 break-all">{{ walletAddress || props.depositDetails.address }}</span>
+                            <span class="text-[11px] sm:text-[10px] md:text-xs lg:text-sm text-slate-800 flex-1 break-all">{{ walletAddress }}</span>
                             <button
                                 @click="copyAddress"
                                 class="ml-2 px-2 py-1 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white text-xs rounded-md transition-all duration-200 shadow-lg"
@@ -378,7 +502,7 @@ const submitDeposit = () => {
                         <div v-if="copyError" class="mt-1 text-xs text-red-500">{{ copyError }}</div>
                     </div>
 
-                    <div class="mb-3">
+                    <div class="mb-2">
                         <label class="block text-xs font-medium text-slate-700 mb-1 drop-shadow-sm">{{ t('Amount') }}</label>
                         <input
                             v-model="form.amount"
@@ -404,11 +528,12 @@ const submitDeposit = () => {
 
                     <button
                         @click="submitDeposit"
-                        :disabled="!form.amount || !form.slip"
+                        :disabled="!form.amount || !form.slip || !currentCrypto"
                         class="w-full px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-medium rounded-lg transition-all duration-300 transform hover:scale-[1.02] shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                     >
                         {{ t('Submit Deposit') }}
                     </button>
+                    </div>
                 </div>
             </div>
 

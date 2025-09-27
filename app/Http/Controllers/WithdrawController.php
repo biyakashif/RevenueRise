@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Withdraw;
+use App\Models\CryptoDepositDetail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -21,10 +22,16 @@ class WithdrawController extends Controller
         ];
 
         $withdrawals = Withdraw::where('user_id', $user->id)
+            ->with('crypto')
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(function ($withdraw) {
                 $withdraw->amount_withdraw = number_format($withdraw->amount_withdraw, 2, '.', '');
+                if ($withdraw->crypto_amount && $withdraw->crypto_symbol) {
+                    $withdraw->crypto_amount = $withdraw->crypto_symbol === 'USDT' 
+                        ? number_format($withdraw->crypto_amount, 2, '.', '')
+                        : number_format($withdraw->crypto_amount, 6, '.', '');
+                }
                 return $withdraw;
             });
 
@@ -40,16 +47,19 @@ class WithdrawController extends Controller
         return Inertia::render('Withdraw', $data);
     }
 
-    // submit withdraw (USDT only)
+    // submit withdraw (multi-crypto)
     public function store(Request $request)
     {
-        $user = Auth::user();
+        try {
+            $user = Auth::user();
 
-        $validated = $request->validate([
-            'amount_withdraw' => 'required|numeric|min:0.00000001',
-            'crypto_wallet' => 'required|string|max:255',
-            'withdraw_password' => 'required|string',
-        ]);
+            $validated = $request->validate([
+                'amount_withdraw' => 'required|numeric|min:0.00000001',
+                'crypto_symbol' => 'required|string',
+                'crypto_amount' => 'required|numeric|min:0.00000001',
+                'crypto_wallet' => 'required|string|max:255',
+                'withdraw_password' => 'required|string',
+            ]);
 
         $amount = $validated['amount_withdraw'];
 
@@ -81,6 +91,8 @@ class WithdrawController extends Controller
         // Create withdrawal request (under review)
         $withdraw = Withdraw::create([
             'user_id' => $user->id,
+            'crypto_symbol' => $validated['crypto_symbol'],
+            'crypto_amount' => $validated['crypto_amount'],
             'amount_withdraw' => $amount,
             'status' => 'under review',
             'crypto_wallet' => $validated['crypto_wallet'],
@@ -96,6 +108,23 @@ class WithdrawController extends Controller
 
         return redirect()->route('withdraw')
             ->with('success', 'Withdrawal request submitted successfully. Await admin approval.');
+        } catch (ValidationException $e) {
+            throw $e; // Re-throw validation exceptions to preserve error messages
+        } catch (\Exception $e) {
+            \Log::error('Withdrawal error: ' . $e->getMessage(), [
+                'user_id' => $user->id ?? null,
+                'request_data' => $request->all(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            if ($request->wantsJson() && !$request->header('X-Inertia')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $e->getMessage()
+                ], 422);
+            }
+            return redirect()->back()->withErrors(['error' => $e->getMessage()]);
+        }
     }
 
     // show only withdrawal history
@@ -104,10 +133,16 @@ class WithdrawController extends Controller
         $user = Auth::user();
 
         $withdrawals = Withdraw::where('user_id', $user->id)
+            ->with('crypto')
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(function ($withdraw) {
                 $withdraw->amount_withdraw = number_format($withdraw->amount_withdraw, 2, '.', '');
+                if ($withdraw->crypto_amount && $withdraw->crypto_symbol) {
+                    $withdraw->crypto_amount = $withdraw->crypto_symbol === 'USDT' 
+                        ? number_format($withdraw->crypto_amount, 2, '.', '')
+                        : number_format($withdraw->crypto_amount, 6, '.', '');
+                }
                 return $withdraw;
             });
 

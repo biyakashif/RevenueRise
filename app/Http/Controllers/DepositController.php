@@ -15,24 +15,14 @@ class DepositController extends Controller
 {
    public function index(Request $request)
     {
-        $detail = CryptoDepositDetail::first();
-        $depositDetails = [
-            'network' => $detail ? $detail->network : 'TBD',
-            'address' => $detail ? $detail->address : 'TBD',
-            'qr_code' => $detail ? $detail->qr_code : null,
-            'currency' => $detail ? $detail->currency : '',
-            'min_deposit' => $detail?->min_deposit ?? null,
-            'deposit_account' => $detail?->deposit_account ?? null,
-            'deposit_arrival_time' => $detail?->deposit_arrival_time ?? null,
-            'withdraw_enabled_time' => $detail?->withdraw_enabled_time ?? null,
-        ];
-
+        $cryptos = CryptoDepositDetail::where('is_active', true)->get();
+        
         // pass vip and prefill amount when coming from VIP purchase page
         $vip = $request->query('vip');
         $prefillAmount = $request->query('amount');
 
         return Inertia::render('Deposit', [
-            'depositDetails' => $depositDetails,
+            'cryptos' => $cryptos,
             'vip' => $vip,
             'prefillAmount' => $prefillAmount,
         ]);
@@ -66,17 +56,18 @@ class DepositController extends Controller
             'amount' => 'required|numeric|min:1',
             'slip' => 'required|image|max:2048',
             'vip' => 'nullable|string',
+            'crypto_id' => 'required|exists:crypto_deposit_details,id',
         ]);
 
         $path = $request->file('slip')->store('deposits', 'public');
         $user = auth()->user();
-        $detail = CryptoDepositDetail::first();
+        $crypto = CryptoDepositDetail::findOrFail($request->crypto_id);
 
         $data = [
             'user_id' => $user->id,
-            'symbol' => $detail ? strtolower($detail->currency) : '',
+            'symbol' => strtolower($crypto->currency),
             'amount' => $request->amount,
-            'address' => $detail ? $detail->address : 'TBD',
+            'address' => $crypto->address,
             'status' => 'pending',
             'slip_path' => $path,
         ];

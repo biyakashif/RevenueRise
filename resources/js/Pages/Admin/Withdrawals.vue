@@ -72,10 +72,19 @@ const showLimitModal = ref(false);
 const selectedUserId = ref(null);
 const newWithdrawLimit = ref('');
 const limitModalError = ref('');
+const modalPosition = ref({ top: 0, left: 0 });
 
-const openLimitModal = (userId, currentLimit) => {
+const openLimitModal = (userId, currentLimit, event) => {
   selectedUserId.value = userId;
   newWithdrawLimit.value = currentLimit;
+  
+  // Get button position
+  const rect = event.target.getBoundingClientRect();
+  modalPosition.value = {
+    top: rect.bottom + window.scrollY + 10,
+    left: Math.max(10, rect.left + window.scrollX - 200)
+  };
+  
   showLimitModal.value = true;
   limitModalError.value = '';
 };
@@ -133,7 +142,7 @@ const updateWithdrawLimit = async () => {
             <h3 class="font-semibold text-slate-800 text-sm">{{ user.name }} <span class="text-xs text-slate-600">— {{ user.mobile_number }} / {{ user.invitation_code }}</span></h3>
             <div class="text-xs text-slate-600 mt-1">
               Withdraw Limit: <strong class="text-slate-800">{{ formatUSDT(user.withdraw_limit) }}</strong> USDT
-              <button @click="openLimitModal(user.id, formatUSDT(user.withdraw_limit))" 
+              <button @click="openLimitModal(user.id, formatUSDT(user.withdraw_limit), $event)" 
                 class="ml-2 text-xs bg-white/20 backdrop-blur-sm px-2 py-1 rounded-lg hover:bg-white/30 transition-colors text-slate-700 border border-white/30">
                 Change Limit
               </button>
@@ -145,8 +154,13 @@ const updateWithdrawLimit = async () => {
           <div v-for="w in user.withdraws" :key="w.id" class="bg-white/10 backdrop-blur-sm p-3 rounded-lg border border-white/20">
             <div class="flex justify-between">
               <div>
-                <div class="text-sm text-slate-800 font-semibold">{{ formatUSDT(w.amount_withdraw) }} USDT</div>
-                <div class="text-xs text-slate-600">To: {{ w.crypto_wallet }}</div>
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="text-sm text-slate-800 font-semibold">{{ formatUSDT(w.amount_withdraw) }} USDT</span>
+                  <span v-if="w.crypto_symbol && w.crypto_symbol !== 'USDT'" class="px-2 py-0.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-full text-xs font-medium shadow-sm">
+                    {{ w.crypto_amount ? (w.crypto_symbol === 'USDT' ? formatUSDT(w.crypto_amount) : Number(w.crypto_amount).toFixed(6)) : formatUSDT(w.amount_withdraw) }} {{ w.crypto_symbol }}
+                  </span>
+                </div>
+                <div class="text-xs text-slate-600 mb-1">To: {{ w.crypto_wallet }}</div>
                 <div class="text-xs text-slate-500">{{ new Date(w.created_at).toLocaleString() }}</div>
               </div>
               <div class="flex flex-col items-end space-y-2">
@@ -176,8 +190,11 @@ const updateWithdrawLimit = async () => {
     </div>
 
     <!-- Withdraw Limit Modal -->
-    <div v-if="showLimitModal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-      <div class="bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl rounded-lg p-6 w-full max-w-md border border-white/20">
+    <div v-if="showLimitModal" class="fixed inset-0 bg-black bg-opacity-40 z-50" @click="showLimitModal = false">
+      <div 
+        class="absolute bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl rounded-lg p-6 w-full max-w-md border border-white/20"
+        :style="{ top: modalPosition.top + 'px', left: modalPosition.left + 'px' }"
+        @click.stop>
         <h3 class="text-lg font-semibold mb-4 text-slate-800">Update Withdraw Limit</h3>
         <div class="mb-4">
           <label class="block text-sm font-medium text-slate-700 mb-2">Minimum Withdraw Amount (USDT)</label>

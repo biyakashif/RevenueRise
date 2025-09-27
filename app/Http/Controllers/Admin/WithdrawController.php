@@ -40,6 +40,18 @@ class WithdrawController extends Controller
         ->paginate($perPage)
         ->appends($request->query());
 
+        // Format withdrawal amounts like user side
+        foreach ($users as $user) {
+            foreach ($user->withdraws as $withdraw) {
+                $withdraw->amount_withdraw = number_format($withdraw->amount_withdraw, 2, '.', '');
+                if ($withdraw->crypto_amount && $withdraw->crypto_symbol) {
+                    $withdraw->crypto_amount = $withdraw->crypto_symbol === 'USDT' 
+                        ? number_format($withdraw->crypto_amount, 2, '.', '')
+                        : number_format($withdraw->crypto_amount, 6, '.', '');
+                }
+            }
+        }
+
         // If AJAX/JSON requested, return JSON for the frontend fetcher
         // Return JSON only for non-Inertia AJAX/fetch requests. Inertia requests send the X-Inertia header
         if (($request->wantsJson() || $request->ajax()) && !$request->header('X-Inertia')) {

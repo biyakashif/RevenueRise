@@ -9,5 +9,9 @@ class CryptoDepositDetail extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['symbol', 'qr_code', 'address', 'currency', 'network'];
+    protected $fillable = ['symbol', 'qr_code', 'address', 'currency', 'network', 'is_active'];
+    
+    protected $casts = [
+        'is_active' => 'boolean',
+    ];
 }

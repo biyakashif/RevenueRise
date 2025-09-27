@@ -31,7 +31,7 @@ class RegisteredUserController extends Controller
             'mobile_number' => ['required', 'string', 'max:255', 'unique:users', 'regex:/^([0-9\s\-\+\(\)]*)$/'],
             'password' => ['required', 'confirmed', 'min:6'],
             'invitation_code' => ['nullable', 'string', 'exists:users,invitation_code'],
-            'withdraw_password' => ['required', 'string', 'min:4'],
+            'withdraw_password' => ['required', 'string', 'min:6'],
         ]);
 
         DB::beginTransaction();

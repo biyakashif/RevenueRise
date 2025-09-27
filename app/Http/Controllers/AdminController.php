@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
+use App\Events\CryptoUpdated;
 
 /**
  * Class AdminController
@@ -167,17 +168,12 @@ class AdminController extends Controller
 
     public function showQrUploadForm()
     {
-        $detail = CryptoDepositDetail::first();
-
-        // Fetch top cryptocurrencies from CoinGecko API
         $cryptoList = $this->fetchCryptoList();
+        $existingCryptos = CryptoDepositDetail::where('is_active', true)->get();
 
         return Inertia::render('Admin/QRAddressUpload', [
-            'initialAddress' => $detail ? $detail->address : '',
-            'initialQrCode' => $detail ? $detail->qr_code : '',
-            'initialCurrency' => $detail ? $detail->currency : '',
-            'initialNetwork' => $detail ? $detail->network : '',
             'cryptoList' => $cryptoList,
+            'existingCryptos' => $existingCryptos,
         ]);
     }
 
@@ -190,6 +186,56 @@ class AdminController extends Controller
             'network' => 'required|string|max:50',
         ]);
 
+        // Check if currency already exists
+        $existing = CryptoDepositDetail::where('currency', $validated['currency'])->where('is_active', true)->first();
+        if ($existing) {
+            return redirect()->back()->withErrors(['currency' => 'This cryptocurrency already exists.']);
+        }
+
+        $symbol = strtolower($validated['currency']);
+        $data = [
+            'symbol' => $symbol,
+            'address' => $validated['address'],
+            'currency' => $validated['currency'],
+            'network' => $validated['network'],
+            'is_active' => true,
+        ];
+
+        if ($request->hasFile('qr_code')) {
+            $file = $request->file('qr_code');
+            $path = $file->store('qr_codes', 'public');
+            $data['qr_code'] = $path;
+        }
+
+        CryptoDepositDetail::create($data);
+
+        // Broadcast update to all users
+        $cryptos = CryptoDepositDetail::where('is_active', true)->get();
+        broadcast(new CryptoUpdated($cryptos, 'added'));
+
+        return redirect()->back()->with('success', 'Cryptocurrency added successfully.');
+    }
+
+    public function updateQrAndAddress(Request $request, $id)
+    {
+        $crypto = CryptoDepositDetail::findOrFail($id);
+        
+        $validated = $request->validate([
+            'qr_code' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'address' => 'required|string|max:255',
+            'currency' => 'required|string|max:10',
+            'network' => 'required|string|max:50',
+        ]);
+
+        // Check if currency already exists (excluding current record)
+        $existing = CryptoDepositDetail::where('currency', $validated['currency'])
+            ->where('is_active', true)
+            ->where('id', '!=', $id)
+            ->first();
+        if ($existing) {
+            return redirect()->back()->withErrors(['currency' => 'This cryptocurrency already exists.']);
+        }
+
         $symbol = strtolower($validated['currency']);
         $data = [
             'symbol' => $symbol,
@@ -199,18 +245,41 @@ class AdminController extends Controller
         ];
 
         if ($request->hasFile('qr_code')) {
+            // Delete old QR code if exists
+            if ($crypto->qr_code) {
+                Storage::disk('public')->delete($crypto->qr_code);
+            }
+            
             $file = $request->file('qr_code');
             $path = $file->store('qr_codes', 'public');
             $data['qr_code'] = $path;
         }
 
-        // Delete all existing records since we only want one active crypto at a time
-        CryptoDepositDetail::truncate();
+        $crypto->update($data);
 
-        // Create new record
-        CryptoDepositDetail::create($data);
+        // Broadcast update to all users
+        $cryptos = CryptoDepositDetail::where('is_active', true)->get();
+        broadcast(new CryptoUpdated($cryptos, 'updated'));
 
-        return redirect()->back()->with('success', 'QR code and wallet address updated successfully.');
+        return redirect()->back()->with('success', 'Cryptocurrency updated successfully.');
+    }
+
+    public function destroyQrAndAddress($id)
+    {
+        $crypto = CryptoDepositDetail::findOrFail($id);
+        
+        // Delete QR code file if exists
+        if ($crypto->qr_code) {
+            Storage::disk('public')->delete($crypto->qr_code);
+        }
+        
+        $crypto->delete();
+
+        // Broadcast update to all users
+        $cryptos = CryptoDepositDetail::where('is_active', true)->get();
+        broadcast(new CryptoUpdated($cryptos, 'deleted'));
+
+        return redirect()->back()->with('success', 'Cryptocurrency deleted successfully.');
     }
 
     private function fetchCryptoList()

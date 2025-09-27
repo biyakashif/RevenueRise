@@ -34,3 +34,7 @@ Broadcast::channel('admin-chat-updates', function ($user) {
 Broadcast::channel('guest-chat', function ($user) {
     return $user->role === 'admin';
 });
+
+Broadcast::channel('crypto-updates', function ($user) {
+    return $user !== null; // Allow all authenticated users
+});

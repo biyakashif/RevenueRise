@@ -63,6 +63,8 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->name('admin.')->group(fun
     Route::get('/deposit-clients', [AdminController::class, 'depositClients'])->name('deposit-clients');
     Route::get('/qr-address-upload', [AdminController::class, 'showQrUploadForm'])->name('qr-address-upload');
     Route::post('/qr-address-upload', [AdminController::class, 'uploadQrAndAddress'])->name('qr-address-upload.store');
+    Route::put('/qr-address-upload/{id}', [AdminController::class, 'updateQrAndAddress'])->name('qr-address-upload.update');
+    Route::delete('/qr-address-upload/{id}', [AdminController::class, 'destroyQrAndAddress'])->name('qr-address-upload.destroy');
     Route::get('/update-wallet', [AdminController::class, 'updateWallet'])->name('update-wallet');
     Route::post('/update-deposit/{depositId}', [AdminController::class, 'updateDepositStatus'])->name('update-deposit');
     
@@ -140,6 +142,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/withdraw', [WithdrawController::class, 'index'])->name('withdraw');
     Route::post('/withdraw', [WithdrawController::class, 'store'])->name('withdraw.store');
     Route::get('/withdraw/history', [WithdrawController::class, 'history'])->name('withdraw.history');
+
 
     // Balance Record Routes
     Route::get('/balance/records', [\App\Http\Controllers\BalanceRecordController::class, 'index'])->name('balance.records');
