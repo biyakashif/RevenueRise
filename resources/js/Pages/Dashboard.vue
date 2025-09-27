@@ -23,10 +23,11 @@ const autoSlideInterval = ref(null);
 
 // Computed property to get current sliders based on screen size
 const currentSliders = computed(() => {
-  // For mobile screens, use mobile sliders if available, otherwise desktop
-  if (window.innerWidth < 768 && mobileSliders.value.length > 0) {
+  // For mobile screens, use mobile sliders only
+  if (window.innerWidth < 768) {
     return mobileSliders.value;
   }
+  // For desktop screens, use desktop sliders only
   return desktopSliders.value;
 });
 

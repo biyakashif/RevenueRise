@@ -246,19 +246,25 @@ onMounted(() => {
           </div>
 
     <!-- Assign Tasks Modal -->
-    <div v-if="showAssignTasksModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div class="bg-white p-4 rounded shadow-lg w-full max-w-md mx-2 overflow-y-auto max-h-[90vh]">
-        <h2 class="text-lg font-bold mb-4 text-center">Assign Tasks to {{ selectedUser?.name }}</h2>
+    <div v-if="showAssignTasksModal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+      <div class="bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl rounded-2xl p-6 w-full max-w-md mx-4 border border-white/20 shadow-2xl">
+        <h2 class="text-lg font-semibold mb-4 text-white text-center">Assign Tasks to {{ selectedUser?.name }}</h2>
         <div class="mb-4">
-          <label class="block text-sm font-medium text-gray-700">Enter Tasks Number</label>
-          <input v-model="tasksNumber" type="number" class="mt-1 block w-full p-2 border rounded-md" />
+          <label class="block text-sm font-medium text-white mb-2">Enter Tasks Number</label>
+          <input v-model="tasksNumber" type="number" class="w-full h-10 rounded-lg bg-white/50 border-0 focus:ring-2 focus:ring-cyan-400 text-slate-900 px-3 placeholder-slate-400 backdrop-blur-sm shadow-lg" />
         </div>
         <div class="mb-4">
-          <label class="block text-sm font-medium text-gray-700">Enter Lucky Order</label>
-          <input v-model="luckyOrder" type="number" class="mt-1 block w-full p-2 border rounded-md" />
+          <label class="block text-sm font-medium text-white mb-2">Enter Lucky Order</label>
+          <input v-model="luckyOrder" type="number" class="w-full h-10 rounded-lg bg-white/50 border-0 focus:ring-2 focus:ring-cyan-400 text-slate-900 px-3 placeholder-slate-400 backdrop-blur-sm shadow-lg" />
         </div>
-        <button @click="assignTasks" class="w-full bg-green-600 text-white py-2 rounded">Assign</button>
-        <button @click="closeAssignTasksModal" class="mt-4 w-full bg-gray-600 text-white py-2 rounded">Cancel</button>
+        <div class="flex space-x-2">
+          <button @click="closeAssignTasksModal" class="flex-1 px-4 py-2 bg-white/20 backdrop-blur-sm rounded-lg text-sm hover:bg-white/30 text-white border border-white/30">
+            Cancel
+          </button>
+          <button @click="assignTasks" class="flex-1 px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded text-sm hover:from-green-600 hover:to-green-700 transform hover:scale-105 transition-all duration-200">
+            Assign
+          </button>
+        </div>
       </div>
     </div>
 
@@ -307,46 +313,46 @@ onMounted(() => {
     </div>
 
     <!-- Modal for tasks -->
-    <div v-if="showModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div class="bg-white p-4 rounded shadow-lg w-full max-w-md mx-2 overflow-y-auto max-h-[90vh]">
-        <h2 class="text-lg font-bold mb-4 text-center">
+    <div v-if="showModal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+      <div class="bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl rounded-2xl p-6 w-full max-w-md mx-4 border border-white/20 shadow-2xl overflow-y-auto max-h-[90vh]">
+        <h2 class="text-lg font-semibold mb-4 text-white text-center">
           Tasks for {{ modalUser?.name }} ({{ modalUser?.vip_level }})
         </h2>
-        <div v-if="tasksByUser && tasksByUser.length === 0" class="text-center text-gray-500">No tasks assigned.</div>
-        <ul v-if="tasksByUser && tasksByUser.length > 0" class="space-y-3">
+        <div v-if="tasksByUser && tasksByUser.length === 0" class="text-center text-white/70">No tasks assigned.</div>
+        <ul v-if="tasksByUser && tasksByUser.length > 0" class="space-y-3 mb-6">
           <li
             v-for="task in tasksByUser"
             :key="task.id"
-            class="flex items-center rounded-lg p-2 shadow-sm"
-            :class="task.product_type === 'Lucky Order' ? 'bg-yellow-100' : 'bg-gray-50'"
+            class="flex items-center rounded-lg p-3 shadow-sm backdrop-blur-sm border border-white/20"
+            :class="task.product_type === 'Lucky Order' ? 'bg-yellow-100/20' : 'bg-white/10'"
           >
             <img
               :src="task.product?.image_path ? '/storage/' + task.product.image_path : '/default-product.png'"
               alt="Product"
-              class="w-10 h-10 object-cover rounded mr-2 border"
+              class="w-10 h-10 object-cover rounded mr-3 border border-white/30"
             />
             <div class="flex-1">
-              <div class="font-semibold text-sm">{{ task.product?.title }}</div>
-              <div class="text-xs text-gray-600 mb-1">{{ task.product_type }}</div>
+              <div class="font-semibold text-sm text-white">{{ task.product?.title }}</div>
+              <div class="text-xs text-white/70 mb-1">{{ task.product_type }}</div>
               <div class="flex gap-2 text-xs">
-                <span class="text-green-700">Buy: {{ task.product?.purchase_price }}</span>
-                <span class="text-blue-700">Sell: {{ task.product?.selling_price }}</span>
+                <span class="text-green-300">Buy: {{ task.product?.purchase_price }}</span>
+                <span class="text-blue-300">Sell: {{ task.product?.selling_price }}</span>
               </div>
             </div>
-            <div class="text-xs text-gray-400 ml-2">#{{ task.position }}</div>
+            <div class="text-xs text-white/50 ml-2">#{{ task.position }}</div>
             <span v-if="task.status && task.status.toString().trim().toLowerCase() === 'confirmed'" class="ml-2 bg-green-500 text-white px-2 py-1 rounded text-xs">
               Confirmed
             </span>
             <button
               v-if="task.product_type !== 'Lucky Order' && task.status !== 'confirmed' && modalUser?.id"
               @click="applyLuckyOrder(task.id, modalUser.id)"
-              class="ml-2 bg-blue-500 text-white px-2 py-1 rounded text-xs"
+              class="ml-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white px-2 py-1 rounded text-xs hover:from-blue-600 hover:to-blue-700 transition-all duration-200"
             >
               Apply L/O
             </button>
           </li>
         </ul>
-        <button @click="closeModal" class="mt-6 w-full bg-blue-600 text-white py-2 rounded">Close</button>
+        <button @click="closeModal" class="w-full px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded text-sm hover:from-blue-600 hover:to-blue-700 transform hover:scale-105 transition-all duration-200">Close</button>
       </div>
     </div>
 

@@ -227,25 +227,25 @@
         </div>
 
         <!-- Blocked Guests Modal -->
-        <div v-if="showBlockedGuestsModal" class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center z-40">
-            <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md max-h-[80vh] overflow-y-auto">
+        <div v-if="showBlockedGuestsModal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-40">
+            <div class="bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl rounded-2xl p-6 w-full max-w-md max-h-[80vh] overflow-y-auto border border-white/20 shadow-2xl">
                 <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-lg font-semibold">Blocked Guests</h3>
-                    <button @click="closeBlockedGuestsModal" class="text-gray-400 hover:text-gray-600">
+                    <h3 class="text-lg font-semibold text-white">Blocked Guests</h3>
+                    <button @click="closeBlockedGuestsModal" class="text-white/70 hover:text-white">
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
-                <div v-if="blockedGuests.length === 0" class="text-center py-8 text-gray-500">
+                <div v-if="blockedGuests.length === 0" class="text-center py-8 text-white/70">
                     No blocked guests
                 </div>
                 <div v-else class="space-y-3">
-                    <div v-for="guest in blockedGuests" :key="guest.id" class="flex items-center justify-between p-3 border rounded-lg">
+                    <div v-for="guest in blockedGuests" :key="guest.id" class="flex items-center justify-between p-3 bg-white/10 backdrop-blur-sm rounded-lg border border-white/20">
                         <div>
-                            <div class="font-medium">{{ guest.name }}</div>
-                            <div class="text-sm text-gray-600">{{ guest.mobile_number }}</div>
-                            <div class="text-xs text-gray-400">Blocked: {{ formatDate(guest.blocked_at) }}</div>
+                            <div class="font-medium text-white">{{ guest.name }}</div>
+                            <div class="text-sm text-white/70">{{ guest.mobile_number }}</div>
+                            <div class="text-xs text-white/50">Blocked: {{ formatDate(guest.blocked_at) }}</div>
                         </div>
-                        <button @click="unblockGuest(guest.session_id)" class="px-3 py-1 bg-green-500 hover:bg-green-600 text-white rounded text-sm">
+                        <button @click="unblockGuest(guest.session_id)" class="px-3 py-1 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded text-sm transform hover:scale-105 transition-all duration-200">
                             Unblock
                         </button>
                     </div>

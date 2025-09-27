@@ -258,9 +258,9 @@ const cancelEdit = () => {
             
             <!-- Modal -->
             <div v-if="showForm" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                <div class="bg-gradient-to-br from-white/95 via-blue-50/90 to-indigo-50/95 backdrop-blur-xl p-6 rounded-2xl w-full max-w-md max-h-[80vh] overflow-y-auto shadow-2xl border border-white/40">
+                <div class="bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl p-6 rounded-2xl w-full max-w-md max-h-[80vh] overflow-y-auto shadow-2xl border border-white/20">
                     <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-lg font-semibold text-slate-800">{{ editingCrypto ? 'Edit' : 'Add' }} Cryptocurrency</h2>
+                        <h2 class="text-lg font-semibold text-white">{{ editingCrypto ? 'Edit' : 'Add' }} Cryptocurrency</h2>
                         <button @click="cancelEdit" class="text-slate-400 hover:text-slate-600 transition-colors">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -269,7 +269,7 @@ const cancelEdit = () => {
                     </div>
                     <form @submit.prevent="submit" enctype="multipart/form-data" class="space-y-4">
                         <div>
-                            <label for="currency" class="block text-sm font-medium text-slate-700 mb-2 drop-shadow-sm">Cryptocurrency</label>
+                            <label for="currency" class="block text-sm font-medium text-white mb-2 drop-shadow-sm">Cryptocurrency</label>
                             <select
                                 v-model="form.currency"
                                 id="currency"
@@ -283,7 +283,7 @@ const cancelEdit = () => {
                         </div>
 
                         <div>
-                            <label for="network" class="block text-sm font-medium text-slate-700 mb-2 drop-shadow-sm">Network</label>
+                            <label for="network" class="block text-sm font-medium text-white mb-2 drop-shadow-sm">Network</label>
                             <div class="flex gap-2">
                                 <input
                                     v-model="form.network"
@@ -303,14 +303,14 @@ const cancelEdit = () => {
                                 </button>
                             </div>
                             <div v-if="form.errors.network" class="mt-1 text-xs text-red-600 bg-red-50/80 p-2 rounded border border-red-200">{{ form.errors.network }}</div>
-                            <p class="text-xs text-slate-500 mt-1">
+                            <p class="text-xs text-white/70 mt-1">
                                 Network auto-updates when you select a currency. Use "Reset" to restore the default network.
                                 <span v-if="networkManuallyModified" class="text-orange-600 font-medium">(Modified)</span>
                             </p>
                         </div>
 
                         <div>
-                            <label for="qr_code" class="block text-sm font-medium text-slate-700 mb-2 drop-shadow-sm">QR Code Image</label>
+                            <label for="qr_code" class="block text-sm font-medium text-white mb-2 drop-shadow-sm">QR Code Image</label>
                             <input
                                 type="file"
                                 id="qr_code"
@@ -325,7 +325,7 @@ const cancelEdit = () => {
                         </div>
 
                         <div>
-                            <label for="address" class="block text-sm font-medium text-slate-700 mb-2 drop-shadow-sm">Wallet Address</label>
+                            <label for="address" class="block text-sm font-medium text-white mb-2 drop-shadow-sm">Wallet Address</label>
                             <input
                                 v-model="form.address"
                                 type="text"
@@ -357,15 +357,15 @@ const cancelEdit = () => {
             
             <!-- Delete Confirmation Modal -->
             <div v-if="showDeleteModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                <div class="bg-gradient-to-br from-white/95 via-red-50/90 to-red-100/95 backdrop-blur-xl p-6 rounded-2xl w-full max-w-sm shadow-2xl border border-white/40">
+                <div class="bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl p-6 rounded-2xl w-full max-w-sm shadow-2xl border border-white/20">
                     <div class="text-center">
                         <div class="w-12 h-12 mx-auto mb-4 bg-red-100 rounded-full flex items-center justify-center">
                             <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                             </svg>
                         </div>
-                        <h3 class="text-lg font-semibold text-slate-800 mb-2">Delete Cryptocurrency</h3>
-                        <p class="text-slate-600 mb-4">Are you sure you want to delete <strong>{{ deletingCrypto?.currency }}</strong>? This action cannot be undone.</p>
+                        <h3 class="text-lg font-semibold text-white mb-2">Delete Cryptocurrency</h3>
+                        <p class="text-white/80 mb-4">Are you sure you want to delete <strong>{{ deletingCrypto?.currency }}</strong>? This action cannot be undone.</p>
                         <div class="flex space-x-2">
                             <button @click="cancelDelete" class="flex-1 px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg text-sm font-medium transition-colors">
                                 Cancel
