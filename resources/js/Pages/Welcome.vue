@@ -1,12 +1,65 @@
 <script setup>
-import { Head, Link, usePage } from '@inertiajs/vue3';
+import { Head, Link, usePage, router } from '@inertiajs/vue3';
 import ApplicationLogo from '@/Components/ApplicationLogo.vue';
+import FloatingChatIcon from '@/Components/FloatingChatIcon.vue';
 import { ref, computed, onMounted } from 'vue';
 import axios from 'axios';
 
 const page = usePage();
 const translations = computed(() => page.props.translations || {});
+const locale = computed(() => page.props.locale || 'en');
 const t = (key) => translations.value[key] || key;
+
+const languages = [
+    { code: 'en', name: 'English', flag: 'https://flagcdn.com/w20/gb.png' },
+    { code: 'es', name: 'Español', flag: 'https://flagcdn.com/w20/es.png' },
+    { code: 'it', name: 'Italiano', flag: 'https://flagcdn.com/w20/it.png' },
+    { code: 'ro', name: 'Română', flag: 'https://flagcdn.com/w20/ro.png' },
+    { code: 'ru', name: 'Русский', flag: 'https://flagcdn.com/w20/ru.png' },
+    { code: 'de', name: 'Deutsch', flag: 'https://flagcdn.com/w20/de.png' },
+    { code: 'bn', name: 'বাংলা', flag: 'https://flagcdn.com/w20/bd.png' },
+    { code: 'hi', name: 'हिन्दी', flag: 'https://flagcdn.com/w20/in.png' },
+];
+
+const currentLanguage = computed(() => {
+    return languages.find(lang => lang.code === locale.value) || languages[0];
+});
+
+const dropdownOpen = ref(false);
+
+const refreshCSRFToken = async () => {
+    const res = await fetch(route('csrf-token'), {
+        method: 'GET',
+        headers: {
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        credentials: 'same-origin'
+    });
+    const data = await res.json();
+    const token = data.token;
+    document.head.querySelector('meta[name="csrf-token"]').content = token;
+    window.axios.defaults.headers.common['X-CSRF-TOKEN'] = token;
+};
+
+const changeLanguage = async (lang) => {
+    try {
+        await refreshCSRFToken();
+        await router.post(route('locale.change'), { locale: lang }, {
+            preserveScroll: true,
+            preserveState: true,
+            onSuccess: () => {
+                dropdownOpen.value = false;
+            },
+        });
+    } catch (error) {
+        if (error.response && error.response.status === 419) {
+            window.location.reload();
+        } else {
+            console.error('Failed to change language:', error);
+        }
+    }
+};
 
 defineProps({
     canLogin: Boolean,
@@ -69,7 +122,7 @@ const startGuestChat = async () => {
         });
         
         if (!captchaResponse.data.valid) {
-            showCaptchaError.value = 'Incorrect captcha. Please try again.';
+            showCaptchaError.value = t('Incorrect captcha. Please try again.');
             generateCaptcha();
             guestForm.value.captcha = '';
             return;
@@ -82,7 +135,7 @@ const startGuestChat = async () => {
         });
         
         if (response.data.blocked) {
-            showCaptchaError.value = 'You have been blocked. You cannot send messages.';
+            showCaptchaError.value = t('You have been blocked. You cannot send messages.');
             return;
         }
         
@@ -97,7 +150,7 @@ const startGuestChat = async () => {
         loadGuestMessages();
         startRealTimeChat();
     } catch (error) {
-        alert('Error starting chat. Please try again.');
+        alert(t('Error starting chat. Please try again.'));
     }
 };
 
@@ -176,6 +229,9 @@ const startRealTimeChat = () => {
                         video_path: e.message.video_path || null
                     };
                     
+                    // Remove any temp messages before adding the real message
+                    messages.value = messages.value.filter(m => !m.isTemp);
+                    
                     const exists = messages.value.some(m => m.id === newMessage.id);
                     if (!exists) {
                         messages.value.push(newMessage);
@@ -198,7 +254,7 @@ const startRealTimeChat = () => {
             echoChannel.listen('GuestChatDeleted', (e) => {
                 console.log('🗑️ Guest chat deleted:', e);
                 if (e.session_id === guestSessionId.value) {
-                    alert('Your chat session has been ended by the administrator.');
+                    alert(t('Your chat session has been ended by the administrator.'));
                     closeGuestChat();
                 }
             });
@@ -241,18 +297,45 @@ const handleImageUpload = async (event) => {
         const file = event.target.files[0];
         if (!file || isBlocked.value) return;
 
+        // Create immediate preview
+        const imageUrl = URL.createObjectURL(file);
+        const tempMessage = {
+            id: 'temp_' + Date.now(),
+            message: '',
+            is_guest: true,
+            image_path: imageUrl,
+            video_path: null,
+            created_at: new Date().toISOString(),
+            isTemp: true
+        };
+        messages.value.push(tempMessage);
+        messages.value.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+
+        setTimeout(() => {
+            if (messagesContainer.value) {
+                messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
+            }
+        }, 50);
+
         const formData = new FormData();
         formData.append('image', file);
 
         await axios.post(`/guest-chat/${guestSessionId.value}/send`, formData);
         event.target.value = '';
+
+        // Temp message will be replaced by real message when it comes through real-time
     } catch (error) {
         console.error('Error uploading image:', error);
         if (error.response?.status === 403) {
             isBlocked.value = true;
-            alert('You have been blocked and cannot send messages.');
+            alert(t('You have been blocked and cannot send messages.'));
         } else {
-            alert('Error uploading image. Please try again.');
+            alert(t('Error uploading image. Please try again.'));
+        }
+        // Remove temp message on error
+        const tempIndex = messages.value.findIndex(m => m.isTemp);
+        if (tempIndex > -1) {
+            messages.value.splice(tempIndex, 1);
         }
     }
 };
@@ -263,23 +346,56 @@ const handleVideoUpload = async (event) => {
         if (!file || isBlocked.value) return;
 
         if (file.size > 30 * 1024 * 1024) {
-            alert('Video file size must not exceed 30MB.');
+            alert(t('Video file size must not exceed 30MB.'));
             event.target.value = '';
             return;
         }
+
+        // Create immediate preview
+        const videoUrl = URL.createObjectURL(file);
+        const tempMessage = {
+            id: 'temp_' + Date.now(),
+            message: '',
+            is_guest: true,
+            image_path: null,
+            video_path: videoUrl,
+            created_at: new Date().toISOString(),
+            isTemp: true
+        };
+        messages.value.push(tempMessage);
+        messages.value.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+
+        setTimeout(() => {
+            if (messagesContainer.value) {
+                messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
+            }
+        }, 50);
 
         const formData = new FormData();
         formData.append('video', file);
 
         await axios.post(`/guest-chat/${guestSessionId.value}/send`, formData);
         event.target.value = '';
+
+        // Temp message will be replaced by real message when it comes through real-time
+        setTimeout(() => {
+            const index = messages.value.findIndex(m => m.id === tempMessage.id);
+            if (index > -1) {
+                messages.value.splice(index, 1);
+            }
+        }, 2000);
     } catch (error) {
         console.error('Error uploading video:', error);
         if (error.response?.status === 403) {
             isBlocked.value = true;
-            alert('You have been blocked by the administrator and cannot send messages.');
+            alert(t('You have been blocked by the administrator and cannot send messages.'));
         } else {
-            alert('Error uploading video. Please try again.');
+            alert(t('Error uploading video. Please try again.'));
+        }
+        // Remove temp message on error
+        const tempIndex = messages.value.findIndex(m => m.isTemp);
+        if (tempIndex > -1) {
+            messages.value.splice(tempIndex, 1);
         }
     }
 };
@@ -289,63 +405,147 @@ const handleVideoUpload = async (event) => {
     <Head :title="t('Task App - Boost Your Product Sales')" />
     <div class="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900">
         <!-- Header -->
-        <header class="fixed top-0 left-0 w-full bg-gradient-to-r from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl z-50 border-b border-cyan-300/30">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-20 relative">
-                <!-- Logo -->
-                <Link :href="route('dashboard')" class="flex items-center flex-shrink-0">
-                    <ApplicationLogo class="h-8 w-auto fill-current text-cyan-400" />
-                    <span class="ml-3 text-2xl font-bold text-white tracking-tight">Task App</span>
-                </Link>
-                <!-- Navigation (desktop) -->
-                <nav class="hidden lg:flex flex-1 justify-center">
-                    <ul class="flex space-x-10 text-base font-semibold text-white/90">
-                        <li><a href="#earn-money" class="hover:text-cyan-300 transition-colors duration-200 py-2" @click.prevent="scrollToSection('earn-money')">{{ t('Earn Money') }}</a></li>
-                        <li><a href="#how-it-works" class="hover:text-cyan-300 transition-colors duration-200 py-2" @click.prevent="scrollToSection('how-it-works')">{{ t('How It Works') }}</a></li>
-                        <li><a href="#for-business" class="hover:text-cyan-300 transition-colors duration-200 py-2" @click.prevent="scrollToSection('for-business')">{{ t('For Business') }}</a></li>
-                        <li><a href="#learn" class="hover:text-cyan-300 transition-colors duration-200 py-2" @click.prevent="scrollToSection('learn')">{{ t('Learn') }}</a></li>
-                    </ul>
-                </nav>
-                <!-- Auth Buttons (desktop and mobile) -->
-                <div class="flex items-center space-x-3 md:space-x-4">
-                    <Link
-                        v-if="!page.props.auth.user"
-                        :href="route('register')"
-                        class="bg-gradient-to-r from-cyan-400/70 via-blue-500/60 to-indigo-600/70 hover:from-cyan-500/80 hover:via-blue-600/70 hover:to-indigo-700/80 text-white font-semibold px-3 sm:px-4 md:px-6 py-2 md:py-2.5 rounded-full text-xs sm:text-sm shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] backdrop-blur-sm whitespace-nowrap"
-                    >
-                        {{ t('Sign Up') }}
-                    </Link>
-                    <Link
-                        v-if="!page.props.auth.user"
-                        :href="route('login')"
-                        class="text-white/80 hover:text-white font-semibold text-sm transition-colors duration-200"
-                    >
-                        {{ t('Sign In') }}
-                    </Link>
-                    <Link
-                        v-if="page.props.auth.user"
-                        :href="route('dashboard')"
-                        class="bg-gradient-to-r from-cyan-400/70 via-blue-500/60 to-indigo-600/70 hover:from-cyan-500/80 hover:via-blue-600/70 hover:to-indigo-700/80 text-white font-semibold px-3 sm:px-4 md:px-6 py-2 md:py-2.5 rounded-full text-xs sm:text-sm shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] backdrop-blur-sm whitespace-nowrap"
-                    >
-                        {{ t('Dashboard') }}
-                    </Link>
+        <header class="fixed top-0 left-0 w-full bg-white/5 backdrop-blur-2xl z-50 border-b border-white/10 shadow-2xl">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex flex-col">
+                    <!-- Top Row -->
+                    <div class="flex items-center justify-between h-16">
+                        <!-- Logo -->
+                        <Link :href="route('dashboard')" class="flex items-center group">
+                            <div class="relative">
+                                <ApplicationLogo class="h-10 w-auto fill-current text-white group-hover:text-cyan-300 transition-colors duration-300" />
+                                <div class="absolute -inset-2 bg-gradient-to-r from-cyan-400/20 to-blue-500/20 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-sm"></div>
+                            </div>
+                            <span class="ml-3 text-xl font-bold text-white group-hover:text-cyan-300 transition-colors duration-300">Task App</span>
+                        </Link>
+                        
+                        <!-- Desktop Navigation -->
+                        <nav class="hidden md:flex items-center space-x-1">
+                            <a href="#earn-money" @click.prevent="scrollToSection('earn-money')" 
+                               class="px-4 py-2 text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-all duration-200">
+                                {{ t('Earn Money') }}
+                            </a>
+                            <a href="#how-it-works" @click.prevent="scrollToSection('how-it-works')" 
+                               class="px-4 py-2 text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-all duration-200">
+                                {{ t('How It Works') }}
+                            </a>
+                            <a href="#for-business" @click.prevent="scrollToSection('for-business')" 
+                               class="px-4 py-2 text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-all duration-200">
+                                {{ t('For Business') }}
+                            </a>
+                            <a href="#learn" @click.prevent="scrollToSection('learn')" 
+                               class="px-4 py-2 text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-all duration-200">
+                                {{ t('Learn') }}
+                            </a>
+                        </nav>
+                        
+                        <!-- Right Section -->
+                        <div class="flex items-center space-x-3">
+                            <!-- Language Dropdown -->
+                            <div class="relative">
+                                <button
+                                    @click="dropdownOpen = !dropdownOpen"
+                                    class="flex items-center px-3 py-2 rounded-lg text-white font-semibold transition-all duration-300 hover:bg-white/10 hover:scale-105"
+                                >
+                                    <img :src="currentLanguage.flag" alt="Lang" class="h-4 w-auto mr-2 rounded-sm" />
+                                    <span class="text-sm">{{ t('Language') }}</span>
+                                    <svg class="ml-1 h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </button>
+
+                                <div
+                                    v-if="dropdownOpen"
+                                    class="absolute right-0 mt-2 w-40 bg-white/95 backdrop-blur-md border border-white/30 rounded-lg shadow-xl z-[9999]"
+                                >
+                                    <ul>
+                                        <li v-for="lang in languages" :key="lang.code">
+                                            <button
+                                                @click="changeLanguage(lang.code)"
+                                                class="flex items-center w-full px-3 py-2 text-sm text-gray-800 font-medium hover:bg-blue-50 transition-all duration-300 first:rounded-t-lg last:rounded-b-lg"
+                                            >
+                                                <img :src="lang.flag" :alt="lang.name" class="h-4 w-auto mr-2 rounded-sm" />
+                                                <span>{{ lang.name }}</span>
+                                            </button>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                            
+                            <!-- Mobile Menu Button -->
+                            <button @click="mobileNavOpen = !mobileNavOpen" 
+                                    class="md:hidden p-2 rounded-lg text-white hover:bg-white/10 transition-colors duration-200">
+                                <svg v-if="!mobileNavOpen" class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                                </svg>
+                                <svg v-else class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Auth Buttons Row -->
+                    <div class="pb-2 border-t border-white/10">
+                        <div class="flex flex-row gap-2 justify-center items-center pt-2">
+                            <Link
+                                v-if="!page.props.auth.user"
+                                :href="route('register')"
+                                class="group relative bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-semibold px-4 py-1.5 rounded-lg text-xs shadow-lg hover:shadow-cyan-500/25 transition-all duration-300 transform hover:scale-105 text-center overflow-hidden"
+                            >
+                                <div class="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                <span class="relative z-10">{{ t('Sign Up') }}</span>
+                            </Link>
+                            <Link
+                                v-if="!page.props.auth.user"
+                                :href="route('login')"
+                                class="group relative bg-white/10 backdrop-blur-sm border border-white/30 hover:border-white/50 text-white font-semibold px-4 py-1.5 rounded-lg text-xs hover:bg-white/20 transition-all duration-300 transform hover:scale-105 text-center overflow-hidden"
+                            >
+                                <div class="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                <span class="relative z-10">{{ t('Sign In') }}</span>
+                            </Link>
+                            <Link
+                                v-if="page.props.auth.user"
+                                :href="route('dashboard')"
+                                class="group relative bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-semibold px-4 py-1.5 rounded-lg text-xs shadow-lg hover:shadow-cyan-500/25 transition-all duration-300 transform hover:scale-105 text-center overflow-hidden"
+                            >
+                                <div class="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                <span class="relative z-10">{{ t('Dashboard') }}</span>
+                            </Link>
+                        </div>
+                    </div>
                 </div>
-                <!-- Hamburger (mobile) -->
-                <button @click="mobileNavOpen = !mobileNavOpen" class="lg:hidden ml-2 p-2 rounded-lg hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-cyan-400 transition-colors duration-200" aria-label="Open navigation">
-                    <svg v-if="!mobileNavOpen" class="h-6 w-6 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
-                    <svg v-else class="h-6 w-6 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-                </button>
+                
+                <!-- Mobile Navigation -->
+                <transition 
+                    enter-active-class="transition duration-200 ease-out" 
+                    enter-from-class="opacity-0 -translate-y-2" 
+                    enter-to-class="opacity-100 translate-y-0" 
+                    leave-active-class="transition duration-150 ease-in" 
+                    leave-from-class="opacity-100 translate-y-0" 
+                    leave-to-class="opacity-0 -translate-y-2">
+                    <div v-if="mobileNavOpen" class="md:hidden border-t border-white/10">
+                        <div class="px-4 py-4 space-y-2">
+                            <a href="#earn-money" @click.prevent="scrollToSection('earn-money')" 
+                               class="block px-3 py-2 text-base font-medium text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-all duration-200">
+                                {{ t('Earn Money') }}
+                            </a>
+                            <a href="#how-it-works" @click.prevent="scrollToSection('how-it-works')" 
+                               class="block px-3 py-2 text-base font-medium text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-all duration-200">
+                                {{ t('How It Works') }}
+                            </a>
+                            <a href="#for-business" @click.prevent="scrollToSection('for-business')" 
+                               class="block px-3 py-2 text-base font-medium text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-all duration-200">
+                                {{ t('For Business') }}
+                            </a>
+                            <a href="#learn" @click.prevent="scrollToSection('learn')" 
+                               class="block px-3 py-2 text-base font-medium text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-all duration-200">
+                                {{ t('Learn') }}
+                            </a>
+                        </div>
+                    </div>
+                </transition>
             </div>
-            <!-- Mobile nav -->
-            <transition name="fade">
-                <div v-if="mobileNavOpen" class="lg:hidden absolute top-20 left-0 w-full bg-gradient-to-r from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl shadow-2xl z-50 border-t border-cyan-300/30">
-                    <nav class="px-6 py-6 flex flex-col space-y-4">
-                        <a href="#earn-money" class="text-lg font-semibold text-white hover:text-cyan-300 py-2 transition-colors duration-200" @click.prevent="scrollToSection('earn-money')">{{ t('Earn Money') }}</a>
-                        <a href="#how-it-works" class="text-lg font-semibold text-white hover:text-cyan-300 py-2 transition-colors duration-200" @click.prevent="scrollToSection('how-it-works')">{{ t('How It Works') }}</a>
-                        <a href="#for-business" class="text-lg font-semibold text-white hover:text-cyan-300 py-2 transition-colors duration-200" @click.prevent="scrollToSection('for-business')">{{ t('For Business') }}</a>
-                        <a href="#learn" class="text-lg font-semibold text-white hover:text-cyan-300 py-2 transition-colors duration-200" @click.prevent="scrollToSection('learn')">{{ t('Learn') }}</a>
-                    </nav>
-                </div>
-            </transition>
         </header>
         <div class="h-20"></div>
 
@@ -356,6 +556,7 @@ const handleVideoUpload = async (event) => {
             <div class="absolute bottom-0 right-1/4 w-96 h-96 bg-indigo-400/10 rounded-full blur-3xl"></div>
             
             <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+
                 <h1 class="text-3xl sm:text-5xl md:text-7xl font-extrabold mb-6 sm:mb-8 leading-tight">
                     <span class="bg-gradient-to-r from-white to-cyan-100 bg-clip-text text-transparent">
                         {{ t('Simple Ways to Make') }}
@@ -720,20 +921,13 @@ const handleVideoUpload = async (event) => {
         </section>
 
         <!-- Floating Help Icon -->
-        <button 
-            v-if="!page.props.auth.user"
-            @click="openGuestChat"
-            class="floating-help-btn fixed bottom-6 right-6 w-14 h-14 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-full flex items-center justify-center transition-all duration-300 transform hover:scale-110 z-50"
-            title="Help & Support"
-        >
-            <i class="fas fa-headset text-lg"></i>
-        </button>
+        <FloatingChatIcon v-if="!page.props.auth.user" @click="openGuestChat" />
 
         <!-- Guest Chat Modal -->
         <div v-if="showGuestChat" class="guest-chat-modal fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
             <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[80vh] flex flex-col">
                 <div class="flex items-center justify-between p-4 border-b">
-                    <h3 class="text-lg font-semibold text-gray-800">{{ showChatForm ? 'Contact Support' : 'Guest Chat' }}</h3>
+                    <h3 class="text-lg font-semibold text-gray-800">{{ showChatForm ? t('Contact Support') : t('Guest Chat') }}</h3>
                     <button @click="closeGuestChat" class="text-gray-400 hover:text-gray-600">
                         <i class="fas fa-times text-xl"></i>
                     </button>
@@ -742,27 +936,29 @@ const handleVideoUpload = async (event) => {
                 <div v-if="showChatForm" class="p-6">
                     <form @submit.prevent="startGuestChat" class="space-y-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('Name') }}</label>
                             <input 
                                 v-model="guestForm.name" 
                                 type="text" 
                                 required 
                                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                placeholder="Enter your name"
+                                :placeholder="t('Enter your name')"
                             >
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Mobile Number</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('Mobile Number') }}</label>
                             <input 
                                 v-model="guestForm.mobile_number" 
                                 type="tel" 
                                 required 
+                                pattern="[0-9+\-\s]*"
+                                @input="guestForm.mobile_number = guestForm.mobile_number.replace(/[^0-9+\-\s]/g, '')"
                                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                placeholder="Enter your mobile number"
+                                :placeholder="t('Enter your mobile number')"
                             >
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Verification</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('Verification') }}</label>
                             <div class="flex items-center space-x-2 mb-2">
                                 <img 
                                     :src="captchaImage" 
@@ -784,7 +980,7 @@ const handleVideoUpload = async (event) => {
                                 type="text" 
                                 required 
                                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                placeholder="Enter the code shown above"
+                                :placeholder="t('Enter the code shown above')"
                             >
                             <div v-if="showCaptchaError" class="text-red-500 text-sm mt-1">{{ showCaptchaError }}</div>
                         </div>
@@ -792,7 +988,7 @@ const handleVideoUpload = async (event) => {
                             type="submit" 
                             class="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white py-2 px-4 rounded-lg transition-all duration-200"
                         >
-                            Start Chat
+                            {{ t('Start Chat') }}
                         </button>
                     </form>
                 </div>
@@ -800,7 +996,7 @@ const handleVideoUpload = async (event) => {
                 <div v-else class="flex flex-col flex-1 min-h-0">
                     <div ref="messagesContainer" class="flex-1 overflow-y-auto p-4 space-y-3 min-h-0">
                         <div v-if="messages.length === 0" class="text-center text-gray-500 py-8">
-                            No messages yet. Start the conversation!
+                            {{ t('No messages yet. Start the conversation!') }}
                         </div>
                         <div v-for="message in messages" :key="message.id" 
                              class="guest-chat-message flex" 
@@ -810,22 +1006,25 @@ const handleVideoUpload = async (event) => {
                                      ? 'bg-blue-500 text-white' 
                                      : 'bg-gray-100 text-gray-800'">
                                 <div v-if="message.image_path" class="mb-2">
-                                    <img :src="message.image_path" alt="chat image" class="max-w-full rounded">
+                                    <img :src="message.image_path.startsWith('blob:') ? message.image_path : (message.image_path.startsWith('/storage/') ? message.image_path : `/storage/${message.image_path}`)" alt="chat image" class="max-w-full rounded">
                                 </div>
                                 <div v-if="message.video_path" class="mb-2">
-                                    <video controls class="max-w-full rounded">
-                                        <source :src="message.video_path" type="video/mp4">
+                                    <div v-if="message.video_path.startsWith('blob:')" class="w-32 h-32 bg-gray-200 rounded flex items-center justify-center">
+                                        <i class="fas fa-video text-gray-600 text-2xl"></i>
+                                    </div>
+                                    <video v-else controls class="max-w-full rounded">
+                                        <source :src="message.video_path.startsWith('blob:') ? message.video_path : (message.video_path.startsWith('/storage/') ? message.video_path : `/storage/${message.video_path}`)" type="video/mp4">
                                         Your browser does not support the video tag.
                                     </video>
                                 </div>
-                                <p v-if="message.message">{{ message.message }}</p>
+                                <p v-if="message.message" v-html="message.message"></p>
                             </div>
                         </div>
                     </div>
 
                     <div class="border-t p-4">
                         <div v-if="isBlocked" class="text-center py-4 text-red-600 bg-red-50 rounded-lg mb-4">
-                            You have been blocked. You cannot send messages.
+                            {{ t('You have been blocked. You cannot send messages.') }}
                         </div>
                         <form v-else @submit.prevent="sendGuestMessage" class="space-y-2">
                             <div class="flex space-x-2">
@@ -852,7 +1051,7 @@ const handleVideoUpload = async (event) => {
                                 <input 
                                     v-model="newMessage" 
                                     type="text" 
-                                    placeholder="Type your message..." 
+                                    :placeholder="t('Type your message...')" 
                                     class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                     @keydown.enter.exact.prevent="sendGuestMessage"
                                 >
@@ -948,41 +1147,3 @@ const handleVideoUpload = async (event) => {
         </section>
     </div>
 </template>
-const handleVideoUpload = async (event) => {
-    try {
-        const file = event.target.files[0];
-        if (!file || isBlocked.value) return;
-
-        if (file.size > 30 * 1024 * 1024) {
-            alert('Video file size must not exceed 30MB.');
-            event.target.value = '';
-            return;
-        }
-
-        const formData = new FormData();
-        formData.append('video', file);
-
-        await axios.post(`/guest-chat/${guestSessionId.value}/send`, formData);
-        event.target.value = '';
-    } catch (error) {
-        console.error('Error uploading video:', error);
-        if (error.response?.status === 403) {
-            isBlocked.value = true;
-            alert('You have been blocked by the administrator and cannot send messages.');
-        } else {
-            alert('Error uploading video. Please try again.');
-        }
-    }
-};
-
-const openMediaModal = (src, type) => {
-    modalMediaSrc.value = src;
-    modalMediaType.value = type;
-    showMediaModal.value = true;
-};
-
-const closeMediaModal = () => {
-    showMediaModal.value = false;
-    modalMediaSrc.value = '';
-    modalMediaType.value = '';
-};

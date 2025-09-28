@@ -1,4 +1,7 @@
+
 <?php
+
+
 
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PasswordController;
@@ -103,6 +106,19 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->name('admin.')->group(fun
     Route::post('/sliders/{sliderImage}', [\App\Http\Controllers\Admin\SliderController::class, 'update'])->name('sliders.update');
     Route::delete('/sliders/{sliderImage}', [\App\Http\Controllers\Admin\SliderController::class, 'destroy'])->name('sliders.destroy');
     Route::post('/sliders/{sliderImage}/toggle', [\App\Http\Controllers\Admin\SliderController::class, 'toggle'])->name('sliders.toggle');
+    
+    // Contact Settings
+    Route::get('/contact-settings', [AdminController::class, 'contactSettings'])->name('contact-settings');
+    Route::post('/contact-settings', [AdminController::class, 'updateContactSettings'])->name('contact-settings.update');
+    
+    // Auto Reply Settings
+    Route::get('/auto-reply', [AdminController::class, 'autoReplySettings'])->name('auto-reply');
+    Route::post('/auto-reply', [AdminController::class, 'updateAutoReplySettings'])->name('auto-reply.update');
+    
+    // User Blocking
+    Route::post('/users/{user}/block', [AdminController::class, 'blockUser'])->name('users.block');
+    Route::post('/users/{user}/unblock', [AdminController::class, 'unblockUser'])->name('users.unblock');
+    Route::get('/blocked-users', [AdminController::class, 'blockedUsers'])->name('blocked-users');
 });
 
 // ================= AUTHENTICATED USER ROUTES =================
@@ -114,6 +130,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/chat/send', [\App\Http\Controllers\ChatController::class, 'sendMessage'])->name('chat.send');
     Route::post('/chat/broadcast', [\App\Http\Controllers\ChatController::class, 'broadcastMessage'])->name('chat.broadcast');
     Route::post('/chat/upload-image', [\App\Http\Controllers\ChatController::class, 'uploadImage'])->name('chat.upload-image');
+    Route::get('/chat/block-status', [\App\Http\Controllers\ChatController::class, 'checkBlockStatus'])->name('chat.block-status');
 
     // Balance Route
     Route::get('/balance', function () {
@@ -173,9 +190,13 @@ Route::middleware('auth')->group(function () {
         return Inertia::render('Event');
     })->name('event');
 
-    Route::get('/terms', function () {
-        return Inertia::render('Terms');
-    })->name('terms');
+// Contact Page Route
+Route::get('/contact', function () {
+    $contactSettings = \App\Models\ContactSetting::first();
+    return Inertia::render('Contact', [
+        'contactSettings' => $contactSettings
+    ]);
+})->name('contact');
 
     Route::get('/certificate', function () {
         return Inertia::render('Certificate');

@@ -21,6 +21,7 @@ class ChatController extends Controller
             ->select('id', 'mobile_number', 'name', 'avatar_url')
             ->get()
             ->map(function ($user) {
+                $isBlocked = \App\Models\UserBlock::where('user_id', $user->id)->exists();
                 return [
                     'id' => $user->id,
                     'name' => $user->name,
@@ -28,6 +29,7 @@ class ChatController extends Controller
                     'avatar_url' => $user->avatar_url,
                     'unread_count' => 0,
                     'last_message_at' => null,
+                    'is_blocked' => $isBlocked,
                 ];
             });
 
@@ -165,6 +167,9 @@ class ChatController extends Controller
         })->orWhere(function($query) use ($userId) {
             $query->where('sender_id', $userId)->where('recipient_id', auth()->id());
         })->where('sender_type', '!=', 'guest')->delete();
+        
+        // Clear auto-reply tracking so auto-replies can be sent again
+        \DB::table('auto_reply_sent')->where('user_id', $userId)->delete();
         
         // Broadcast chat deletion event
         broadcast(new \App\Events\ChatDeleted($userId, false));

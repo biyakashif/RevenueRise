@@ -396,7 +396,7 @@ const grabOrders = debounce(() => {
       // Now that state is synced, get the truly current product
       const currentProduct = activeTask.value.products[currentTaskProductIndex.value];
       if (!currentProduct) {
-        balanceErrorMessage.value = 'Failed to sync the current task. Please try again.';
+        balanceErrorMessage.value = t('Failed to sync the current task. Please try again.');
         setTimeout(() => (balanceErrorMessage.value = ''), 4000);
         isGrabbing.value = false;
         return;
@@ -458,7 +458,7 @@ const grabOrders = debounce(() => {
       });
     },
     onError: () => {
-      balanceErrorMessage.value = 'Failed to sync with server. Please try again.';
+      balanceErrorMessage.value = t('Failed to sync with server. Please try again.');
       setTimeout(() => (balanceErrorMessage.value = ''), 4000);
       isGrabbing.value = false;
     }
@@ -493,7 +493,7 @@ const confirmProduct = () => {
       }
     },
     onError: (errors) => {
-      modalErrorMessage.value = errors?.message || 'Error saving order. Please try again.';
+      modalErrorMessage.value = errors?.message || t('Error saving order. Please try again.');
       setTimeout(() => (modalErrorMessage.value = ''), 4000);
     },
     onFinish: () => {

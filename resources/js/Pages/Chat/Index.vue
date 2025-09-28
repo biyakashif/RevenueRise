@@ -13,7 +13,14 @@
 
             <!-- Chat Area -->
             <div class="flex-1 overflow-y-auto p-4 bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl">
-                <div v-if="messages.length === 0" class="flex items-center justify-center h-full text-slate-600">
+                <div v-if="isBlocked" class="flex items-center justify-center h-full">
+                    <div class="text-center py-8 px-4 bg-red-50 rounded-lg border border-red-200">
+                        <i class="fas fa-ban text-red-500 text-4xl mb-4"></i>
+                        <h3 class="text-lg font-semibold text-red-800 mb-2">{{ t('Account Blocked') }}</h3>
+                        <p class="text-red-600">{{ t('You have been blocked by the administrator. You cannot send or receive messages.') }}</p>
+                    </div>
+                </div>
+                <div v-else-if="messages.length === 0" class="flex items-center justify-center h-full text-slate-600">
                     {{ t('No messages yet') }}
                 </div>
                 <div v-else v-for="message in messages" :key="message.id" 
@@ -36,21 +43,21 @@
                         <div class="rounded-lg p-3 text-sm"
                              :class="message.sender_id === page.props.auth.user.id ? 'bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl border border-cyan-300/30 self-end' : 'bg-white/90 backdrop-blur-xl border border-white/50 self-start'">
                             <div v-if="message.image_path" class="mb-2">
-                                <img :src="message.image_path" 
+                                <img :src="message.image_path.startsWith('/storage/') ? message.image_path : `/storage/${message.image_path}`" 
                                      alt="chat image" 
                                      class="w-32 h-32 object-cover rounded cursor-pointer hover:opacity-80 transition-opacity"
-                                     @click="openMediaModal(message.image_path, 'image')">
+                                     @click="openMediaModal(message.image_path.startsWith('/storage/') ? message.image_path : `/storage/${message.image_path}`, 'image')">
                             </div>
                             <div v-if="message.video_path" class="mb-2 relative">
                                 <video class="w-32 h-32 object-cover rounded cursor-pointer hover:opacity-80 transition-opacity"
-                                       @click="openMediaModal(message.video_path, 'video')">
-                                    <source :src="message.video_path" type="video/mp4">
+                                       @click="openMediaModal(message.video_path.startsWith('/storage/') ? message.video_path : `/storage/${message.video_path}`, 'video')">
+                                    <source :src="message.video_path.startsWith('/storage/') ? message.video_path : `/storage/${message.video_path}`" type="video/mp4">
                                 </video>
                                 <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
                                     <i class="fas fa-play-circle text-white text-2xl opacity-80"></i>
                                 </div>
                             </div>
-                            <p class="text-sm text-slate-800">{{ message.message }}</p>
+                            <div v-if="message.message" class="text-sm text-slate-800" v-html="message.message"></div>
                         </div>
                     </div>
                 </div>
@@ -58,6 +65,10 @@
 
             <!-- Message Input -->
             <div class="border-t border-cyan-300/30 p-3 bg-gradient-to-br from-cyan-400/30 via-blue-500/25 to-indigo-600/30 backdrop-blur-xl flex items-center space-x-2 rounded-b-2xl sm:rounded-b-3xl">
+                <div v-if="isBlocked" class="w-full text-center py-4 text-red-600 bg-red-50 rounded-lg">
+                    {{ t('You are blocked and cannot send messages.') }}
+                </div>
+                <template v-else>
                 <input type="file" 
                        ref="imageInput" 
                        class="hidden" 
@@ -96,6 +107,7 @@
                         <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
                     </svg>
                 </button>
+                </template>
             </div>
         </div>
     </AuthenticatedLayout>
@@ -137,6 +149,7 @@ const modalMediaSrc = ref('');
 const modalMediaType = ref('');
 const notificationSound = new Audio('/notification.mp3');
 const videoError = ref('');
+const isBlocked = ref(false);
 
 // Configure axios with CSRF token and credentials
 axios.defaults.headers.common['X-CSRF-TOKEN'] = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
@@ -166,6 +179,7 @@ const loadMessages = async () => {
 
 const sendMessage = async () => {
     try {
+        if (isBlocked.value) return;
         if (!newMessage.value.trim() && !imageInput.value?.files[0] && !videoInput.value?.files[0]) return;
 
         const messageText = newMessage.value;
@@ -217,7 +231,7 @@ const sendMessage = async () => {
 
 const handleImageUpload = async (event) => {
     const file = event.target.files[0];
-    if (!file) return;
+    if (!file || isBlocked.value) return;
 
     const formData = new FormData();
     formData.append('image', file);
@@ -227,7 +241,8 @@ const handleImageUpload = async (event) => {
 
 const handleVideoUpload = async (event) => {
     const file = event.target.files[0];
-    if (file && file.size > 30 * 1024 * 1024) {
+    if (!file || isBlocked.value) return;
+    if (file.size > 30 * 1024 * 1024) {
         videoError.value = t('The video file size must not exceed 30MB.');
         event.target.value = '';
         return;
@@ -270,6 +285,7 @@ const goBack = () => {
 
 onMounted(() => {
     loadMessages();
+    checkBlockStatus();
 
 
 
@@ -321,5 +337,17 @@ onMounted(() => {
     window.addEventListener('click', primeAudio);
     window.addEventListener('keydown', primeAudio);
     window.addEventListener('touchstart', primeAudio);
+    
+    // Check block status periodically
+    setInterval(checkBlockStatus, 5000);
 });
+
+const checkBlockStatus = async () => {
+    try {
+        const response = await axios.get('/chat/block-status');
+        isBlocked.value = response.data.is_blocked;
+    } catch (error) {
+        console.error('Error checking block status:', error);
+    }
+};
 </script>

@@ -3,56 +3,68 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Session;
 
 class CaptchaController extends Controller
 {
     public function generate()
     {
-        $code = strtoupper(Str::random(5));
-        session(['captcha_code' => strtolower($code)]);
-
-        $width = 120;
-        $height = 40;
-        $image = imagecreate($width, $height);
+        $characters = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+        $code = '';
+        for ($i = 0; $i < 5; $i++) {
+            $code .= $characters[rand(0, strlen($characters) - 1)];
+        }
+        Session::put('captcha_code', $code);
         
-        // Colors
-        $bg = imagecolorallocate($image, 240, 240, 240);
-        $textColor = imagecolorallocate($image, 51, 51, 51);
+        // Create complex SVG captcha
+        $svg = '<svg width="150" height="50" xmlns="http://www.w3.org/2000/svg">';
         
-        // Add noise
-        for ($i = 0; $i < 50; $i++) {
-            $noiseColor = imagecolorallocate($image, rand(0, 255), rand(0, 255), rand(0, 255));
-            imagesetpixel($image, rand(0, $width-1), rand(0, $height-1), $noiseColor);
+        // Background with gradient
+        $svg .= '<defs><linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">';
+        $svg .= '<stop offset="0%" style="stop-color:#e3f2fd;stop-opacity:1" />';
+        $svg .= '<stop offset="100%" style="stop-color:#bbdefb;stop-opacity:1" /></linearGradient></defs>';
+        $svg .= '<rect width="150" height="50" fill="url(#bg)" stroke="#90caf9" stroke-width="2"/>';
+        
+        // Add noise lines
+        for ($i = 0; $i < 8; $i++) {
+            $x1 = rand(0, 150); $y1 = rand(0, 50);
+            $x2 = rand(0, 150); $y2 = rand(0, 50);
+            $color = sprintf('#%02x%02x%02x', rand(100, 200), rand(100, 200), rand(100, 200));
+            $svg .= '<line x1="'.$x1.'" y1="'.$y1.'" x2="'.$x2.'" y2="'.$y2.'" stroke="'.$color.'" stroke-width="1" opacity="0.3"/>';
         }
         
-        // Add text
-        imagestring($image, 5, 35, 12, $code, $textColor);
-        
-        // Add lines
-        for ($i = 0; $i < 3; $i++) {
-            $lineColor = imagecolorallocate($image, rand(0, 255), rand(0, 255), rand(0, 255));
-            imageline($image, rand(0, $width), rand(0, $height), rand(0, $width), rand(0, $height), $lineColor);
+        // Add characters with rotation and different positions
+        $colors = ['#1976d2', '#388e3c', '#f57c00', '#d32f2f', '#7b1fa2'];
+        for ($i = 0; $i < 5; $i++) {
+            $x = 15 + ($i * 25) + rand(-3, 3);
+            $y = 32 + rand(-5, 5);
+            $rotation = rand(-15, 15);
+            $fontSize = rand(16, 20);
+            $color = $colors[$i];
+            
+            $svg .= '<text x="'.$x.'" y="'.$y.'" font-family="Arial Black" font-size="'.$fontSize.'" fill="'.$color.'" ';
+            $svg .= 'transform="rotate('.$rotation.' '.$x.' '.$y.')" font-weight="bold">'.$code[$i].'</text>';
         }
-
-        ob_start();
-        imagepng($image);
-        $imageData = ob_get_contents();
-        ob_end_clean();
-        imagedestroy($image);
-
-        return response($imageData)
-            ->header('Content-Type', 'image/png')
-            ->header('Cache-Control', 'no-cache, no-store, must-revalidate');
+        
+        // Add noise dots
+        for ($i = 0; $i < 30; $i++) {
+            $cx = rand(0, 150); $cy = rand(0, 50);
+            $color = sprintf('#%02x%02x%02x', rand(150, 255), rand(150, 255), rand(150, 255));
+            $svg .= '<circle cx="'.$cx.'" cy="'.$cy.'" r="1" fill="'.$color.'" opacity="0.5"/>';
+        }
+        
+        $svg .= '</svg>';
+        
+        return response($svg)->header('Content-Type', 'image/svg+xml');
     }
-
+    
     public function verify(Request $request)
     {
-        $input = strtolower(trim($request->input('captcha')));
-        $stored = session('captcha_code');
+        $captcha = strtoupper($request->input('captcha'));
+        $sessionCaptcha = Session::get('captcha_code');
         
         return response()->json([
-            'valid' => $input === $stored
+            'valid' => $captcha == $sessionCaptcha
         ]);
     }
 }

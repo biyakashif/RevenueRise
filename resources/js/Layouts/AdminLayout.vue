@@ -121,6 +121,19 @@
                         </div>
                         <span class="text-sm">Slider Images</span>
                     </Link>
+                    <!-- Contact Settings -->
+                    <Link
+                        :href="route('admin.contact-settings')"
+                        class="flex items-center px-3 py-2 text-white hover:bg-white/10 hover:text-white/90 rounded-lg transition-all duration-200"
+                        :class="{ 'bg-white/10 text-white': route().current('admin.contact-settings') }"
+                    >
+                        <div class="w-6 h-6 mr-2 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-md flex items-center justify-center">
+                            <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                            </svg>
+                        </div>
+                        <span class="text-sm">Contact Settings</span>
+                    </Link>
                     <!-- Logout -->
                     <Link
                         :href="route('logout')"

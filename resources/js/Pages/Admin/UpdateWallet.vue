@@ -51,18 +51,66 @@ onUnmounted(() => {
   clearInterval(pollingInterval);
 });
 
-const updateDepositStatus = (depositId, action) => {
-  router.post(`/admin/update-deposit/${depositId}`, { action }, {
-    preserveState: true,
-    preserveScroll: true,
-    onSuccess: () => {
-      fetchData();
-    },
-    onError: (errors) => {
-      errorMessage.value = errors.action || 'Failed to update deposit status.';
-      fetchData();
-    },
-  });
+const updateDepositStatus = async (depositId, action) => {
+  if (action === 'approve') {
+    // Find the deposit to get its symbol and amount
+    const deposit = localDeposits.value.find(d => d.id === depositId);
+    if (!deposit) {
+      errorMessage.value = 'Deposit not found.';
+      return;
+    }
+
+    try {
+      // Fetch live exchange rate from Coinbase API
+      const response = await fetch(`https://api.coinbase.com/v2/exchange-rates?currency=${deposit.symbol}`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch exchange rate: ${response.status}`);
+      }
+      const rateData = await response.json();
+      
+      if (!rateData.data || !rateData.data.rates || !rateData.data.rates.USDT) {
+        throw new Error('Invalid exchange rate data received');
+      }
+      
+      const usdtRate = parseFloat(rateData.data.rates.USDT);
+      const convertedAmount = parseFloat(deposit.amount) * usdtRate;
+      
+      // Send the converted USDT amount to backend
+      router.post(`/admin/update-deposit/${depositId}`, { 
+        action, 
+        converted_amount: convertedAmount,
+        original_amount: deposit.amount,
+        symbol: deposit.symbol,
+        exchange_rate: usdtRate
+      }, {
+        preserveState: true,
+        preserveScroll: true,
+        onSuccess: () => {
+          fetchData();
+        },
+        onError: (errors) => {
+          errorMessage.value = errors.action || 'Failed to approve deposit.';
+          fetchData();
+        },
+      });
+    } catch (error) {
+      errorMessage.value = `Failed to get exchange rate: ${error.message}. Please try again.`;
+      return;
+    }
+  } else {
+    // For reject action, proceed normally
+    router.post(`/admin/update-deposit/${depositId}`, { action }, {
+      preserveState: true,
+      preserveScroll: true,
+      onSuccess: () => {
+        fetchData();
+      },
+      onError: (errors) => {
+        errorMessage.value = errors.action || 'Failed to update deposit status.';
+        fetchData();
+      },
+    });
+  }
 };
 
 const updateBalance = (action) => {
@@ -203,7 +251,7 @@ const updateBalance = (action) => {
                               </span>
                               <span v-if="deposit.title" class="ml-2 text-xs text-slate-600 italic">{{ deposit.title }}</span>
                             </div>
-                            <div class="text-sm text-slate-700"><strong>Amount:</strong> {{ deposit.amount }} USDT</div>
+                            <div class="text-sm text-slate-700"><strong>Amount:</strong> {{ deposit.amount }} {{ deposit.symbol }}</div>
                             <div class="text-sm text-slate-700"><strong>Date:</strong> {{ new Date(deposit.created_at).toLocaleString() }}</div>
                             <div class="mt-2 flex justify-end gap-2">
                               <span v-if="deposit.status === 'approved'" class="text-green-600 text-xs font-semibold">Approved</span>

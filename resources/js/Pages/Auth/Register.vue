@@ -5,7 +5,9 @@ import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
 import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
-import { computed, onMounted } from 'vue';
+import { computed, onMounted, ref } from 'vue';
+
+const currentCard = ref(0);
 
 const form = useForm({
     name: '',
@@ -77,130 +79,191 @@ const refreshCSRFToken = async () => {
     <GuestLayout>
         <Head :title="t('Register')" />
 
-    <div class='bg-gradient-to-br from-white/95 via-blue-50/90 to-indigo-50/95 backdrop-blur-xl p-4 md:p-8 rounded-b-3xl rounded-t-none shadow-2xl max-w-md w-full border border-white/40 border-t-0 mx-auto'>
-            <form @submit.prevent='submit' class='space-y-4 md:space-y-6'>
-                <div class='grid grid-cols-1 md:grid-cols-2 gap-4'>
-                    <!-- Name -->
-                    <div>
-                        <InputLabel for='name' :value='t("Name")' class='text-sm font-medium text-gray-700 mb-1' />
-                        <TextInput
-                            id='name'
-                            type='text'
-                            class='w-full h-10 md:h-12 rounded-xl bg-gray-50 border-0 focus:ring-2 focus:ring-blue-500 text-gray-900 px-4 placeholder-gray-400'
-                            v-model='form.name'
-                            placeholder='Enter your name'
-                            required
-                            autofocus
-                            autocomplete='name'
-                        />
-                        <InputError class='mt-1 text-xs text-red-500' :message='form.errors.name' />
-                    </div>
+    <div class="bg-gradient-to-br from-white/95 via-blue-50/90 to-indigo-50/95 backdrop-blur-xl rounded-b-3xl rounded-t-none shadow-2xl max-w-md w-full border border-white/40 border-t-0 mx-auto overflow-hidden">
+        <div class="relative">
+            <div class="flex transition-transform duration-500 ease-in-out" :style="{ transform: `translateX(-${currentCard * 100}%)` }">
+                <!-- Card 1: Name & Mobile -->
+                <div class="w-full flex-shrink-0 p-4 md:p-8 flex flex-col justify-between h-full">
+                    <div class="space-y-4 md:space-y-6">
+                        <div class="text-center mb-4">
+                            <p class="text-xs text-gray-600 leading-relaxed">{{ t('Please provide your basic information to begin the registration process') }}</p>
+                        </div>
+                        <div>
+                            <InputLabel for="name" :value="t('Name')" class="text-xs font-medium text-gray-600" />
+                            <TextInput
+                                id="name"
+                                type="text"
+                                class="w-full h-9 rounded-lg bg-gray-50 border-0 focus:ring-1 focus:ring-blue-500 text-gray-900 px-3 text-sm placeholder:text-xs placeholder:text-gray-400 mt-1"
+                                v-model="form.name"
+                                placeholder="Your full name"
+                                required
+                                autofocus
+                                autocomplete="name"
+                            />
+                            <InputError class="mt-1 text-xs text-red-500" :message="form.errors.name" />
+                        </div>
 
-                    <!-- Mobile Number -->
-                    <div>
-                        <InputLabel for="mobile_number" :value="t('Mobile Number')" class="text-sm font-medium text-gray-700 mb-1" />
-                        <TextInput
-                            id='mobile_number'
-                            type='text'
-                            class='w-full h-10 md:h-12 rounded-xl bg-gray-50 border-0 focus:ring-2 focus:ring-blue-500 text-gray-900 px-4 placeholder-gray-400'
-                            v-model='form.mobile_number'
-                            placeholder='Enter mobile number'
-                            required
-                            autocomplete='username'
-                            @input='form.mobile_number = form.mobile_number.replace(/[^0-9]/g, "")'
-                        />
-                        <InputError class='mt-1 text-xs text-red-500' :message='form.errors.mobile_number' />
+                        <div>
+                            <InputLabel for="mobile_number" :value="t('Mobile Number')" class="text-xs font-medium text-gray-600" />
+                            <TextInput
+                                id="mobile_number"
+                                type="text"
+                                class="w-full h-9 rounded-lg bg-gray-50 border-0 focus:ring-1 focus:ring-blue-500 text-gray-900 px-3 text-sm placeholder:text-xs placeholder:text-gray-400 mt-1"
+                                v-model="form.mobile_number"
+                                placeholder="Mobile number"
+                                required
+                                autocomplete="username"
+                                @input="form.mobile_number = form.mobile_number.replace(/[^0-9]/g, '')"
+                            />
+                            <InputError class="mt-1 text-xs text-red-500" :message="form.errors.mobile_number" />
+                        </div>
                     </div>
-                </div>
-
-                <div class='grid grid-cols-1 md:grid-cols-2 gap-4'>
-                    <!-- Password -->
-                    <div>
-                        <InputLabel for='password' :value='t("Password")' class='text-sm font-medium text-gray-700 mb-1' />
-                        <TextInput
-                            id='password'
-                            type='password'
-                            class='w-full h-10 md:h-12 rounded-xl bg-gray-50 border-0 focus:ring-2 focus:ring-blue-500 text-gray-900 px-4 placeholder-gray-400'
-                            v-model='form.password'
-                            placeholder='Enter password'
-                            required
-                            autocomplete='new-password'
-                        />
-                        <InputError class='mt-1 text-xs text-red-500' :message='form.errors.password' />
-                    </div>
-
-                    <!-- Confirm Password -->
-                    <div>
-                        <InputLabel for='password_confirmation' :value='t("Confirm Password")' class='text-sm font-medium text-gray-700 mb-1' />
-                        <TextInput
-                            id='password_confirmation'
-                            type='password'
-                            class='w-full h-10 md:h-12 rounded-xl bg-gray-50 border-0 focus:ring-2 focus:ring-blue-500 text-gray-900 px-4 placeholder-gray-400'
-                            v-model='form.password_confirmation'
-                            placeholder='Confirm password'
-                            required
-                            autocomplete='new-password'
-                        />
-                        <InputError class='mt-1 text-xs text-red-500' :message='form.errors.password_confirmation' />
+                    
+                    <div class="flex justify-center mt-4">
+                        <button
+                            type="button"
+                            @click="currentCard = 1"
+                            class="flex items-center justify-center w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 hover:bg-white/30 transition-all duration-300 transform hover:scale-110"
+                        >
+                            <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                            </svg>
+                        </button>
                     </div>
                 </div>
 
-                <div class='grid grid-cols-1 md:grid-cols-2 gap-4'>
-                    <!-- Withdraw Password -->
-                    <div>
-                        <InputLabel for='withdraw_password' :value='t("Withdraw PIN")' class='text-sm font-medium text-gray-700 mb-1' />
-                        <TextInput
-                            id='withdraw_password'
-                            type='password'
-                            class='w-full h-10 md:h-12 rounded-xl bg-gray-50 border-0 focus:ring-2 focus:ring-blue-500 text-gray-900 px-4 placeholder-gray-400'
-                            v-model='form.withdraw_password'
-                            placeholder='6-digit PIN'
-                            required
-                            autocomplete='off'
-                        />
-                        <InputError class='mt-1 text-xs text-red-500' :message='form.errors.withdraw_password' />
-                    </div>
+                <!-- Card 2: Passwords -->
+                <div class="w-full flex-shrink-0 p-4 md:p-8 flex flex-col justify-between h-full">
+                    <div class="space-y-4 md:space-y-6">
+                        <div class="flex items-center justify-between">
+                            <button
+                                type="button"
+                                @click="currentCard = 0"
+                                class="flex items-center justify-center w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 hover:bg-white/30 transition-all duration-300"
+                            >
+                                <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                                </svg>
+                            </button>
+                            <span class="text-sm font-medium text-gray-700">{{ t('Set Password') }}</span>
+                            <div class="w-8"></div>
+                        </div>
 
-                    <!-- Confirm Withdraw Password -->
-                    <div>
-                        <InputLabel for='withdraw_password_confirmation' :value='t("Confirm PIN")' class='text-sm font-medium text-gray-700 mb-1' />
-                        <TextInput
-                            id='withdraw_password_confirmation'
-                            type='password'
-                            class='w-full h-10 md:h-12 rounded-xl bg-gray-50 border-0 focus:ring-2 focus:ring-blue-500 text-gray-900 px-4 placeholder-gray-400'
-                            v-model='form.withdraw_password_confirmation'
-                            placeholder='Confirm PIN'
-                            required
-                            autocomplete='off'
-                        />
-                        <InputError class='mt-1 text-xs text-red-500' :message='form.errors.withdraw_password_confirmation' />
+                        <div>
+                            <InputLabel for="password" :value="t('Password')" class="text-xs font-medium text-gray-600" />
+                            <TextInput
+                                id="password"
+                                type="password"
+                                class="w-full h-9 rounded-lg bg-gray-50 border-0 focus:ring-1 focus:ring-blue-500 text-gray-900 px-3 text-sm placeholder:text-xs placeholder:text-gray-400 mt-1"
+                                v-model="form.password"
+                                placeholder="Password"
+                                required
+                                autocomplete="new-password"
+                            />
+                            <InputError class="mt-1 text-xs text-red-500" :message="form.errors.password" />
+                        </div>
+
+                        <div>
+                            <InputLabel for="password_confirmation" :value="t('Confirm Password')" class="text-xs font-medium text-gray-600" />
+                            <TextInput
+                                id="password_confirmation"
+                                type="password"
+                                class="w-full h-9 rounded-lg bg-gray-50 border-0 focus:ring-1 focus:ring-blue-500 text-gray-900 px-3 text-sm placeholder:text-xs placeholder:text-gray-400 mt-1"
+                                v-model="form.password_confirmation"
+                                placeholder="Confirm password"
+                                required
+                                autocomplete="new-password"
+                            />
+                            <InputError class="mt-1 text-xs text-red-500" :message="form.errors.password_confirmation" />
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-center mt-4">
+                        <button
+                            type="button"
+                            @click="currentCard = 2"
+                            class="flex items-center justify-center w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 hover:bg-white/30 transition-all duration-300 transform hover:scale-110"
+                        >
+                            <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                            </svg>
+                        </button>
                     </div>
                 </div>
 
-                <!-- Invitation Code -->
-                <div>
-                    <InputLabel for='invitation_code' :value='t("Invitation Code (Optional)")' class='text-sm font-medium text-gray-700 mb-1' />
-                    <TextInput
-                        id='invitation_code'
-                        type='text'
-                        class='w-full h-10 md:h-12 rounded-xl bg-gray-50 border-0 focus:ring-2 focus:ring-blue-500 text-gray-900 px-4 placeholder-gray-400'
-                        v-model='form.invitation_code'
-                        placeholder='Enter invitation code'
-                        autocomplete='off'
-                    />
-                    <InputError class='mt-1 text-xs text-red-500' :message='form.errors.invitation_code' />
-                </div>
+                <!-- Card 3: PIN & Register -->
+                <div class="w-full flex-shrink-0 p-4 md:p-8 flex flex-col h-full">
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between">
+                            <button
+                                type="button"
+                                @click="currentCard = 1"
+                                class="flex items-center justify-center w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 hover:bg-white/30 transition-all duration-300"
+                            >
+                                <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                                </svg>
+                            </button>
+                            <span class="text-sm font-medium text-gray-700">{{ t('Final Step') }}</span>
+                            <div class="w-8"></div>
+                        </div>
 
-                <!-- Submit Button -->
-                <PrimaryButton
-                    class='w-full h-9 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold text-sm transition-all duration-300 transform hover:scale-[1.02] shadow-lg hover:shadow-xl'
-                    :class='{ "opacity-50 cursor-not-allowed": form.processing }'
-                    :disabled='form.processing'
-                >
-                    <span v-if='form.processing'>{{ t('Creating Account...') }}</span>
-                    <span v-else>{{ t('Create Account') }}</span>
-                </PrimaryButton>
-            </form>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <InputLabel for="withdraw_password" :value="t('Withdraw PIN')" class="text-xs font-medium text-gray-600" />
+                                <TextInput
+                                    id="withdraw_password"
+                                    type="password"
+                                    class="w-full h-9 rounded-lg bg-gray-50 border-0 focus:ring-1 focus:ring-blue-500 text-gray-900 px-3 text-sm placeholder:text-xs placeholder:text-gray-400 mt-1"
+                                    v-model="form.withdraw_password"
+                                    placeholder="6-digit PIN"
+                                    required
+                                    autocomplete="off"
+                                />
+                                <InputError class="mt-1 text-xs text-red-500" :message="form.errors.withdraw_password" />
+                            </div>
+
+                            <div>
+                                <InputLabel for="withdraw_password_confirmation" :value="t('Confirm PIN')" class="text-xs font-medium text-gray-600" />
+                                <TextInput
+                                    id="withdraw_password_confirmation"
+                                    type="password"
+                                    class="w-full h-9 rounded-lg bg-gray-50 border-0 focus:ring-1 focus:ring-blue-500 text-gray-900 px-3 text-sm placeholder:text-xs placeholder:text-gray-400 mt-1"
+                                    v-model="form.withdraw_password_confirmation"
+                                    placeholder="Confirm PIN"
+                                    required
+                                    autocomplete="off"
+                                />
+                                <InputError class="mt-1 text-xs text-red-500" :message="form.errors.withdraw_password_confirmation" />
+                            </div>
+                        </div>
+
+                        <div>
+                            <InputLabel for="invitation_code" :value="t('Invitation Code (Optional)')" class="text-xs font-medium text-gray-600" />
+                            <TextInput
+                                id="invitation_code"
+                                type="text"
+                                class="w-full h-9 rounded-lg bg-gray-50 border-0 focus:ring-1 focus:ring-blue-500 text-gray-900 px-3 text-sm placeholder:text-xs placeholder:text-gray-400 mt-1"
+                                v-model="form.invitation_code"
+                                placeholder="Invitation code"
+                                autocomplete="off"
+                            />
+                            <InputError class="mt-1 text-xs text-red-500" :message="form.errors.invitation_code" />
+                        </div>
+                    </div>
+                    
+                    <PrimaryButton
+                        @click="submit"
+                        class="w-full h-9 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold text-sm transition-all duration-300 transform hover:scale-[1.02] shadow-lg hover:shadow-xl mt-4"
+                        :class="{ 'opacity-50 cursor-not-allowed': form.processing }"
+                        :disabled="form.processing"
+                    >
+                        <span v-if="form.processing">{{ t('Creating Account...') }}</span>
+                        <span v-else>{{ t('Create Account') }}</span>
+                    </PrimaryButton>
+                </div>
+            </div>
         </div>
+    </div>
     </GuestLayout>
 </template>

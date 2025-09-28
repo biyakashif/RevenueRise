@@ -10,13 +10,14 @@ const t = (key) => translations.value[key] || key;
 
 const props = defineProps({
     cryptos: { type: Array, required: true },
+    cryptoDetails: { type: Object, default: () => ({}) },
     vip: { type: [String, null], default: null },
     prefillAmount: { type: [Number, String, null], default: null },
 });
 
 const cryptos = ref([...props.cryptos]);
 
-const cryptoDetails = ref({});
+const cryptoDetails = ref({ ...props.cryptoDetails });
 const isLoadingCrypto = ref(false);
 const cryptoError = ref(null);
 const isLoadingHistory = ref(false);
@@ -120,20 +121,33 @@ const fetchCryptoDetails = async (symbol, showLoading = true) => {
 };
 
 // Fetch deposit history
-const fetchHistory = async (showLoading = true) => {
+const fetchHistory = async (showLoading = true, page = 1, perPage = 20) => {
     if (showLoading) {
         isLoadingHistory.value = true;
         historyError.value = null;
     }
 
     try {
-        const response = await fetch('/deposit/history');
+        const response = await fetch(`/deposit/history?page=${page}&per_page=${perPage}`, {
+            headers: {
+                'Cache-Control': 'no-cache',
+                'Pragma': 'no-cache'
+            }
+        });
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
 
         const data = await response.json();
-        history.value = data.deposits || [];
+        
+        if (page === 1) {
+            history.value = data.deposits || [];
+        } else {
+            // Append new data for pagination
+            history.value = [...history.value, ...(data.deposits || [])];
+        }
+        
+        historyPagination.value = data.pagination || {};
     } catch (error) {
         historyError.value = 'Failed to load deposit history.';
         history.value = [];
@@ -143,13 +157,9 @@ const fetchHistory = async (showLoading = true) => {
 };
 
 onMounted(() => {
-    // Initialize with first crypto if available and preload all crypto details
+    // Initialize with first crypto if available
     if (cryptos.value.length > 0) {
         form.value.crypto_id = cryptos.value[0].id;
-        // Preload crypto details for all available cryptos
-        cryptos.value.forEach(crypto => {
-            fetchCryptoDetails(crypto.currency, false);
-        });
     }
     
     // Initialize arrows after mount
@@ -169,10 +179,6 @@ onMounted(() => {
                 // Update form crypto_id
                 if (cryptos.value[activeTab.value]) {
                     form.value.crypto_id = cryptos.value[activeTab.value].id;
-                    // Preload new crypto details
-                    cryptos.value.forEach(crypto => {
-                        fetchCryptoDetails(crypto.currency, false);
-                    });
                 }
                 updateArrows();
             })
@@ -198,6 +204,18 @@ onMounted(() => {
                         updatedDeposit.status = e.deposit.status;
                         // Force reactivity update
                         history.value = [...history.value];
+                    }
+                }
+            })
+            .listen('.App\\Events\\DepositCreated', (e) => {
+                connectionStatus.value = 'connected';
+                // Add new deposit to history immediately if history modal is open
+                if (showHistory.value && e.deposit) {
+                    // Add to the beginning of the array (most recent first)
+                    history.value.unshift(e.deposit);
+                    // Limit history to prevent memory issues (keep last 50)
+                    if (history.value.length > 50) {
+                        history.value = history.value.slice(0, 50);
                     }
                 }
             })
@@ -232,7 +250,8 @@ onUnmounted(() => {
     const userId = page.props.auth?.user?.id;
     if (userId && window.Echo) {
         window.Echo.private(`user.${userId}`)
-            .stopListening('.App\\Events\\DepositStatusUpdated');
+            .stopListening('.App\\Events\\DepositStatusUpdated')
+            .stopListening('.App\\Events\\DepositCreated');
     }
     // Clean up crypto updates listener
     if (window.Echo) {
@@ -246,8 +265,10 @@ const isCopied = ref(false);
 const copyError = ref(null);
 const showHistory = ref(false);
 const history = ref([]);
+const historyPagination = ref({});
 const historyError = ref(null);
 const successMessage = ref(null || page.props.flash?.success);
+const formErrors = ref({});
 
 // initialize form with prefilled amount if VIP purchase
 const form = ref({
@@ -261,7 +282,6 @@ const switchTab = (index) => {
     activeTab.value = index;
     if (cryptos.value[index]) {
         form.value.crypto_id = cryptos.value[index].id;
-        fetchCryptoDetails(cryptos.value[index].currency, false);
     }
 };
 
@@ -318,7 +338,7 @@ const copyAddress = async () => {
             setTimeout(() => (isCopied.value = false), 2000);
             return;
         } catch (err) {
-            copyError.value = 'Failed to copy address. Please copy manually.';
+            copyError.value = t('Failed to copy address. Please copy manually.');
         }
     }
     try {
@@ -331,7 +351,7 @@ const copyAddress = async () => {
         isCopied.value = true;
         setTimeout(() => (isCopied.value = false), 2000);
     } catch (err) {
-        copyError.value = 'Failed to copy address. Please copy manually.';
+        copyError.value = t('Failed to copy address. Please copy manually.');
     }
 };
 
@@ -342,12 +362,12 @@ const startHistoryPolling = () => {
     // Set status to polling
     connectionStatus.value = 'polling';
 
-    // Start polling every 10 seconds when history modal is open
+    // Start polling every 3 seconds when history modal is open
     historyPollingInterval = setInterval(() => {
         if (showHistory.value) {
             fetchHistory(false);
         }
-    }, 10000); // 10 seconds
+    }, 3000); // 3 seconds
 };
 
 const stopHistoryPolling = () => {
@@ -357,9 +377,16 @@ const stopHistoryPolling = () => {
     }
 };
 
+const loadMoreHistory = () => {
+    if (historyPagination.value.current_page < historyPagination.value.last_page) {
+        const nextPage = historyPagination.value.current_page + 1;
+        fetchHistory(true, nextPage, historyPagination.value.per_page);
+    }
+};
+
 const submitDeposit = () => {
     if (!form.value.crypto_id) {
-        alert('Please select a cryptocurrency');
+        alert(t('Please select a cryptocurrency'));
         return;
     }
     
@@ -382,13 +409,14 @@ const submitDeposit = () => {
                 vip: props.vip || null,
                 crypto_id: cryptos.value[activeTab.value]?.id || null
             };
+            formErrors.value = {};
             // Refresh history if modal is open to show the new deposit
             if (showHistory.value) {
                 fetchHistory(false);
             }
         },
         onError: (errors) => {
-            alert('Error submitting deposit: ' + JSON.stringify(errors));
+            formErrors.value = errors;
         },
     });
 };
@@ -397,9 +425,9 @@ const submitDeposit = () => {
 <template>
     <Head :title="t('Deposit')" />
     <AuthenticatedLayout>
-        <div class="bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-2xl border border-cyan-300/30 h-full overflow-y-auto">
+        <div class="bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-sm p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-2xl border border-cyan-300/30 h-full overflow-y-auto">
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                <div class="bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-none sm:shadow-2xl border-none sm:border sm:border-cyan-300/30 w-full flex flex-col justify-between">
+                <div class="bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-sm p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-lg border border-cyan-300/30 w-full flex flex-col justify-between">
                     
                     <!-- No Cryptocurrencies Available -->
                     <div v-if="cryptos.length === 0" class="text-center py-8">
@@ -458,7 +486,16 @@ const submitDeposit = () => {
                         </div>
                         <div class="flex items-center space-x-2">
                             <button
-                                @click="() => { fetchHistory(); showHistory = true; startHistoryPolling(); }"
+                                @click="() => { 
+                                    if (!showHistory.value) { 
+                                        fetchHistory(); 
+                                        showHistory = true; 
+                                        startHistoryPolling(); 
+                                    } else {
+                                        showHistory = false;
+                                        stopHistoryPolling();
+                                    }
+                                }"
                                 class="flex items-center text-cyan-600 font-medium text-sm hover:text-cyan-700 transition-all duration-200 drop-shadow-sm"
                                 :disabled="isLoadingHistory"
                             >
@@ -491,7 +528,7 @@ const submitDeposit = () => {
                     <div class="mb-2">
                         <label class="block text-xs font-medium text-slate-700 mb-1 drop-shadow-sm">{{ t('Address') }}</label>
                         <div class="flex items-center bg-white/50 border border-white/40 p-1 sm:p-2 rounded-lg backdrop-blur-sm shadow-lg">
-                            <span class="text-[11px] sm:text-[10px] md:text-xs lg:text-sm text-slate-800 flex-1 break-all">{{ walletAddress }}</span>
+                            <span class="text-[10px] sm:text-[9px] md:text-xs lg:text-sm text-slate-800 flex-1 break-all">{{ walletAddress }}</span>
                             <button
                                 @click="copyAddress"
                                 class="ml-2 px-2 py-1 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white text-xs rounded-md transition-all duration-200 shadow-lg"
@@ -503,7 +540,7 @@ const submitDeposit = () => {
                     </div>
 
                     <div class="mb-2">
-                        <label class="block text-xs font-medium text-slate-700 mb-1 drop-shadow-sm">{{ t('Amount') }}</label>
+                        <label class="block text-xs font-medium text-slate-700 mb-1 drop-shadow-sm">{{ t('Enter amount in') }} {{ selectedCurrency }}</label>
                         <input
                             v-model="form.amount"
                             :disabled="!!form.vip"
@@ -513,6 +550,7 @@ const submitDeposit = () => {
                             class="mt-1 block w-full h-8 rounded-lg border-0 focus:ring-2 focus:ring-cyan-400 text-slate-900 px-3 placeholder-slate-400 backdrop-blur-sm shadow-lg text-sm"
                             :class="form.vip ? 'bg-white/30' : 'bg-white/50'"
                         />
+                        <div v-if="formErrors.amount" class="text-red-500 text-xs mt-1">{{ formErrors.amount }}</div>
                         <div v-if="form.vip" class="mt-1 text-xs text-cyan-700 bg-cyan-50/80 p-2 rounded-lg border border-cyan-200">{{ t('This deposit is for') }} <strong>{{ form.vip }}</strong>. {{ t('Amount is fixed for this VIP purchase.') }}</div>
                     </div>
 
@@ -524,12 +562,13 @@ const submitDeposit = () => {
                             accept="image/*"
                             class="mt-1 block w-full h-8 rounded-lg bg-white/50 border-0 focus:ring-2 focus:ring-cyan-400 text-slate-900 px-3 backdrop-blur-sm shadow-lg file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-cyan-50 file:text-cyan-700 hover:file:bg-cyan-100"
                         />
+                        <div v-if="formErrors.slip" class="text-red-500 text-xs mt-1">{{ formErrors.slip }}</div>
                     </div>
 
                     <button
                         @click="submitDeposit"
                         :disabled="!form.amount || !form.slip || !currentCrypto"
-                        class="w-full px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-medium rounded-lg transition-all duration-300 transform hover:scale-[1.02] shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                        class="w-full px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-medium rounded-lg transition-all duration-200 transform hover:scale-[1.02] shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                     >
                         {{ t('Submit Deposit') }}
                     </button>
@@ -539,7 +578,7 @@ const submitDeposit = () => {
 
             <!-- HISTORY MODAL -->
             <div v-if="showHistory" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                <div class="bg-gradient-to-br from-white/95 via-blue-50/90 to-indigo-50/95 backdrop-blur-xl p-6 rounded-2xl sm:rounded-3xl w-full max-w-md max-h-[80vh] overflow-y-auto shadow-2xl border border-white/40">
+                <div class="bg-gradient-to-br from-white/95 via-blue-50/90 to-indigo-50/95 backdrop-blur-sm p-6 rounded-2xl sm:rounded-3xl w-full max-w-md max-h-[80vh] overflow-y-auto shadow-2xl border border-white/40">
                     <div class="flex justify-between items-center mb-4">
                         <div class="flex items-center">
                             <h2 class="text-lg font-semibold text-slate-800 drop-shadow-sm">{{ t('Deposit History') }}</h2>
@@ -589,6 +628,17 @@ const submitDeposit = () => {
                                 </span>
                             </div>
                             <div class="text-slate-500 text-xs mt-1">{{ new Date(deposit.created_at).toLocaleString() }}</div>
+                        </div>
+                        
+                        <!-- Load More Button -->
+                        <div v-if="historyPagination.current_page < historyPagination.last_page" class="text-center pt-4">
+                            <button
+                                @click="loadMoreHistory"
+                                :disabled="isLoadingHistory"
+                                class="px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white text-sm rounded-lg transition-colors duration-200 disabled:opacity-50"
+                            >
+                                {{ isLoadingHistory ? t('Loading...') : t('Load More') }}
+                            </button>
                         </div>
                     </div>
                 </div>

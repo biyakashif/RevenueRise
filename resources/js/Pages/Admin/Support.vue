@@ -15,9 +15,17 @@
         <div class="bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl p-4 rounded-2xl shadow-2xl border border-cyan-300/30 h-full overflow-y-auto">
             <div class="flex justify-between items-center mb-4">
                 <h1 class="text-lg font-bold text-slate-800 drop-shadow-sm">Support Chat</h1>
-                <button @click="openBlockedGuestsModal" class="px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm transition-all duration-200">
-                    <i class="fas fa-ban mr-1"></i> Blocked Guests
-                </button>
+                <div class="flex space-x-2">
+                    <Link :href="route('admin.auto-reply')" class="px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm transition-all duration-200">
+                        <i class="fas fa-robot mr-1"></i> Auto Reply
+                    </Link>
+                    <Link :href="route('admin.blocked-users')" class="px-3 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm transition-all duration-200">
+                        <i class="fas fa-user-slash mr-1"></i> Block User
+                    </Link>
+                    <button @click="openBlockedGuestsModal" class="px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm transition-all duration-200">
+                        <i class="fas fa-ban mr-1"></i> Blocked Guests
+                    </button>
+                </div>
             </div>
             <div class="flex h-[calc(100vh-8rem)]">
                             <!-- Users List with Chat Status -->
@@ -72,6 +80,16 @@
                                                         @click.stop="unblockGuestUser(user)" 
                                                         class="text-green-500 text-xs hover:underline">
                                                     Unblock
+                                                </button>
+                                                <button v-if="!user.is_guest && !user.is_blocked" 
+                                                        @click.stop="blockUser(user)" 
+                                                        class="text-orange-500 text-xs hover:underline">
+                                                    Block User
+                                                </button>
+                                                <button v-if="!user.is_guest && user.is_blocked" 
+                                                        @click.stop="unblockUser(user)" 
+                                                        class="text-green-500 text-xs hover:underline">
+                                                    Unblock User
                                                 </button>
                                                 <button @click.stop="openDeleteModal(user)" 
                                                         class="text-red-500 text-xs hover:underline">
@@ -258,7 +276,7 @@
 <script setup>
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 import { ref, onMounted, nextTick, computed } from 'vue';
-import { usePage } from '@inertiajs/vue3';
+import { usePage, Link, router } from '@inertiajs/vue3';
 import axios from 'axios';
 
 const page = usePage();
@@ -323,6 +341,7 @@ const loadUsers = async (force = false) => {
             mobile_number: u.mobile_number != null ? String(u.mobile_number) : u.mobile_number,
             unread_count: u.unread_count ?? 0,
             is_guest: false,
+            is_blocked: u.is_blocked || false,
         }));
         
         const guestUsers = (guestResponse.data || []).map(u => ({
@@ -1135,6 +1154,42 @@ const closeMediaModal = () => {
     showMediaModal.value = false;
     modalMediaSrc.value = '';
     modalMediaType.value = '';
+};
+
+const blockUser = async (user) => {
+    if (confirm(`Are you sure you want to block ${user.name}?`)) {
+        try {
+            await router.post(route('admin.users.block', user.id), {}, {
+                preserveScroll: true,
+                onSuccess: () => {
+                    const userIndex = users.value.findIndex(u => u.id === user.id && !u.is_guest);
+                    if (userIndex !== -1) {
+                        users.value[userIndex].is_blocked = true;
+                    }
+                }
+            });
+        } catch (error) {
+            console.error('Error blocking user:', error);
+        }
+    }
+};
+
+const unblockUser = async (user) => {
+    if (confirm(`Are you sure you want to unblock ${user.name}?`)) {
+        try {
+            await router.post(route('admin.users.unblock', user.id), {}, {
+                preserveScroll: true,
+                onSuccess: () => {
+                    const userIndex = users.value.findIndex(u => u.id === user.id && !u.is_guest);
+                    if (userIndex !== -1) {
+                        users.value[userIndex].is_blocked = false;
+                    }
+                }
+            });
+        } catch (error) {
+            console.error('Error unblocking user:', error);
+        }
+    }
 };
 
 

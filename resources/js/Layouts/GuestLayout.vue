@@ -1,5 +1,6 @@
 <script setup>
 import Header from '@/Components/Header.vue';
+import FloatingChatIcon from '@/Components/FloatingChatIcon.vue';
 import { Link, usePage } from '@inertiajs/vue3';
 import { computed, ref, onMounted } from 'vue';
 import axios from 'axios';
@@ -61,7 +62,7 @@ const startGuestChat = async () => {
         });
         
         if (!captchaResponse.data.valid) {
-            showCaptchaError.value = 'Incorrect captcha. Please try again.';
+            showCaptchaError.value = t('Incorrect captcha. Please try again.');
             generateCaptcha();
             guestForm.value.captcha = '';
             return;
@@ -74,7 +75,7 @@ const startGuestChat = async () => {
         });
         
         if (response.data.blocked) {
-            showCaptchaError.value = 'You have been blocked. You cannot send messages.';
+            showCaptchaError.value = t('You have been blocked. You cannot send messages.');
             return;
         }
         
@@ -89,7 +90,7 @@ const startGuestChat = async () => {
         loadGuestMessages();
         startRealTimeChat();
     } catch (error) {
-        alert('Error starting chat. Please try again.');
+        alert(t('Error starting chat. Please try again.'));
     }
 };
 
@@ -206,6 +207,9 @@ const startRealTimeChat = () => {
                         video_path: e.message.video_path || null
                     };
                     
+                    // Remove any temp messages before adding the real message
+                    messages.value = messages.value.filter(m => !m.isTemp);
+                    
                     const exists = messages.value.some(m => m.id === newMessage.id);
                     if (!exists) {
                         messages.value.push(newMessage);
@@ -228,7 +232,7 @@ const startRealTimeChat = () => {
             echoChannel.listen('GuestChatDeleted', (e) => {
                 console.log('🗑️ Guest chat deleted:', e);
                 if (e.session_id === guestSessionId.value) {
-                    alert('Your chat session has been ended by the administrator.');
+                    alert(t('Your chat session has been ended by the administrator.'));
                     closeGuestChat();
                 }
             });
@@ -269,18 +273,45 @@ const handleImageUpload = async (event) => {
         const file = event.target.files[0];
         if (!file || isBlocked.value) return;
 
+        // Create immediate preview
+        const imageUrl = URL.createObjectURL(file);
+        const tempMessage = {
+            id: 'temp_' + Date.now(),
+            message: '',
+            is_guest: true,
+            image_path: imageUrl,
+            video_path: null,
+            created_at: new Date().toISOString(),
+            isTemp: true
+        };
+        messages.value.push(tempMessage);
+        messages.value.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+
+        setTimeout(() => {
+            if (messagesContainer.value) {
+                messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
+            }
+        }, 50);
+
         const formData = new FormData();
         formData.append('image', file);
 
         await axios.post(`/guest-chat/${guestSessionId.value}/send`, formData);
         event.target.value = '';
+
+        // Temp message will be replaced by real message when it comes through real-time
     } catch (error) {
         console.error('Error uploading image:', error);
         if (error.response?.status === 403) {
             isBlocked.value = true;
-            alert('You have been blocked and cannot send messages.');
+            alert(t('You have been blocked and cannot send messages.'));
         } else {
-            alert('Error uploading image. Please try again.');
+            alert(t('Error uploading image. Please try again.'));
+        }
+        // Remove temp message on error
+        const tempIndex = messages.value.findIndex(m => m.isTemp);
+        if (tempIndex > -1) {
+            messages.value.splice(tempIndex, 1);
         }
     }
 };
@@ -291,23 +322,50 @@ const handleVideoUpload = async (event) => {
         if (!file || isBlocked.value) return;
 
         if (file.size > 30 * 1024 * 1024) {
-            alert('Video file size must not exceed 30MB.');
+            alert(t('Video file size must not exceed 30MB.'));
             event.target.value = '';
             return;
         }
+
+        // Create immediate preview
+        const videoUrl = URL.createObjectURL(file);
+        const tempMessage = {
+            id: 'temp_' + Date.now(),
+            message: '',
+            is_guest: true,
+            image_path: null,
+            video_path: videoUrl,
+            created_at: new Date().toISOString(),
+            isTemp: true
+        };
+        messages.value.push(tempMessage);
+        messages.value.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+
+        setTimeout(() => {
+            if (messagesContainer.value) {
+                messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
+            }
+        }, 50);
 
         const formData = new FormData();
         formData.append('video', file);
 
         await axios.post(`/guest-chat/${guestSessionId.value}/send`, formData);
         event.target.value = '';
+
+        // Temp message will be replaced by real message when it comes through real-time
     } catch (error) {
         console.error('Error uploading video:', error);
         if (error.response?.status === 403) {
             isBlocked.value = true;
-            alert('You have been blocked and cannot send messages.');
+            alert(t('You have been blocked and cannot send messages.'));
         } else {
-            alert('Error uploading video. Please try again.');
+            alert(t('Error uploading video. Please try again.'));
+        }
+        // Remove temp message on error
+        const tempIndex = messages.value.findIndex(m => m.isTemp);
+        if (tempIndex > -1) {
+            messages.value.splice(tempIndex, 1);
         }
     }
 };
@@ -388,20 +446,14 @@ const closeMediaModal = () => {
         </div>
 
         <!-- Floating Help Icon -->
-        <button 
-            @click="openGuestChat"
-            class="floating-help-btn fixed bottom-6 right-6 w-14 h-14 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-full flex items-center justify-center transition-all duration-300 transform hover:scale-110 z-50"
-            title="Help & Support"
-        >
-            <i class="fas fa-headset text-lg"></i>
-        </button>
+        <FloatingChatIcon @click="openGuestChat" />
 
         <!-- Guest Chat Modal -->
         <div v-if="showGuestChat" class="guest-chat-modal fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
             <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[80vh] flex flex-col">
                 <!-- Modal Header -->
                 <div class="flex items-center justify-between p-4 border-b">
-                    <h3 class="text-lg font-semibold text-gray-800">{{ showChatForm ? 'Contact Support' : 'Guest Chat' }}</h3>
+                    <h3 class="text-lg font-semibold text-gray-800">{{ showChatForm ? t('Contact Support') : t('Guest Chat') }}</h3>
                     <button @click="closeGuestChat" class="text-gray-400 hover:text-gray-600">
                         <i class="fas fa-times text-xl"></i>
                     </button>
@@ -410,27 +462,29 @@ const closeMediaModal = () => {
                 <div v-if="showChatForm" class="p-6">
                     <form @submit.prevent="startGuestChat" class="space-y-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('Name') }}</label>
                             <input 
                                 v-model="guestForm.name" 
                                 type="text" 
                                 required 
                                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                placeholder="Enter your name"
+                                :placeholder="t('Enter your name')"
                             >
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Mobile Number</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('Mobile Number') }}</label>
                             <input 
                                 v-model="guestForm.mobile_number" 
                                 type="tel" 
                                 required 
+                                pattern="[0-9+\-\s]*"
+                                @input="guestForm.mobile_number = guestForm.mobile_number.replace(/[^0-9+\-\s]/g, '')"
                                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                placeholder="Enter your mobile number"
+                                :placeholder="t('Enter your mobile number')"
                             >
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Verification</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('Verification') }}</label>
                             <div class="flex items-center space-x-2 mb-2">
                                 <img 
                                     :src="captchaImage" 
@@ -452,7 +506,7 @@ const closeMediaModal = () => {
                                 type="text" 
                                 required 
                                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                placeholder="Enter the code shown above"
+                                :placeholder="t('Enter the code shown above')"
                             >
                             <div v-if="showCaptchaError" class="text-red-500 text-sm mt-1">{{ showCaptchaError }}</div>
                         </div>
@@ -460,7 +514,7 @@ const closeMediaModal = () => {
                             type="submit" 
                             class="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white py-2 px-4 rounded-lg transition-all duration-200"
                         >
-                            Start Chat
+                            {{ t('Start Chat') }}
                         </button>
                     </form>
                 </div>
@@ -468,7 +522,7 @@ const closeMediaModal = () => {
                 <div v-else class="flex flex-col flex-1 min-h-0">
                     <div ref="messagesContainer" class="flex-1 overflow-y-auto p-4 space-y-3 min-h-0">
                         <div v-if="messages.length === 0" class="text-center text-gray-500 py-8">
-                            No messages yet. Start the conversation!
+                            {{ t('No messages yet. Start the conversation!') }}
                         </div>
                         <div v-for="message in messages" :key="message.id" 
                              class="guest-chat-message flex" 
@@ -478,28 +532,31 @@ const closeMediaModal = () => {
                                      ? 'bg-blue-500 text-white' 
                                      : 'bg-gray-100 text-gray-800'">
                                 <div v-if="message.image_path" class="mb-2">
-                                    <img :src="message.image_path" 
+                                    <img :src="message.image_path.startsWith('blob:') ? message.image_path : (message.image_path.startsWith('/storage/') ? message.image_path : `/storage/${message.image_path}`)" 
                                          alt="chat image" 
                                          class="w-32 h-32 object-cover rounded cursor-pointer hover:opacity-80 transition-opacity"
-                                         @click="openMediaModal(message.image_path, 'image')">
+                                         @click="openMediaModal(message.image_path.startsWith('blob:') ? message.image_path : (message.image_path.startsWith('/storage/') ? message.image_path : `/storage/${message.image_path}`), 'image')">
                                 </div>
                                 <div v-if="message.video_path" class="mb-2 relative">
-                                    <video class="w-32 h-32 object-cover rounded cursor-pointer hover:opacity-80 transition-opacity"
-                                           @click="openMediaModal(message.video_path, 'video')">
-                                        <source :src="message.video_path" type="video/mp4">
+                                    <div v-if="message.video_path.startsWith('blob:')" class="w-32 h-32 bg-gray-200 rounded flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity">
+                                        <i class="fas fa-video text-gray-600 text-2xl"></i>
+                                    </div>
+                                    <video v-else class="w-32 h-32 object-cover rounded cursor-pointer hover:opacity-80 transition-opacity"
+                                           @click="openMediaModal(message.video_path.startsWith('blob:') ? message.video_path : (message.video_path.startsWith('/storage/') ? message.video_path : `/storage/${message.video_path}`), 'video')">
+                                        <source :src="message.video_path.startsWith('blob:') ? message.video_path : (message.video_path.startsWith('/storage/') ? message.video_path : `/storage/${message.video_path}`)" type="video/mp4">
                                     </video>
-                                    <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                    <div v-if="!message.video_path.startsWith('blob:')" class="absolute inset-0 flex items-center justify-center pointer-events-none">
                                         <i class="fas fa-play-circle text-white text-2xl opacity-80"></i>
                                     </div>
                                 </div>
-                                <p v-if="message.message">{{ message.message }}</p>
+                                <p v-if="message.message" v-html="message.message"></p>
                             </div>
                         </div>
                     </div>
 
                     <div class="border-t p-4">
                         <div v-if="isBlocked" class="text-center py-4 text-red-600 bg-red-50 rounded-lg mb-4">
-                            You have been blocked. You cannot send messages.
+                            {{ t('You have been blocked. You cannot send messages.') }}
                         </div>
                         <form v-else @submit.prevent="sendGuestMessage" class="space-y-2">
                             <div class="flex space-x-2">
@@ -526,7 +583,7 @@ const closeMediaModal = () => {
                                 <input 
                                     v-model="newMessage" 
                                     type="text" 
-                                    placeholder="Type your message..." 
+                                    :placeholder="t('Type your message...')" 
                                     class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                     @keydown.enter.exact.prevent="sendGuestMessage"
                                 >

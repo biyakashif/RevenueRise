@@ -603,18 +603,21 @@ class AdminController extends Controller
         }
 
         if ($action === 'approve') {
-                $user = User::find($deposit->user_id);
+            $user = User::find($deposit->user_id);
 
             if ($user && $user->role === 'user') {
+                // Use converted amount if provided (from Coinbase API conversion), otherwise use original amount
+                $amountToAdd = $request->input('converted_amount', $deposit->amount);
+
                 // Only add balance for non-VIP deposits
                 if (empty($deposit->vip_level)) {
-                    $user->balance += $deposit->amount;
-                    
+                    $user->balance += $amountToAdd;
+
                     // Create balance record for deposit
                     BalanceRecord::create([
                         'user_id' => $user->id,
                         'type' => 'deposit',
-                        'amount' => $deposit->amount,
+                        'amount' => $amountToAdd,
                         'description' => $deposit->title ?: 'Deposit approved',
                     ]);
                 }
@@ -639,9 +642,7 @@ class AdminController extends Controller
         broadcast(new \App\Events\DepositStatusUpdated($deposit));
 
         return redirect()->back()->with('success', 'Deposit status updated successfully.');
-    }
-
-    public function products()
+    }    public function products()
     {
         $products = Product::latest()->get();
 
@@ -1082,5 +1083,136 @@ class AdminController extends Controller
     {
         $assignedUserIds = Task::distinct('user_id')->pluck('user_id');
         return response()->json(['assignedUserIds' => $assignedUserIds]);
+    }
+
+    public function contactSettings()
+    {
+        $settings = \App\Models\ContactSetting::first() ?? new \App\Models\ContactSetting();
+        return Inertia::render('Admin/ContactSettings', ['settings' => $settings]);
+    }
+
+    public function updateContactSettings(Request $request)
+    {
+        $request->validate([
+            'show_email' => 'boolean',
+            'email' => 'nullable|email',
+            'show_whatsapp' => 'boolean',
+            'whatsapp' => 'nullable|string',
+            'show_telegram' => 'boolean',
+            'telegram' => 'nullable|string',
+            'show_office' => 'boolean',
+            'office_address' => 'nullable|string',
+        ]);
+
+        $settings = \App\Models\ContactSetting::first();
+        if (!$settings) {
+            $settings = \App\Models\ContactSetting::create($request->all());
+        } else {
+            $settings->update($request->all());
+        }
+
+        return redirect()->back()->with('success', 'Contact settings updated successfully.');
+    }
+
+    public function autoReplySettings()
+    {
+        $settings = \App\Models\AutoReplySetting::first() ?? new \App\Models\AutoReplySetting();
+        $messages = \App\Models\AutoReplyMessage::orderBy('order')->get();
+        $contactSettings = \App\Models\ContactSetting::first();
+        
+        return Inertia::render('Admin/AutoReplySettings', [
+            'settings' => $settings,
+            'messages' => $messages,
+            'contactSettings' => $contactSettings
+        ]);
+    }
+
+    public function updateAutoReplySettings(Request $request)
+    {
+        $request->validate([
+            'is_enabled' => 'boolean',
+            'messages' => 'array',
+            'messages.*.message' => 'required|string',
+            'messages.*.include_contact_info' => 'boolean',
+            'messages.*.image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120', // 5MB max
+            'messages.*.video' => 'nullable|mimes:mp4,mkv|max:30720', // 30MB max
+        ]);
+
+        $settings = \App\Models\AutoReplySetting::first();
+        if (!$settings) {
+            $settings = \App\Models\AutoReplySetting::create([
+                'is_enabled' => $request->is_enabled,
+                'include_contact_info' => false // This is now per-message, so we can set it to false globally
+            ]);
+        } else {
+            $settings->update([
+                'is_enabled' => $request->is_enabled,
+                'include_contact_info' => false // This is now per-message, so we can set it to false globally
+            ]);
+        }
+
+        // Update messages
+        \App\Models\AutoReplyMessage::truncate();
+        foreach ($request->messages as $index => $messageData) {
+            $imagePath = null;
+            $videoPath = null;
+
+            // Handle image upload
+            if ($request->hasFile("messages.{$index}.image")) {
+                $imageFile = $request->file("messages.{$index}.image");
+                $imageName = time() . '_' . $index . '_auto_reply.' . $imageFile->getClientOriginalExtension();
+                $imagePath = $imageFile->storeAs('auto_reply_images', $imageName, 'public');
+            }
+
+            // Handle video upload
+            if ($request->hasFile("messages.{$index}.video")) {
+                $videoFile = $request->file("messages.{$index}.video");
+                $videoName = time() . '_' . $index . '_auto_reply.' . $videoFile->getClientOriginalExtension();
+                $videoPath = $videoFile->storeAs('auto_reply_videos', $videoName, 'public');
+            }
+
+            \App\Models\AutoReplyMessage::create([
+                'message' => $messageData['message'],
+                'order' => $index + 1,
+                'is_active' => true,
+                'include_contact_info' => $messageData['include_contact_info'] ?? false,
+                'image_path' => $imagePath,
+                'video_path' => $videoPath
+            ]);
+        }
+
+        // Return JSON response for AJAX requests
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Auto reply settings updated successfully.'
+            ]);
+        }
+
+        return redirect()->back()->with('success', 'Auto reply settings updated successfully.');
+    }
+
+    public function blockUser(Request $request, $userId)
+    {
+        $user = User::findOrFail($userId);
+        
+        \App\Models\UserBlock::updateOrCreate(
+            ['user_id' => $userId],
+            ['blocked_at' => now()]
+        );
+
+        return redirect()->back()->with('success', 'User blocked successfully.');
+    }
+
+    public function unblockUser(Request $request, $userId)
+    {
+        \App\Models\UserBlock::where('user_id', $userId)->delete();
+        return redirect()->back()->with('success', 'User unblocked successfully.');
+    }
+
+    public function blockedUsers()
+    {
+        $blockedUsers = \App\Models\UserBlock::with('user')->latest('blocked_at')->get();
+        return Inertia::render('Admin/BlockedUsers', ['blockedUsers' => $blockedUsers]);
     }
 }

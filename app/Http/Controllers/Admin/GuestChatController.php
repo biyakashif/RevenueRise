@@ -144,6 +144,9 @@ class GuestChatController extends Controller
         // Delete from database
         \App\Models\ChatMessage::where('guest_session_id', $sessionId)->delete();
         
+        // Clear auto-reply tracking so auto-replies can be sent again
+        \DB::table('auto_reply_sent')->where('guest_session_id', $sessionId)->delete();
+        
         // Broadcast chat deletion event
         broadcast(new \App\Events\ChatDeleted($sessionId, true));
         

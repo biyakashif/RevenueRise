@@ -19,7 +19,7 @@ class Deposit extends Model
     ];
 
     protected $casts = [
-        'amount' => 'decimal:2',
+        'amount' => 'decimal:8',
     ];
 
     public function user()

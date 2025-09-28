@@ -220,7 +220,7 @@ const validateThenSubmit = async () => {
   modalError.value = '';
   
   if (!selectedCrypto.value) {
-    modalError.value = 'Please select a cryptocurrency';
+    modalError.value = t('Please select a cryptocurrency');
     return;
   }
   

@@ -279,14 +279,24 @@ function fmt(n) {
             </div>
             <span class="block text-slate-700 text-xs sm:text-sm font-medium hover:text-slate-900 transition-colors drop-shadow-sm">{{ t('Deposit') }}</span>
           </Link>
-          <Link href="/terms" class="block text-center transition-all duration-300 transform hover:scale-105">
-            <div class="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-2 sm:mb-3 bg-gradient-to-br from-red-400 to-red-600 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg transform rotate-3 hover:rotate-0 transition-transform">
+          <Link href="/contact" class="block text-center transition-all duration-300 transform hover:scale-105">
+            <div class="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-2 sm:mb-3 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg transform rotate-3 hover:rotate-0 transition-transform">
               <svg class="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h10a2 2 0 012 2v12a2 2 0 01-2 2z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 10.5V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2h14a2 2 0 002-2v-4.5M17 8l-5 5-5-5" />
               </svg>
             </div>
-            <span class="block text-slate-700 text-xs sm:text-sm font-medium hover:text-slate-900 transition-colors drop-shadow-sm">{{ t('T&C') }}</span>
+            <span class="block text-slate-700 text-xs sm:text-sm font-medium hover:text-slate-900 transition-colors drop-shadow-sm">{{ t('Contact') }}</span>
           </Link>
+      <!-- Contact Card -->
+      <div v-if="$page.url === '/contact'" class="bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-2xl border border-cyan-300/30 mt-4 sm:mt-6">
+        <h2 class="text-lg sm:text-xl font-bold text-slate-800 mb-2">{{ t('Contact & About Task App') }}</h2>
+        <p class="text-sm sm:text-base text-slate-700 mb-2">
+          {{ t('Task App helps people make money online by offering simple and easy ways to earn. Our platform gives everyone access to a wide variety of small tasks, allowing users to earn extra income from anywhere. With no special skills needed, Task App makes it possible for anyone to start earning and be part of the online economy.') }}
+        </p>
+        <p class="text-xs sm:text-sm text-slate-600">
+          {{ t('For any questions, feedback, or support, please contact our team. We are here to help you 24/7!') }}
+        </p>
+      </div>
           <Link href="/certificate" class="block text-center transition-all duration-300 transform hover:scale-105">
             <div class="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-2 sm:mb-3 bg-gradient-to-br from-teal-400 to-teal-600 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg transform rotate-3 hover:rotate-0 transition-transform">
               <svg class="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
