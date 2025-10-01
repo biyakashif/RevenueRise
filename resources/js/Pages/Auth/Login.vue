@@ -66,10 +66,7 @@ const submit = async () => {
         <Head :title="t('login.title')" />
 
         <div class="bg-gradient-to-br from-white/95 via-blue-50/90 to-indigo-50/95 backdrop-blur-xl p-4 md:p-8 rounded-b-3xl rounded-t-none shadow-2xl max-w-md w-full border border-white/40 border-t-0 mx-auto">
-            <!-- Registration Info Message -->
-            <div class="mb-4 text-center text-base font-semibold text-gray-700">
-                {{ t('login.provide_basic_info') }}
-            </div>
+
             <div v-if="status" class="mb-4 md:mb-6 p-4 bg-green-50 border border-green-200 rounded-xl text-sm font-medium text-green-700 text-center">
                 {{ status }}
             </div>
