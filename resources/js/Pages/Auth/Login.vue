@@ -74,13 +74,13 @@ const submit = async () => {
             <form @submit.prevent="submit" class="space-y-4 md:space-y-6">
                 <!-- Mobile Number -->
                 <div>
-                    <InputLabel for="mobile_number" :value="t('login.mobile_number')" class="text-sm font-medium text-gray-700 mb-1" />
+                    <InputLabel for="mobile_number" :value="t('Mobile Number')" class="text-sm font-medium text-gray-700 mb-1" />
                     <TextInput
                         id="mobile_number"
                         type="text"
                         class="w-full h-10 md:h-12 rounded-xl bg-gray-50 border-0 focus:ring-2 focus:ring-blue-500 text-gray-900 px-4 placeholder-gray-400"
                         v-model="form.mobile_number"
-                        :placeholder="t('login.mobile_number_placeholder')"
+                        :placeholder="t('Mobile Number')"
                         required
                         autofocus
                         autocomplete="username"
@@ -91,32 +91,28 @@ const submit = async () => {
 
                 <!-- Set Password -->
                 <div>
-                    <InputLabel for="password" :value="t('login.set_password')" class="text-sm font-medium text-gray-700 mb-1" />
+                    <InputLabel for="password" :value="t('Password')" class="text-sm font-medium text-gray-700 mb-1" />
                     <TextInput
                         id="password"
                         type="password"
                         class="w-full h-10 md:h-12 rounded-xl bg-gray-50 border-0 focus:ring-2 focus:ring-blue-500 text-gray-900 px-4 placeholder-gray-400"
                         v-model="form.password"
-                        :placeholder="t('login.password_placeholder')"
+                        :placeholder="t('Password')"
                         required
                         autocomplete="current-password"
                     />
                     <InputError class="mt-1 text-xs text-red-500" :message="form.errors.password" />
                 </div>
 
-                <!-- Final Step Message -->
-                <div class="mb-2 text-center text-sm text-gray-500">
-                    {{ t('login.final_step') }}
-                </div>
 
                 <!-- Remember Me -->
                 <div class="flex items-center justify-between">
                     <div class="flex items-center">
                         <Checkbox name="remember" v-model:checked="form.remember" class="rounded" />
-                        <span class="ml-2 text-sm text-gray-600">{{ t('login.remember_me') }}</span>
+                        <span class="ml-2 text-sm text-gray-600">{{ t('Remember Me') }}</span>
                     </div>
                     <Link href="#" class="text-sm text-blue-600 hover:text-blue-800 transition-colors duration-200">
-                        {{ t('login.need_help') }}
+                        {{ t('Need Help') }}
                     </Link>
                 </div>
 
@@ -126,8 +122,8 @@ const submit = async () => {
                     :class="{ 'opacity-50 cursor-not-allowed': form.processing }"
                     :disabled="form.processing"
                 >
-                    <span v-if="form.processing">{{ t('login.signing_in') }}</span>
-                    <span v-else>{{ t('login.sign_in') }}</span>
+                    <span v-if="form.processing">{{ t('Signing in') }}</span>
+                    <span v-else>{{ t('Signin') }}</span>
                 </PrimaryButton>
             </form>
         </div>

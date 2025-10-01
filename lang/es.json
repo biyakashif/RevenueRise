@@ -1,7 +1,7 @@
+{
     "login.provide_basic_info": "Por favor, proporcione su información básica para comenzar el proceso de registro",
     "login.set_password": "Establecer contraseña",
     "login.final_step": "Paso final",
-{
     "login.title": "Iniciar sesión",
     "login.mobile_number": "Número de móvil",
     "login.mobile_number_placeholder": "Ingrese su número de móvil",
@@ -338,5 +338,6 @@
     "Failed to sync the current task. Please try again.": "Error al sincronizar la tarea actual. Por favor, inténtalo de nuevo.",
     "Failed to sync with server. Please try again.": "Error al sincronizar con el servidor. Por favor, inténtalo de nuevo.",
     "Error saving order. Please try again.": "Error al guardar el pedido. Por favor, inténtalo de nuevo.",
-    "Failed to copy address. Please copy manually.": "Error al copiar la dirección. Por favor, cópiala manualmente."
+    "Failed to copy address. Please copy manually.": "Error al copiar la dirección. Por favor, cópiala manualmente.",
+    "Language": "Idioma"
 }

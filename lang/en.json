@@ -229,5 +229,6 @@
     "Failed to sync the current task. Please try again.": "Failed to sync the current task. Please try again.",
     "Failed to sync with server. Please try again.": "Failed to sync with server. Please try again.",
     "Error saving order. Please try again.": "Error saving order. Please try again.",
-    "Failed to copy address. Please copy manually.": "Failed to copy address. Please copy manually."
+    "Failed to copy address. Please copy manually.": "Failed to copy address. Please copy manually.",
+    "Language": "Language"
 }
