@@ -1,16 +1,6 @@
-    "login.provide_basic_info": "নিবন্ধন প্রক্রিয়া শুরু করতে আপনার মৌলিক তথ্য দিন",
-    "login.set_password": "পাসওয়ার্ড সেট করুন",
-    "login.final_step": "চূড়ান্ত ধাপ",
+
 {
-    "login.title": "লগইন করুন",
-    "login.mobile_number": "মোবাইল নম্বর",
-    "login.mobile_number_placeholder": "আপনার মোবাইল নম্বর লিখুন",
-    "login.password": "পাসওয়ার্ড",
-    "login.password_placeholder": "আপনার পাসওয়ার্ড লিখুন",
-    "login.remember_me": "মনে রাখুন",
-    "login.need_help": "সহায়তা দরকার? সহায়তার সাথে যোগাযোগ করুন",
-    "login.signing_in": "সাইন ইন হচ্ছে...",
-    "login.sign_in": "সাইন ইন করুন",
+  
     "Home": "হোম",
     "VIP Levels": "ভিআইপি স্তর",
     "View More": "আরো দেখুন",

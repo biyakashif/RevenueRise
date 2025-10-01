@@ -1,16 +1,6 @@
-    "login.provide_basic_info": "कृपया पंजीकरण प्रक्रिया शुरू करने के लिए अपनी मूल जानकारी प्रदान करें",
-    "login.set_password": "पासवर्ड सेट करें",
-    "login.final_step": "अंतिम चरण",
+
 {
-    "login.title": "लॉग इन करें",
-    "login.mobile_number": "मोबाइल नंबर",
-    "login.mobile_number_placeholder": "अपना मोबाइल नंबर दर्ज करें",
-    "login.password": "पासवर्ड",
-    "login.password_placeholder": "अपना पासवर्ड दर्ज करें",
-    "login.remember_me": "मुझे याद रखें",
-    "login.need_help": "मदद चाहिए? सहायता से संपर्क करें",
-    "login.signing_in": "साइन इन हो रहा है...",
-    "login.sign_in": "साइन इन करें",
+
     "Home": "होम",
     "VIP Levels": "वीआईपी स्तर",
     "View More": "और देखें",

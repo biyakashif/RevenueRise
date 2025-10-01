@@ -1,16 +1,6 @@
-    "login.provide_basic_info": "Vă rugăm să furnizați informațiile de bază pentru a începe procesul de înregistrare",
-    "login.set_password": "Setează parola",
-    "login.final_step": "Pas final",
+
 {
-    "login.title": "Autentificare",
-    "login.mobile_number": "Număr de telefon",
-    "login.mobile_number_placeholder": "Introduceți numărul de telefon",
-    "login.password": "Parolă",
-    "login.password_placeholder": "Introduceți parola",
-    "login.remember_me": "Ține-mă minte",
-    "login.need_help": "Aveți nevoie de ajutor? Contactați suportul",
-    "login.signing_in": "Autentificare...",
-    "login.sign_in": "Autentificare",
+
     "(and :count more error)": "(și :count mai multe erori)",
     "(and :count more errors)": "(și :count mai multe erori)|(și :count mai multe erori)|(și :count mai multe erori)",
     "A decryption key is required.": "Este necesară o cheie de decriptare.",

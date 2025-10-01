@@ -1,17 +1,6 @@
 
 {
-    "login.provide_basic_info": "Please provide your basic information to begin the registration process",
-    "login.set_password": "Set Password",
-    "login.final_step": "Final Step",
-    "login.title": "Log in",
-    "login.mobile_number": "Mobile Number",
-    "login.mobile_number_placeholder": "Enter your mobile number",
-    "login.password": "Password",
-    "login.password_placeholder": "Enter your password",
-    "login.remember_me": "Remember me",
-    "login.need_help": "Need Help? Contact Support",
-    "login.signing_in": "Signing in...",
-    "login.sign_in": "Sign In",
+
     "Avatar": "Avatar",
     "Available Balance": "Available Balance",
     "Back": "Back",

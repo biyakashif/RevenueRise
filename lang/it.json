@@ -1,16 +1,5 @@
 {
-    "login.provide_basic_info": "Fornisci le tue informazioni di base per iniziare la registrazione",
-    "login.set_password": "Imposta password",
-    "login.final_step": "Fase finale",
-    "login.title": "Accedi",
-    "login.mobile_number": "Numero di cellulare",
-    "login.mobile_number_placeholder": "Inserisci il tuo numero di cellulare",
-    "login.password": "Password",
-    "login.password_placeholder": "Inserisci la tua password",
-    "login.remember_me": "Ricordami",
-    "login.need_help": "Hai bisogno di aiuto? Contatta il supporto",
-    "login.signing_in": "Accesso in corso...",
-    "login.sign_in": "Accedi",
+ 
     "Home": "Home",
     "VIP Levels": "Livelli VIP",
     "View More": "Mostra di più",

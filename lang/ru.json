@@ -1,16 +1,5 @@
-    "login.provide_basic_info": "Пожалуйста, предоставьте основную информацию для начала регистрации",
-    "login.set_password": "Установить пароль",
-    "login.final_step": "Последний шаг",
+
 {
-    "login.title": "Войти",
-    "login.mobile_number": "Мобильный номер",
-    "login.mobile_number_placeholder": "Введите ваш мобильный номер",
-    "login.password": "Пароль",
-    "login.password_placeholder": "Введите ваш пароль",
-    "login.remember_me": "Запомнить меня",
-    "login.need_help": "Нужна помощь? Свяжитесь с поддержкой",
-    "login.signing_in": "Вход...",
-    "login.sign_in": "Войти",
     "Home": "Главная",
     "VIP Levels": "VIP Уровни",
     "View More": "Показать больше",

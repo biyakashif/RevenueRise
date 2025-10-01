@@ -1,16 +1,5 @@
 {
-    "login.provide_basic_info": "Bitte geben Sie Ihre grundlegenden Informationen an, um den Registrierungsprozess zu beginnen",
-    "login.set_password": "Passwort festlegen",
-    "login.final_step": "Letzter Schritt",
-    "login.title": "Anmelden",
-    "login.mobile_number": "Handynummer",
-    "login.mobile_number_placeholder": "Geben Sie Ihre Handynummer ein",
-    "login.password": "Passwort",
-    "login.password_placeholder": "Geben Sie Ihr Passwort ein",
-    "login.remember_me": "Angemeldet bleiben",
-    "login.need_help": "Brauchen Sie Hilfe? Kontaktieren Sie den Support",
-    "login.signing_in": "Anmeldung...",
-    "login.sign_in": "Anmelden",
+ 
     "Home": "Startseite",
     "VIP Levels": "VIP-Stufen",
     "View More": "Mehr anzeigen",
