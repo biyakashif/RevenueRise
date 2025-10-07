@@ -289,9 +289,9 @@ function fmt(n) {
           </Link>
       <!-- Contact Card -->
       <div v-if="$page.url === '/contact'" class="bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-2xl border border-cyan-300/30 mt-4 sm:mt-6">
-        <h2 class="text-lg sm:text-xl font-bold text-slate-800 mb-2">{{ t('Contact & About Task App') }}</h2>
+        <h2 class="text-lg sm:text-xl font-bold text-slate-800 mb-2">{{ t('Contact & About Revenue Rise') }}</h2>
         <p class="text-sm sm:text-base text-slate-700 mb-2">
-          {{ t('Task App helps people make money online by offering simple and easy ways to earn. Our platform gives everyone access to a wide variety of small tasks, allowing users to earn extra income from anywhere. With no special skills needed, Task App makes it possible for anyone to start earning and be part of the online economy.') }}
+          {{ t('Revenue Rise helps people make money online by offering simple and easy ways to earn. Our platform gives everyone access to a wide variety of small tasks, allowing users to earn extra income from anywhere. With no special skills needed, Revenue Rise makes it possible for anyone to start earning and be part of the online economy.') }}
         </p>
         <p class="text-xs sm:text-sm text-slate-600">
           {{ t('For any questions, feedback, or support, please contact our team. We are here to help you 24/7!') }}

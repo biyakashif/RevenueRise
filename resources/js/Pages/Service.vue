@@ -15,7 +15,7 @@ const t = (key) => translations.value[key] || key;
                 <div class="bg-gradient-to-br from-white/40 via-white/30 to-white/20 backdrop-blur-xl rounded-2xl sm:rounded-3xl shadow-xl border border-white/30 p-6 sm:p-10 mb-8">
                     <h1 class="text-3xl sm:text-4xl font-extrabold text-slate-800 mb-4 drop-shadow-sm text-center">{{ t('Agency & Promotion Service') }}</h1>
                     <p class="text-base sm:text-lg text-slate-700 mb-4 text-center">
-                        {{ t('Partner with Task App to promote products, boost sales, and grow your agency business!') }}
+                        {{ t('Partner with Revenue Rise to promote products, boost sales, and grow your agency business!') }}
                     </p>
                     <p class="text-base sm:text-lg text-slate-700 mb-2 text-center">
                         {{ t('Join our agency program, access exclusive campaigns, and help brands reach new customers. Rate and review stores, complete promotional tasks, and earn more as a trusted partner.') }}
@@ -29,7 +29,7 @@ const t = (key) => translations.value[key] || key;
                             <path d="M16 24h16M24 16v16" stroke="#06b6d4" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
                         <h2 class="text-lg font-bold text-slate-800 mb-1">{{ t('Agency Program') }}</h2>
-                        <p class="text-slate-700 text-sm">{{ t('Become an official Task App agency, manage teams, and unlock higher commissions for your network.') }}</p>
+                        <p class="text-slate-700 text-sm">{{ t('Become an official Revenue Rise agency, manage teams, and unlock higher commissions for your network.') }}</p>
                     </div>
                     <div class="bg-gradient-to-br from-purple-400/20 via-blue-500/10 to-indigo-600/20 backdrop-blur-xl rounded-2xl shadow-lg border border-purple-300/30 p-6 flex flex-col items-center text-center">
                         <svg width="48" height="48" fill="none" viewBox="0 0 48 48" class="mb-3">
