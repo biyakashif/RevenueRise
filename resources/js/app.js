@@ -20,17 +20,12 @@ createInertiaApp({
         const token = document.head.querySelector('meta[name="csrf-token"]')?.content;
         if (token) {
             window.axios.defaults.headers.common['X-CSRF-TOKEN'] = token;
-            // Configure Inertia to include CSRF token
-            router.on('before', (event) => {
-                if (event.detail.visit.method !== 'get') {
-                    event.detail.visit.headers = event.detail.visit.headers || {};
-                    event.detail.visit.headers['X-CSRF-TOKEN'] = document.head.querySelector('meta[name="csrf-token"]').content;
-                }
-            });
         }
-        // Handle 419 CSRF errors
-        router.on('error', (event) => {
-            if (event.detail && event.detail.error && event.detail.error.status === 419) {
+        // Handle 419 CSRF errors globally
+        router.on('error', (errors) => {
+            if (errors && Object.values(errors).some(error => 
+                error && typeof error === 'object' && error.status === 419
+            )) {
                 window.location.reload();
             }
         });

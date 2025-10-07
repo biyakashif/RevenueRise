@@ -9,16 +9,12 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 
 // Add CSRF token to all requests
 function setupCSRF() {
-    const token = document.head.querySelector('meta[name="csrf-token"]') || 
-                  (window.Laravel && window.Laravel.csrfToken ? { content: window.Laravel.csrfToken } : null) ||
-                  (window.page && window.page.props && window.page.props.csrf_token ? { content: window.page.props.csrf_token } : null);
-
+    const token = document.head.querySelector('meta[name="csrf-token"]')?.content;
+    
     if (token) {
-        window.axios.defaults.headers.common['X-CSRF-TOKEN'] = token.content;
+        window.axios.defaults.headers.common['X-CSRF-TOKEN'] = token;
         window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
         window.axios.defaults.withCredentials = true;
-    } else {
-        console.error('CSRF token not found');
     }
 }
 
@@ -32,16 +28,7 @@ window.axios.interceptors.response.use(
     response => response,
     error => {
         if (error.response && error.response.status === 419) {
-            // Try to refresh CSRF token before reloading
-            fetch('/sanctum/csrf-cookie', {
-                method: 'GET',
-                credentials: 'same-origin'
-            }).then(() => {
-                setupCSRF();
-                window.location.reload();
-            }).catch(() => {
-                window.location.reload();
-            });
+            window.location.reload();
         }
         return Promise.reject(error);
     }

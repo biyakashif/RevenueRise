@@ -164,8 +164,7 @@ Route::middleware('auth')->group(function () {
     // Balance Record Routes
     Route::get('/balance/records', [\App\Http\Controllers\BalanceRecordController::class, 'index'])->name('balance.records');
 
-    // Auth Routes
-    Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
+
 
     // Deposit Routes
     Route::get('/deposit', [DepositController::class, 'index'])->name('deposit.index');
