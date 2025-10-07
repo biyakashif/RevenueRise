@@ -1,0 +1,31 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Guest Chat Styles */
+.guest-chat-modal {
+    backdrop-filter: blur(8px);
+}
+
+.guest-chat-message {
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.floating-help-btn {
+    box-shadow: 0 8px 32px rgba(59, 130, 246, 0.3);
+}
+
+.floating-help-btn:hover {
+    box-shadow: 0 12px 40px rgba(59, 130, 246, 0.4);
+}
