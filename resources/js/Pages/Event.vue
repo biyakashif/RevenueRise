@@ -15,10 +15,10 @@ const t = (key) => translations.value[key] || key;
                 <div class="bg-gradient-to-br from-white/40 via-white/30 to-white/20 backdrop-blur-xl rounded-2xl sm:rounded-3xl shadow-xl border border-white/30 p-6 sm:p-10 mb-8">
                     <h1 class="text-3xl sm:text-4xl font-extrabold text-slate-800 mb-4 drop-shadow-sm text-center">{{ t('Promotional Events') }}</h1>
                     <p class="text-base sm:text-lg text-slate-700 mb-4 text-center">
-                        {{ t('Take part in exclusive Task App events and promotions to boost your earnings and unlock special rewards!') }}
+                        {{ t('Take part in exclusive Revenue Rise events and promotions to boost your earnings and unlock special rewards!') }}
                     </p>
                     <p class="text-base sm:text-lg text-slate-700 mb-2 text-center">
-                        {{ t('Stay tuned for limited-time campaigns, referral contests, and seasonal bonuses. Check this page regularly for the latest opportunities to earn more with Task App!') }}
+                        {{ t('Stay tuned for limited-time campaigns, referral contests, and seasonal bonuses. Check this page regularly for the latest opportunities to earn more with Revenue Rise!') }}
                     </p>
                 </div>
 

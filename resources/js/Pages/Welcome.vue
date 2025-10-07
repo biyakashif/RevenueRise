@@ -402,7 +402,7 @@ const handleVideoUpload = async (event) => {
 </script>
 
 <template>
-    <Head :title="t('Task App - Boost Your Product Sales')" />
+    <Head :title="t('Revenue Rise - Boost Your Product Sales')" />
     <div class="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900">
         <!-- Header -->
         <header class="fixed top-0 left-0 w-full bg-white/5 backdrop-blur-2xl z-50 border-b border-white/10 shadow-2xl">
@@ -416,7 +416,7 @@ const handleVideoUpload = async (event) => {
                                 <ApplicationLogo class="h-10 w-auto fill-current text-white group-hover:text-cyan-300 transition-colors duration-300" />
                                 <div class="absolute -inset-2 bg-gradient-to-r from-cyan-400/20 to-blue-500/20 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-sm"></div>
                             </div>
-                            <span class="ml-3 text-xl font-bold text-white group-hover:text-cyan-300 transition-colors duration-300">Task App</span>
+                            <span class="ml-3 text-xl font-bold text-white group-hover:text-cyan-300 transition-colors duration-300">Revenue Rise</span>
                         </Link>
                         
                         <!-- Desktop Navigation -->
@@ -565,7 +565,7 @@ const handleVideoUpload = async (event) => {
                     <span class="text-white">{{ t('Money Online') }}</span>
                 </h1>
                 <p class="text-base sm:text-xl md:text-2xl mb-8 sm:mb-12 max-w-4xl mx-auto leading-relaxed text-cyan-50">
-                  {{ t('Increase visibility and drive more sales of products on leading e-commerce platforms and explore other easy ways to make money online with Task App.') }}
+                  {{ t('Increase visibility and drive more sales of products on leading e-commerce platforms and explore other easy ways to make money online with Revenue Rise.') }}
                 </p>
                 <div class="flex flex-wrap justify-center gap-3 sm:gap-6 mb-12 sm:mb-16">
                     <div class="bg-gradient-to-br from-white/95 via-blue-50/90 to-indigo-50/95 backdrop-blur-xl rounded-2xl sm:rounded-3xl shadow-xl hover:shadow-2xl px-3 py-3 sm:px-6 sm:py-5 flex flex-col items-center w-28 sm:w-44 min-h-[80px] sm:min-h-[120px] transition-all duration-300 hover:scale-[1.02] border border-white/40">
@@ -627,7 +627,7 @@ const handleVideoUpload = async (event) => {
         <section id="how-it-works" class="py-16 sm:py-20 bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900">
             <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
                 <h2 class="text-3xl sm:text-4xl md:text-5xl font-extrabold text-center mb-12 sm:mb-16 text-white">
-                    {{ t('How does Task App work for online money earning') }}
+                    {{ t('How does Revenue Rise work for online money earning') }}
                 </h2>
                 <div class="grid md:grid-cols-3 gap-6 sm:gap-8 mb-8 sm:mb-12">
                     <div class="bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl rounded-2xl sm:rounded-3xl p-6 sm:p-8 flex flex-col items-start text-left hover:shadow-2xl transition-all duration-300 border border-cyan-300/30 transform hover:scale-[1.02]">
@@ -705,7 +705,7 @@ const handleVideoUpload = async (event) => {
             <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
                 <h2 class="text-4xl sm:text-5xl font-extrabold mb-6 text-white">{{ t('Our vision') }}</h2>
                 <p class="text-base sm:text-lg md:text-xl text-slate-300 mb-8 sm:mb-10 max-w-3xl mx-auto">
-                    {{ t('Task App helps people make money online by offering simple and easy ways to earn. Our platform gives everyone access to a wide variety of small tasks, allowing users to earn extra income from anywhere. With no special skills needed, Task App makes it possible for anyone to start earning and be part of the online economy.') }}
+                    {{ t('Revenue Rise helps people make money online by offering simple and easy ways to earn. Our platform gives everyone access to a wide variety of small tasks, allowing users to earn extra income from anywhere. With no special skills needed, Revenue Rise makes it possible for anyone to start earning and be part of the online economy.') }}
                 </p>
                 <div class="grid md:grid-cols-3 gap-6 sm:gap-8 mt-6 sm:mt-8">
                     <!-- Blue Card -->
@@ -755,7 +755,7 @@ const handleVideoUpload = async (event) => {
         <section class="py-16 sm:py-20 bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <h2 class="text-2xl sm:text-3xl font-bold text-center mb-8 sm:mb-12 text-white">
-                    {{ t('Ways to Earn with Task App') }}
+                    {{ t('Ways to Earn with Revenue Rise') }}
                 </h2>
                 <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
                     <!-- Card 1 -->
@@ -846,10 +846,10 @@ const handleVideoUpload = async (event) => {
         <section id="learn" class="py-16 sm:py-20 bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <h2 class="text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-4 text-white">
-                    {{ t('Why choose Task App to earn money online?') }}
+                    {{ t('Why choose Revenue Rise to earn money online?') }}
                 </h2>
                 <p class="text-center text-slate-300 mb-8 sm:mb-12 max-w-2xl mx-auto text-sm sm:text-base">
-                    {{ t('Task App is a leading platform with thousands of users worldwide, offering endless opportunities to make money online easily and securely.') }}
+                    {{ t('Revenue Rise is a leading platform with thousands of users worldwide, offering endless opportunities to make money online easily and securely.') }}
                 </p>
                 <div class="grid gap-6 sm:gap-8 md:grid-cols-2 lg:grid-cols-4">
                     <!-- Card 1 -->

@@ -15,7 +15,7 @@ const t = (key) => translations.value[key] || key;
                 <div class="bg-gradient-to-br from-white/40 via-white/30 to-white/20 backdrop-blur-xl rounded-2xl sm:rounded-3xl shadow-xl border border-white/30 p-6 sm:p-10 mb-8">
                     <h1 class="text-3xl sm:text-4xl font-extrabold text-slate-800 mb-4 drop-shadow-sm text-center">{{ t('FAQs about Earning & Promotion') }}</h1>
                     <p class="text-base sm:text-lg text-slate-700 mb-4 text-center">
-                        {{ t('Find answers to the most common questions about earning, commissions, and agency opportunities with Task App.') }}
+                        {{ t('Find answers to the most common questions about earning, commissions, and agency opportunities with Revenue Rise.') }}
                     </p>
                 </div>
 
@@ -26,7 +26,7 @@ const t = (key) => translations.value[key] || key;
                     </div>
                     <div class="bg-gradient-to-br from-purple-400/20 via-blue-500/10 to-indigo-600/20 backdrop-blur-xl rounded-2xl shadow-lg border border-purple-300/30 p-6">
                         <h2 class="text-lg font-bold text-slate-800 mb-2">{{ t('How do I join the agency program?') }}</h2>
-                        <p class="text-slate-700 text-sm">{{ t('Apply through your dashboard to become an official Task App agency. Manage your own team, access exclusive campaigns, and earn higher commissions for your network.') }}</p>
+                        <p class="text-slate-700 text-sm">{{ t('Apply through your dashboard to become an official Revenue Rise agency. Manage your own team, access exclusive campaigns, and earn higher commissions for your network.') }}</p>
                     </div>
                     <div class="bg-gradient-to-br from-pink-400/20 via-blue-500/10 to-indigo-600/20 backdrop-blur-xl rounded-2xl shadow-lg border border-pink-300/30 p-6">
                         <h2 class="text-lg font-bold text-slate-800 mb-2">{{ t('Can I rate and review stores?') }}</h2>

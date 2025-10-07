@@ -9,17 +9,17 @@ const t = (key) => translations.value[key] || key;
 </script>
 
 <template>
-    <Head :title="t('About Task App')" />
+    <Head :title="t('About Revenue Rise')" />
     <AuthenticatedLayout>
         <div class="min-h-screen bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-2xl border border-cyan-300/30 flex flex-col items-center justify-center">
             <div class="max-w-4xl w-full mx-auto">
                 <div class="bg-gradient-to-br from-white/40 via-white/30 to-white/20 backdrop-blur-xl rounded-2xl sm:rounded-3xl shadow-xl border border-white/30 p-6 sm:p-10 mb-8">
-                    <h1 class="text-3xl sm:text-4xl font-extrabold text-slate-800 mb-4 drop-shadow-sm text-center">{{ t('About Task App') }}</h1>
+                    <h1 class="text-3xl sm:text-4xl font-extrabold text-slate-800 mb-4 drop-shadow-sm text-center">{{ t('About Revenue Rise') }}</h1>
                     <p class="text-base sm:text-lg text-slate-700 mb-4 text-center">
-                        {{ t('Task App is a modern platform that empowers anyone to earn money online by completing simple tasks for top e-commerce brands. Our mission is to make online earning accessible, transparent, and rewarding for everyone—no special skills required!') }}
+                        {{ t('Revenue Rise is a modern platform that empowers anyone to earn money online by completing simple tasks for top e-commerce brands. Our mission is to make online earning accessible, transparent, and rewarding for everyone—no special skills required!') }}
                     </p>
                     <p class="text-base sm:text-lg text-slate-700 mb-2 text-center">
-                        {{ t('With Task App, you can boost products, earn commissions, and grow your income from anywhere, on any device. Join thousands of users who are maximizing their potential and turning spare time into real earnings!') }}
+                        {{ t('With Revenue Rise, you can boost products, earn commissions, and grow your income from anywhere, on any device. Join thousands of users who are maximizing their potential and turning spare time into real earnings!') }}
                     </p>
                 </div>
 
@@ -46,7 +46,7 @@ const t = (key) => translations.value[key] || key;
                             <path d="M16 24h16" stroke="#3b82f6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
                         <h2 class="text-lg font-bold text-slate-800 mb-1">{{ t('Earn Anywhere, Anytime') }}</h2>
-                        <p class="text-slate-700 text-sm">{{ t('Work from your phone, tablet, or desktop—Task App is always with you. Flexible earning, on your schedule!') }}</p>
+                        <p class="text-slate-700 text-sm">{{ t('Work from your phone, tablet, or desktop—Revenue Rise is always with you. Flexible earning, on your schedule!') }}</p>
                     </div>
                     <div class="bg-gradient-to-br from-pink-400/20 via-blue-500/10 to-indigo-600/20 backdrop-blur-xl rounded-2xl shadow-lg border border-pink-300/30 p-6 flex flex-col items-center text-center">
                         <svg width="48" height="48" fill="none" viewBox="0 0 48 48" class="mb-3">
