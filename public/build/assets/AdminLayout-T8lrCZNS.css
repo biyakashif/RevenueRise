@@ -1,0 +1,1 @@
+.slide-right-enter-active,.slide-right-leave-active{transition:all .4s cubic-bezier(.55,0,.1,1)}.slide-right-enter-from,.slide-right-leave-to{transform:translate(100%);opacity:0}.slide-right-enter-to,.slide-right-leave-from{transform:translate(0);opacity:1}
