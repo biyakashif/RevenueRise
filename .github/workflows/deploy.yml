@@ -1,0 +1,56 @@
+name: Deploy
+
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+
+    - name: Install Node.js dependencies
+      run: npm install
+
+    - name: Build assets
+      run: npm run build
+
+    # Optional: Setup PHP and install Composer dependencies if needed for Laravel
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.2'
+
+    - name: Install Composer dependencies
+      run: composer install --no-dev --optimize-autoloader
+
+    # Deployment step (example using SSH - adjust as needed)
+    # Note: You'll need to set up SSH keys and server details in GitHub Secrets
+    - name: Deploy to server
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.SERVER_HOST }}
+        username: ${{ secrets.SERVER_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          cd /path/to/your/project
+          # Pull latest code (if using git on server)
+          git pull origin master
+          # Or copy files from GitHub Actions (if not using git pull)
+          # Install dependencies and build (if not done here)
+          npm install
+          npm run build
+          # Run Laravel-specific commands
+          php artisan config:cache
+          php artisan route:cache
+          php artisan view:cache
+          # Restart services if needed (e.g., queue workers, web server)
+          sudo systemctl restart nginx  # or apache, etc.
