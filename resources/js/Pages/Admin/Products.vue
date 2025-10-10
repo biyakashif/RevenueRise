@@ -397,17 +397,17 @@ function closeLightbox() {
               <div class="overflow-x-auto">
                 <table class="w-full">
                   <thead>
-                    <tr class="bg-white/20 text-slate-700 text-sm font-medium">
-                      <th class="p-4 text-left">Product ID</th>
-                      <th class="p-4 text-left">Image</th>
-                      <th class="p-4 text-left">Title</th>
-                      <th class="p-4 text-left">Type</th>
-                      <th class="p-4 text-left">Description</th>
-                      <th class="p-4 text-left">Purchase Price</th>
-                      <th class="p-4 text-left">Selling Price</th>
-                      <th class="p-4 text-left">Commission Reward</th>
-                      <th class="p-4 text-left">Commission %</th>
-                      <th class="p-4 text-left">Actions</th>
+                    <tr class="bg-white/20 text-slate-700 text-xs font-medium">
+                      <th class="px-2 py-2 text-left">ID</th>
+                      <th class="px-2 py-2 text-left">Image</th>
+                      <th class="px-2 py-2 text-left">Title</th>
+                      <th class="px-2 py-2 text-left">Type</th>
+                      <th class="px-2 py-2 text-left">Description</th>
+                      <th class="px-2 py-2 text-left">Buy</th>
+                      <th class="px-2 py-2 text-left">Sell</th>
+                      <th class="px-2 py-2 text-left">Reward</th>
+                      <th class="px-2 py-2 text-left">%</th>
+                      <th class="px-2 py-2 text-left">Actions</th>
                     </tr>
                   </thead>
             <tbody>
@@ -416,21 +416,21 @@ function closeLightbox() {
                       :key="product.id"
                       class="border-t border-white/20 hover:bg-white/10 transition-all duration-200"
                     >
-                      <td class="p-4 text-sm text-slate-800 font-medium">{{ product.product_id }}</td>
-                      <td class="p-4">
+                      <td class="px-2 py-2 text-xs text-slate-800 font-medium">{{ product.product_id }}</td>
+                      <td class="px-2 py-2">
                         <img
                           :src="`/storage/${product.image_path}`"
-                          class="w-10 h-10 object-cover rounded cursor-pointer hover:scale-105 transition"
+                          class="w-8 h-8 object-cover rounded cursor-pointer hover:scale-105 transition"
                           @click="openLightbox(`/storage/${product.image_path}`)"
                         />
                       </td>
 
                 <!-- Normal View -->
                 <template v-if="editing !== product.id">
-                  <td class="p-3 text-sm text-gray-700">{{ product.title }}</td>
-                  <td class="p-3 text-sm text-gray-700">
+                  <td class="px-2 py-2 text-xs text-gray-700">{{ product.title }}</td>
+                  <td class="px-2 py-2 text-xs text-gray-700">
                     <span
-                      class="inline-block px-2 py-1 rounded text-xs"
+                      class="inline-block px-1 py-0.5 rounded text-xs"
                       :class="{
                         'bg-purple-100 text-purple-700': product.type === 'VIP1' || product.type === 'VIP2' || product.type === 'VIP3' || product.type === 'VIP4' || product.type === 'VIP5' || product.type === 'VIP6' || product.type === 'VIP7',
                         'bg-yellow-100 text-yellow-700': product.type === 'Lucky Order',
@@ -439,40 +439,40 @@ function closeLightbox() {
                       {{ product.type }}
                     </span>
                   </td>
-                  <td class="p-3 text-xs text-gray-600 max-w-xs truncate">{{ product.description }}</td>
-                  <td class="p-3 text-sm text-gray-700">${{ product.purchase_price }}</td>
-                  <td class="p-3 text-sm text-gray-700">${{ product.selling_price }}</td>
-                  <td class="p-3 text-sm text-gray-700">${{ product.commission_reward }}</td>
-                  <td class="p-3 text-sm text-gray-700">{{ product.commission_percentage }}%</td>
-                  <td class="p-3 flex gap-2">
+                  <td class="px-2 py-2 text-xs text-gray-600 max-w-xs truncate">{{ product.description }}</td>
+                  <td class="px-2 py-2 text-xs text-gray-700">${{ product.purchase_price }}</td>
+                  <td class="px-2 py-2 text-xs text-gray-700">${{ product.selling_price }}</td>
+                  <td class="px-2 py-2 text-xs text-gray-700">${{ product.commission_reward }}</td>
+                  <td class="px-2 py-2 text-xs text-gray-700">{{ product.commission_percentage }}%</td>
+                  <td class="px-2 py-2 flex gap-1">
                     <button
                       @click="startEdit(product)"
-                      class="px-3 py-1 bg-blue-600 text-white rounded-md text-xs font-medium hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition"
+                      class="px-2 py-1 bg-blue-600 text-white rounded text-xs font-medium hover:bg-blue-700 transition"
                     >
                       Edit
                     </button>
                     <button
                       @click="deleteProduct(product.id)"
-                      class="px-3 py-1 bg-red-600 text-white rounded-md text-xs font-medium hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition"
+                      class="px-2 py-1 bg-red-600 text-white rounded text-xs font-medium hover:bg-red-700 transition"
                     >
-                      Delete
+                      Del
                     </button>
                   </td>
                 </template>
 
                 <!-- Edit Mode -->
                 <template v-else>
-                  <td class="p-3">
+                  <td class="px-2 py-2">
                     <input
                       v-model="editForm.title"
-                      class="w-full border border-gray-300 rounded-md px-2 py-1 text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition"
+                      class="w-full border border-gray-300 rounded px-1 py-1 text-xs focus:ring-1 focus:ring-purple-500 focus:border-purple-500 transition"
                     />
                     <span v-if="editForm.errors.title" class="text-red-500 text-xs mt-1">{{ editForm.errors.title }}</span>
                   </td>
-                  <td class="p-3">
+                  <td class="px-2 py-2">
                     <select
                       v-model="editForm.type"
-                      class="w-full border border-gray-300 rounded-md px-2 py-1 text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition"
+                      class="w-full border border-gray-300 rounded px-1 py-1 text-xs focus:ring-1 focus:ring-purple-500 focus:border-purple-500 transition"
                     >
                       <option value="VIP1">VIP1</option>
                       <option value="VIP2">VIP2</option>
@@ -485,61 +485,61 @@ function closeLightbox() {
                     </select>
                     <span v-if="editForm.errors.type" class="text-red-500 text-xs mt-1">{{ editForm.errors.type }}</span>
                   </td>
-                  <td class="p-3">
+                  <td class="px-2 py-2">
                     <textarea
                       v-model="editForm.description"
-                      class="w-full border border-gray-300 rounded-md px-2 py-1 text-xs focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition"
-                      rows="2"
+                      class="w-full border border-gray-300 rounded px-1 py-1 text-xs focus:ring-1 focus:ring-purple-500 focus:border-purple-500 transition"
+                      rows="1"
                     ></textarea>
                     <span v-if="editForm.errors.description" class="text-red-500 text-xs mt-1">{{ editForm.errors.description }}</span>
                   </td>
-                  <td class="p-3">
+                  <td class="px-2 py-2">
                     <input
                       v-model="editForm.purchase_price"
                       type="number"
                       step="0.01"
-                      class="w-full border border-gray-300 rounded-md px-2 py-1 text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition"
+                      class="w-full border border-gray-300 rounded px-1 py-1 text-xs focus:ring-1 focus:ring-purple-500 focus:border-purple-500 transition"
                     />
                     <span v-if="editForm.errors.purchase_price" class="text-red-500 text-xs mt-1">{{ editForm.errors.purchase_price }}</span>
                   </td>
-                  <td class="p-3">
+                  <td class="px-2 py-2">
                     <input
                       v-model="editForm.selling_price"
                       type="number"
                       step="0.01"
-                      class="w-full border border-gray-300 rounded-md px-2 py-1 text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition"
+                      class="w-full border border-gray-300 rounded px-1 py-1 text-xs focus:ring-1 focus:ring-purple-500 focus:border-purple-500 transition"
                     />
                     <span v-if="editForm.errors.selling_price" class="text-red-500 text-xs mt-1">{{ editForm.errors.selling_price }}</span>
                   </td>
-                  <td class="p-3">
+                  <td class="px-2 py-2">
                     <input
                       v-model="editForm.commission_percentage"
                       type="number"
                       step="0.01"
                       max="100"
-                      class="w-full border border-gray-300 rounded-md px-2 py-1 text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition"
+                      class="w-full border border-gray-300 rounded px-1 py-1 text-xs focus:ring-1 focus:ring-purple-500 focus:border-purple-500 transition"
                     />
                     <span v-if="editForm.errors.commission_percentage" class="text-red-500 text-xs mt-1">{{ editForm.errors.commission_percentage }}</span>
                   </td>
-                  <td class="p-3">
+                  <td class="px-2 py-2">
                     <input
                       type="file"
                       @change="handleEditFile"
                       accept="image/*"
-                      class="text-sm text-gray-500 file:mr-4 file:py-1 file:px-3 file:rounded-md file:border-0 file:bg-purple-50 file:text-purple-700 file:hover:bg-purple-100"
+                      class="text-xs text-gray-500 file:mr-1 file:py-1 file:px-2 file:rounded file:border-0 file:bg-purple-50 file:text-purple-700 file:hover:bg-purple-100"
                     />
                     <span v-if="editForm.errors.image" class="text-red-500 text-xs mt-1">{{ editForm.errors.image }}</span>
                   </td>
-                  <td class="p-3 flex gap-2">
+                  <td class="px-2 py-2 flex gap-1">
                     <button
                       @click="updateProduct(product.id)"
-                      class="px-3 py-1 bg-green-600 text-white rounded-md text-xs font-medium hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition"
+                      class="px-2 py-1 bg-green-600 text-white rounded text-xs font-medium hover:bg-green-700 transition"
                     >
                       Save
                     </button>
                     <button
                       @click="editing = null"
-                      class="px-3 py-1 bg-gray-200 text-gray-700 rounded-md text-xs font-medium hover:bg-gray-300 focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 transition"
+                      class="px-2 py-1 bg-gray-200 text-gray-700 rounded text-xs font-medium hover:bg-gray-300 transition"
                     >
                       Cancel
                     </button>

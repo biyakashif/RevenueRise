@@ -147,11 +147,10 @@ class DepositController extends Controller
                 'description' => $deposit->title ?: 'Deposit approved',
             ]);
 
-            // If deposit is for VIP upgrade, update VIP level and reassign tasks
+            // If deposit is for VIP upgrade, update VIP level
             if ($deposit->vip_level) {
                 $user->vip_level = $deposit->vip_level;
                 $user->save();
-                $user->assignTasks(); // <-- This will delete old tasks and assign new ones
             }
         } elseif ($action === 'reject') {
             $deposit->update(['status' => 'rejected']);

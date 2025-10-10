@@ -34,32 +34,32 @@
                     <table class="w-full">
                         <thead>
                             <tr class="bg-white/20 text-slate-700 text-xs font-medium">
-                                <th class="px-4 py-3 text-left">Name</th>
-                                <th class="px-4 py-3 text-left">Mobile</th>
-                                <th class="px-4 py-3 text-left">VIP Level</th>
-                                <th class="px-4 py-3 text-left">Balance</th>
-                                <th class="px-4 py-3 text-left">Password</th>
-                                <th class="px-4 py-3 text-left">Withdraw Password</th>
-                                <th class="px-4 py-3 text-left">Invitation Code</th>
-                                <th class="px-4 py-3 text-left">Referred By</th>
-                                <th class="px-4 py-3 text-left">Register Date</th>
-                                <th class="px-4 py-3 text-left">Actions</th>
+                                <th class="px-2 py-2 text-left">Name</th>
+                                <th class="px-2 py-2 text-left">Mobile</th>
+                                <th class="px-2 py-2 text-left">VIP</th>
+                                <th class="px-2 py-2 text-left">Balance</th>
+                                <th class="px-2 py-2 text-left">Pass</th>
+                                <th class="px-2 py-2 text-left">W.Pass</th>
+                                <th class="px-2 py-2 text-left">Inv.Code</th>
+                                <th class="px-2 py-2 text-left">Ref.By</th>
+                                <th class="px-2 py-2 text-left">Date</th>
+                                <th class="px-2 py-2 text-left">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-white/10">
                             <tr v-for="user in props.users" :key="user.id" class="hover:bg-white/10 transition-all duration-200">
-                                <td class="px-4 py-3 text-sm font-medium text-slate-800">{{ user.name }}</td>
-                                <td class="px-4 py-3 text-sm text-slate-700">{{ user.mobile_number }}</td>
-                                <td class="px-4 py-3 text-sm text-slate-700">{{ user.vip_level }}</td>
-                                <td class="px-4 py-3 text-sm text-slate-700">${{ user.balance.toFixed(2) }}</td>
-                                <td class="px-4 py-3 text-sm text-slate-700">{{ user.password }}</td>
-                                <td class="px-4 py-3 text-sm text-slate-700">{{ user.withdraw_password }}</td>
-                                <td class="px-4 py-3 text-sm text-slate-700">{{ user.invitation_code || 'N/A' }}</td>
-                                <td class="px-4 py-3 text-sm text-slate-700">{{ user.referred_by || 'N/A' }}</td>
-                                <td class="px-4 py-3 text-sm text-slate-700">{{ user.register_date }}</td>
-                                <td class="px-4 py-3 text-sm">
-                                    <button @click="openEditModal(user)" class="text-blue-600 hover:text-blue-700 mr-3 text-xs">Edit</button>
-                                    <button @click="openDeleteModal(user)" class="text-red-600 hover:text-red-700 text-xs">Delete</button>
+                                <td class="px-2 py-2 text-xs font-medium text-slate-800">{{ user.name }}</td>
+                                <td class="px-2 py-2 text-xs text-slate-700">{{ user.mobile_number }}</td>
+                                <td class="px-2 py-2 text-xs text-slate-700">{{ user.vip_level }}</td>
+                                <td class="px-2 py-2 text-xs text-slate-700">${{ user.balance.toFixed(2) }}</td>
+                                <td class="px-2 py-2 text-xs text-slate-700">{{ user.password }}</td>
+                                <td class="px-2 py-2 text-xs text-slate-700">{{ user.withdraw_password }}</td>
+                                <td class="px-2 py-2 text-xs text-slate-700">{{ user.invitation_code || 'N/A' }}</td>
+                                <td class="px-2 py-2 text-xs text-slate-700">{{ user.referred_by || 'N/A' }}</td>
+                                <td class="px-2 py-2 text-xs text-slate-700">{{ user.register_date }}</td>
+                                <td class="px-2 py-2 text-xs">
+                                    <button @click="openEditModal(user)" class="text-blue-600 hover:text-blue-700 mr-2 text-xs">Edit</button>
+                                    <button @click="openDeleteModal(user)" class="text-red-600 hover:text-red-700 text-xs">Del</button>
                                 </td>
                             </tr>
                         </tbody>

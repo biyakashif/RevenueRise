@@ -103,45 +103,7 @@ class User extends Authenticatable
         }
     }
 
-    public function assignTasks()
-    {
-        try {
-            \Log::info('Assigning tasks for user: ' . $this->id);
 
-            // Reset order_reward when new tasks are assigned
-            $this->order_reward = 0.00;
-            $this->save();
-
-            // Fetch all available products
-            $availableProducts = Product::all();
-
-            // Get already assigned product IDs for this user
-            $assignedProductIds = Task::where('user_id', $this->id)->pluck('product_id')->toArray();
-
-            // Filter out already assigned products
-            $newProducts = $availableProducts->whereNotIn('id', $assignedProductIds);
-
-            // If no new products are available, allow repetition
-            if ($newProducts->isEmpty()) {
-                $newProducts = $availableProducts;
-            }
-
-            // Assign tasks with the new products
-            $position = 1; // Start position counter
-            foreach ($newProducts as $product) {
-                Task::create([
-                    'user_id' => $this->id,
-                    'product_id' => $product->id,
-                    'product_type' => $product->type,
-                    'position' => $position++, // Increment position for each task
-                ]);
-            }
-
-            \Log::info('Tasks assigned successfully for user: ' . $this->id);
-        } catch (\Exception $e) {
-            \Log::error('Error assigning tasks for user: ' . $this->id . ' - ' . $e->getMessage());
-        }
-    }
 
     protected static function booted()
     {

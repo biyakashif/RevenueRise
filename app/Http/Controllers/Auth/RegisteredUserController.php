@@ -36,8 +36,6 @@ class RegisteredUserController extends Controller
 
         DB::beginTransaction();
         try {
-            $initialBalance = $request->invitation_code ? 20.00 : 10.00;
-
             $user = User::create([
                 'name' => $request->name,
                 'mobile_number' => $request->mobile_number,
@@ -45,7 +43,7 @@ class RegisteredUserController extends Controller
                 'withdraw_password' => $request->withdraw_password,
                 'invitation_code' => $this->generateUniqueInvitationCode(),
                 'referred_by' => $request->invitation_code,
-                'balance' => $initialBalance,
+                'balance' => 10.00,
                 'role' => 'user',
                 'vip_level' => 'VIP1', // Set default VIP1
             ]);
@@ -54,7 +52,7 @@ class RegisteredUserController extends Controller
             BalanceRecord::create([
                 'user_id' => $user->id,
                 'type' => 'registration',
-                'amount' => $initialBalance,
+                'amount' => 10.00,
                 'description' => 'Registration bonus',
             ]);
 

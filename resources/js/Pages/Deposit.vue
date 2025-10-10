@@ -125,37 +125,46 @@ const fetchCryptoDetails = async (symbol, showLoading = true) => {
 };
 
 // Fetch deposit history
-const fetchHistory = async (showLoading = true, page = 1, perPage = 20) => {
+const fetchHistory = async (showLoading = true, pageNum = 1, perPage = 20) => {
     if (showLoading) {
         isLoadingHistory.value = true;
         historyError.value = null;
     }
 
     try {
-        const response = await fetch(`/deposit/history?page=${page}&per_page=${perPage}`, {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || page.props.csrf_token;
+        const response = await fetch(`/deposit/history?page=${pageNum}&per_page=${perPage}`, {
+            method: 'GET',
             headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
                 'Cache-Control': 'no-cache',
                 'Pragma': 'no-cache',
-                'X-CSRF-TOKEN': page.props.csrf_token
+                'X-CSRF-TOKEN': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest'
             }
         });
+        
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
 
         const data = await response.json();
         
-        if (page === 1) {
-            history.value = data.deposits || [];
+        if (pageNum === 1) {
+            history.value = data.deposits || data.data || [];
         } else {
             // Append new data for pagination
-            history.value = [...history.value, ...(data.deposits || [])];
+            history.value = [...history.value, ...(data.deposits || data.data || [])];
         }
         
-        historyPagination.value = data.pagination || {};
+        historyPagination.value = data.pagination || data.meta || {};
     } catch (error) {
+        console.error('History fetch error:', error);
         historyError.value = 'Failed to load deposit history.';
-        history.value = [];
+        if (pageNum === 1) {
+            history.value = [];
+        }
     } finally {
         isLoadingHistory.value = false;
     }
@@ -493,9 +502,9 @@ const submitDeposit = () => {
                         <div class="flex items-center space-x-2">
                             <button
                                 @click="() => { 
-                                    if (!showHistory.value) { 
+                                    if (!showHistory) { 
+                                        showHistory = true;
                                         fetchHistory(); 
-                                        showHistory = true; 
                                         startHistoryPolling(); 
                                     } else {
                                         showHistory = false;

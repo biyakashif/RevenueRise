@@ -128,38 +128,50 @@ function openAssignTasksModal(user) {
 
 async function assignTasks() {
   if (!selectedUser.value || tasksNumber.value <= 0) {
-    alert('Please enter valid inputs.');
+    resetSuccess.value = 'Please enter valid inputs.';
+    setTimeout(() => {
+      resetSuccess.value = '';
+    }, 2000);
     return;
   }
 
   try {
-    router.post(`/admin/tasks/assign`, {
-      userId: selectedUser.value.id,
-      tasksNumber: tasksNumber.value,
-      luckyOrder: luckyOrder.value,
-      _token: page.props.csrf_token,
-    }, {
-      preserveState: true,
-      preserveScroll: true,
-      onSuccess: () => {
-        resetSuccess.value = 'Tasks assigned successfully!';
-        assignedUsers.value.add(selectedUser.value.id);
-        setTimeout(() => {
-          resetSuccess.value = '';
-        }, 1000);
-        closeAssignTasksModal();
+    const response = await fetch('/admin/tasks/assign', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': page.props.csrf_token,
+        'X-Requested-With': 'XMLHttpRequest',
+        'Accept': 'application/json',
       },
-      onError: (errors) => {
-        if (errors && (errors.message?.includes('419') || errors.status === 419)) {
-          window.location.reload();
-          return;
-        }
-        resetSuccess.value = 'Error: ' + (errors ? JSON.stringify(errors) : 'Unknown error');
-        setTimeout(() => {
-          resetSuccess.value = '';
-        }, 2000);
-      }
+      credentials: 'same-origin',
+      body: JSON.stringify({
+        userId: selectedUser.value.id,
+        tasksNumber: tasksNumber.value,
+        luckyOrder: luckyOrder.value,
+      }),
     });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      if (response.status === 419) {
+        window.location.reload();
+        return;
+      }
+      resetSuccess.value = 'Error: ' + (data.message || 'Unknown error');
+      setTimeout(() => {
+        resetSuccess.value = '';
+      }, 3000);
+      return;
+    }
+
+    resetSuccess.value = 'Tasks assigned successfully!';
+    assignedUsers.value.add(selectedUser.value.id);
+    setTimeout(() => {
+      resetSuccess.value = '';
+    }, 1000);
+    closeAssignTasksModal();
   } catch (error) {
     resetSuccess.value = 'Error: ' + error.message;
     setTimeout(() => {

@@ -990,7 +990,7 @@ class AdminController extends Controller
 
         if ($products->isEmpty()) {
             Log::error('No products found for user VIP level:', ['vip_level' => $user->vip_level]);
-            return response()->json(['message' => 'No products found for user VIP level.'], 400);
+            return response()->json(['message' => "No products found for user VIP level: {$user->vip_level}."], 400);
         }
 
         if ($luckyProducts->isEmpty() && $luckyOrder > 0) {

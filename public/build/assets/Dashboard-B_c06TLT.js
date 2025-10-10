@@ -1,0 +1,1 @@
+import{_ as o}from"./AdminLayout-DLZ9ec3C.js";import{p as s,w as t,e,o as r}from"./app-D6hQSsMw.js";const _={__name:"Dashboard",setup(n){return(l,a)=>(r(),s(o,null,{default:t(()=>[...a[0]||(a[0]=[e("h2",{class:"text-2xl font-bold mb-4"},"Admin Dashboard",-1),e("p",null,"Welcome to the admin dashboard. Manage your users and more!",-1)])]),_:1}))}};export{_ as default};
