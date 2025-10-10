@@ -125,7 +125,8 @@ const fetchStatus = async () => {
     const response = await fetch('/withdraw', {
       headers: {
         'Accept': 'application/json',
-        'X-Requested-With': 'XMLHttpRequest'
+        'X-Requested-With': 'XMLHttpRequest',
+        'X-CSRF-TOKEN': page.props.csrf_token
       },
       credentials: 'same-origin'
     });
@@ -230,7 +231,8 @@ const validateThenSubmit = async () => {
     crypto_symbol: selectedCrypto.value.currency,
     crypto_amount: cryptoAmount,   // Converted crypto amount for storage
     crypto_wallet: cryptoWallet.value,
-    withdraw_password: withdrawPassword.value
+    withdraw_password: withdrawPassword.value,
+    _token: page.props.csrf_token
   };
   
   // Backend should:

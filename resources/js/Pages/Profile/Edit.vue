@@ -156,6 +156,7 @@ async function uploadAvatar() {
   try {
     const formData = new FormData();
     formData.append('avatar', selectedFile.value);
+    formData.append('_token', page.props.csrf_token);
     await router.post(route('profile.avatar'), formData, {
       preserveState: true,
       preserveScroll: true,
@@ -191,7 +192,10 @@ const fetchBalance = async () => {
   }
   try {
     const res = await fetch(route('balance'), {
-      headers: { 'Accept': 'application/json' },
+      headers: { 
+        'Accept': 'application/json',
+        'X-CSRF-TOKEN': page.props.csrf_token
+      },
     });
     if (!res.ok) throw new Error(`HTTP error ${res.status}`);
     const data = await res.json();
@@ -258,13 +262,15 @@ const refreshCSRFToken = async () => {
 const logout = async () => {
     try {
         await refreshCSRFToken();
-        await router.post(route('logout'));
+        await router.post(route('logout'), {
+            _token: page.props.csrf_token
+        });
     } catch (error) {
         if (error.response && error.response.status === 419) {
             window.location.reload();
         }
     }
-};;
+};
 </script>
 
 <template>

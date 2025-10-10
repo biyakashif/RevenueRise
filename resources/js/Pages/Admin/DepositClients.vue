@@ -33,6 +33,7 @@ const fetchUsers = async (search = '') => {
   } catch (error) {
   // suppressed: error fetching deposit clients
     errorMessage.value = 'Failed to fetch users. Please try again.';
+    setTimeout(() => errorMessage.value = '', 5000);
   }
 };
 

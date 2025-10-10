@@ -418,6 +418,7 @@ const grabOrders = debounce(() => {
         product_id: productId,
         task_name: activeTask.value.name,
         is_forced: currentProduct.is_forced,
+        _token: page.props.csrf_token,
       }, {
         preserveState: true,
         preserveScroll: true,
@@ -474,6 +475,7 @@ const confirmProduct = () => {
     product_id: currentTaskProduct.value.id ?? currentTaskProduct.value.product_id,
     task_name: activeTask.value.name,
     is_forced: currentTaskProduct.value.is_forced,
+    _token: page.props.csrf_token,
   }, {
     preserveScroll: true,
     onSuccess: (page) => {

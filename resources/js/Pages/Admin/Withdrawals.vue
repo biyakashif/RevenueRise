@@ -1,7 +1,9 @@
 <script setup>
 import AdminLayout from '@/Layouts/AdminLayout.vue';
-import { Head, router } from '@inertiajs/vue3';
+import { Head, router, usePage } from '@inertiajs/vue3';
 import { ref, onMounted, onUnmounted } from 'vue';
+
+const page = usePage();
 
 const users = ref([]);
 const currentPage = ref(1);
@@ -9,9 +11,7 @@ const lastPage = ref(1);
 const searchQuery = ref('');
 let pollingInterval = null;
 
-const csrfToken = typeof document !== 'undefined' && document.querySelector('meta[name="csrf-token"]')
-  ? document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-  : '';
+
 
 const fetchUsers = async (search = '') => {
   try {
@@ -46,21 +46,47 @@ const searchUsers = () => {
 
 const approve = async (id) => {
   try {
-  const res = await fetch(route('admin.withdrawals.approve', id), { method: 'POST', headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': csrfToken } });
-    if (!res.ok) throw new Error('Approve failed');
+    const res = await fetch(route('admin.withdrawals.approve', id), { 
+      method: 'POST', 
+      headers: { 
+        'Accept': 'application/json', 
+        'X-Requested-With': 'XMLHttpRequest', 
+        'X-CSRF-TOKEN': page.props.csrf_token 
+      } 
+    });
+    if (!res.ok) {
+      if (res.status === 419) {
+        window.location.reload();
+        return;
+      }
+      throw new Error('Approve failed');
+    }
     await fetchUsers(searchQuery.value);
   } catch (err) {
-  // suppressed: approve failed
+    // suppressed: approve failed
   }
 };
 
 const rejectW = async (id) => {
   try {
-  const res = await fetch(route('admin.withdrawals.reject', id), { method: 'POST', headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': csrfToken } });
-    if (!res.ok) throw new Error('Reject failed');
+    const res = await fetch(route('admin.withdrawals.reject', id), { 
+      method: 'POST', 
+      headers: { 
+        'Accept': 'application/json', 
+        'X-Requested-With': 'XMLHttpRequest', 
+        'X-CSRF-TOKEN': page.props.csrf_token 
+      } 
+    });
+    if (!res.ok) {
+      if (res.status === 419) {
+        window.location.reload();
+        return;
+      }
+      throw new Error('Reject failed');
+    }
     await fetchUsers(searchQuery.value);
   } catch (err) {
-  // suppressed: reject failed
+    // suppressed: reject failed
   }
 };
 
@@ -106,7 +132,7 @@ const updateWithdrawLimit = async () => {
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
-        'X-CSRF-TOKEN': csrfToken
+        'X-CSRF-TOKEN': page.props.csrf_token
       },
       body: JSON.stringify({ withdraw_limit: formatUSDT(newWithdrawLimit.value) })
     });
@@ -114,6 +140,10 @@ const updateWithdrawLimit = async () => {
     const data = await res.json();
     
     if (!res.ok) {
+      if (res.status === 419) {
+        window.location.reload();
+        return;
+      }
       throw new Error(data.message || 'Failed to update withdraw limit');
     }
 
@@ -121,6 +151,7 @@ const updateWithdrawLimit = async () => {
     await fetchUsers(searchQuery.value);
   } catch (err) {
     limitModalError.value = err.message || 'Failed to update withdraw limit';
+    setTimeout(() => limitModalError.value = '', 5000);
   }
 };
 </script>

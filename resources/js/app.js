@@ -21,11 +21,22 @@ createInertiaApp({
         if (token) {
             window.axios.defaults.headers.common['X-CSRF-TOKEN'] = token;
         }
+        
+        // Make CSRF token globally available
+        window.csrfToken = token || props.initialPage.props.csrf_token;
         // Handle 419 CSRF errors globally
-        router.on('error', (errors) => {
-            if (errors && Object.values(errors).some(error => 
-                error && typeof error === 'object' && error.status === 419
-            )) {
+        router.on('error', (event) => {
+            // Check if it's a 419 CSRF error
+            if (event.detail && event.detail.response && event.detail.response.status === 419) {
+                console.warn('CSRF token mismatch detected, reloading page...');
+                window.location.reload();
+            }
+        });
+        
+        // Also handle Inertia visit errors
+        router.on('exception', (event) => {
+            if (event.detail && event.detail.response && event.detail.response.status === 419) {
+                console.warn('CSRF token mismatch detected, reloading page...');
                 window.location.reload();
             }
         });

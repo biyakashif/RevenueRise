@@ -1,6 +1,8 @@
 <script setup>
 import AdminLayout from '@/Layouts/AdminLayout.vue';
-import { Head, router, Link } from '@inertiajs/vue3';
+import { Head, router, Link, usePage } from '@inertiajs/vue3';
+
+const page = usePage();
 
 const props = defineProps({
     blockedUsers: Array,
@@ -8,10 +10,17 @@ const props = defineProps({
 
 const unblockUser = (userId) => {
     if (confirm('Are you sure you want to unblock this user?')) {
-        router.post(route('admin.users.unblock', userId), {}, {
+        router.post(route('admin.users.unblock', userId), {
+            _token: page.props.csrf_token
+        }, {
             preserveScroll: true,
             onSuccess: () => {
                 // Success handled by redirect
+            },
+            onError: (errors) => {
+                if (errors && (errors.message?.includes('419') || errors.status === 419)) {
+                    window.location.reload();
+                }
             }
         });
     }

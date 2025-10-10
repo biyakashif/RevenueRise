@@ -273,8 +273,10 @@
 
 <script setup>
 import { ref, onMounted, nextTick } from 'vue'
-import { router, Link } from '@inertiajs/vue3'
+import { router, Link, usePage } from '@inertiajs/vue3'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
+
+const page = usePage()
 
 const desktopImages = ref([])
 const mobileImages = ref([])
@@ -576,33 +578,47 @@ const submitForm = () => {
   formData.append('title', form.value.title)
   formData.append('type', modalType.value)
   formData.append('sort_order', form.value.sort_order)
+  formData.append('_token', page.props.csrf_token)
 
   if (form.value.image) {
     formData.append('image', form.value.image)
+  }
+
+  if (isEditing.value) {
+    formData.append('_method', 'PUT')
   }
 
   const url = isEditing.value
     ? `/admin/sliders/${editingImage.value.id}`
     : '/admin/sliders'
 
-  const method = isEditing.value ? 'post' : 'post'
-
-  router[method](url, formData, {
+  router.post(url, formData, {
     onSuccess: () => {
       loading.value = false
       closeModal()
       loadImages()
     },
-    onError: () => {
+    onError: (errors) => {
+      if (errors && (errors.message?.includes('419') || errors.status === 419)) {
+        window.location.reload()
+        return
+      }
       loading.value = false
     }
   })
 }
 
 const toggleImage = (image) => {
-  router.post(`/admin/sliders/${image.id}/toggle`, {}, {
+  router.post(`/admin/sliders/${image.id}/toggle`, {
+    _token: page.props.csrf_token
+  }, {
     onSuccess: () => {
       loadImages()
+    },
+    onError: (errors) => {
+      if (errors && (errors.message?.includes('419') || errors.status === 419)) {
+        window.location.reload()
+      }
     }
   })
 }
@@ -614,10 +630,18 @@ const deleteImage = (image) => {
 
 const confirmDelete = () => {
   router.delete(`/admin/sliders/${deletingImage.value.id}`, {
+    data: {
+      _token: page.props.csrf_token
+    },
     onSuccess: () => {
       showDeleteModal.value = false
       deletingImage.value = null
       loadImages()
+    },
+    onError: (errors) => {
+      if (errors && (errors.message?.includes('419') || errors.status === 419)) {
+        window.location.reload()
+      }
     }
   })
 }

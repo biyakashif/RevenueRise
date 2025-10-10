@@ -24,6 +24,7 @@ const form = useForm({
     current_password: '',
     password: '',
     password_confirmation: '',
+    _token: page.props.csrf_token,
 });
 
 const updatePassword = () => {

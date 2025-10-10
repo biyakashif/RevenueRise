@@ -1,7 +1,7 @@
 <script setup>
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 import { Head, router, usePage } from '@inertiajs/vue3'; // Ensure usePage is imported
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
 
 const props = defineProps({
   deposits: { type: Array, default: () => [] },
@@ -21,6 +21,36 @@ const mobileNumber = ref(props.mobile_number);
 const amount = ref('');
 const errorMessage = ref('');
 
+// Flash message handling
+const flashMessage = ref('');
+const flashType = ref('');
+
+const flashClass = computed(() => ({
+    'bg-green-100 border-green-500 text-green-700': flashType.value === 'success',
+    'bg-red-100 border-red-500 text-red-700': flashType.value === 'error',
+}));
+
+watch(() => page.props.flash, (flash) => {
+    if (flash.success) {
+        flashMessage.value = flash.success;
+        flashType.value = 'success';
+    } else if (flash.error) {
+        flashMessage.value = flash.error;
+        flashType.value = 'error';
+    } else {
+        flashMessage.value = '';
+        flashType.value = '';
+    }
+
+    if (flashMessage.value) {
+        setTimeout(() => {
+            flashMessage.value = '';
+            if (page.props.flash.success) page.props.flash.success = null;
+            if (page.props.flash.error) page.props.flash.error = null;
+        }, 2000);
+    }
+}, { deep: true });
+
 let pollingInterval = null;
 
 const fetchData = async () => {
@@ -39,6 +69,7 @@ const fetchData = async () => {
     errorMessage.value = '';
   } catch (error) {
     errorMessage.value = `Failed to fetch wallet data: ${error.message}. Please try again.`;
+    setTimeout(() => errorMessage.value = '', 5000);
   }
 };
 
@@ -57,6 +88,7 @@ const updateDepositStatus = async (depositId, action) => {
     const deposit = localDeposits.value.find(d => d.id === depositId);
     if (!deposit) {
       errorMessage.value = 'Deposit not found.';
+      setTimeout(() => errorMessage.value = '', 3000);
       return;
     }
 
@@ -81,7 +113,8 @@ const updateDepositStatus = async (depositId, action) => {
         converted_amount: convertedAmount,
         original_amount: deposit.amount,
         symbol: deposit.symbol,
-        exchange_rate: usdtRate
+        exchange_rate: usdtRate,
+        _token: page.props.csrf_token
       }, {
         preserveState: true,
         preserveScroll: true,
@@ -89,24 +122,38 @@ const updateDepositStatus = async (depositId, action) => {
           fetchData();
         },
         onError: (errors) => {
+          if (errors && (errors.message?.includes('419') || errors.status === 419)) {
+            window.location.reload();
+            return;
+          }
           errorMessage.value = errors.action || 'Failed to approve deposit.';
+          setTimeout(() => errorMessage.value = '', 5000);
           fetchData();
         },
       });
     } catch (error) {
       errorMessage.value = `Failed to get exchange rate: ${error.message}. Please try again.`;
+      setTimeout(() => errorMessage.value = '', 5000);
       return;
     }
   } else {
     // For reject action, proceed normally
-    router.post(`/admin/update-deposit/${depositId}`, { action }, {
+    router.post(`/admin/update-deposit/${depositId}`, { 
+      action,
+      _token: page.props.csrf_token
+    }, {
       preserveState: true,
       preserveScroll: true,
       onSuccess: () => {
         fetchData();
       },
       onError: (errors) => {
+        if (errors && (errors.message?.includes('419') || errors.status === 419)) {
+          window.location.reload();
+          return;
+        }
         errorMessage.value = errors.action || 'Failed to update deposit status.';
+        setTimeout(() => errorMessage.value = '', 5000);
         fetchData();
       },
     });
@@ -117,6 +164,7 @@ const updateBalance = (action) => {
   const amt = parseFloat(amount.value);
   if (isNaN(amt) || amt <= 0) {
     errorMessage.value = 'Please enter a valid amount greater than 0.';
+    setTimeout(() => errorMessage.value = '', 3000);
     return;
   }
 
@@ -129,7 +177,11 @@ const updateBalance = (action) => {
     routeUrl = `/admin/update-balance/${props.selectedUserId}`;
   }
 
-  router.post(routeUrl, { amount: amt, action: action === 'freeze' || action === 'unfreeze' ? 'subtract' : action }, {
+  router.post(routeUrl, { 
+    amount: amt, 
+    action: action === 'freeze' || action === 'unfreeze' ? 'subtract' : action,
+    _token: page.props.csrf_token
+  }, {
     preserveState: true,
     preserveScroll: true,
     onSuccess: () => {
@@ -138,7 +190,12 @@ const updateBalance = (action) => {
       errorMessage.value = '';
     },
     onError: (errors) => {
+      if (errors && (errors.message?.includes('419') || errors.status === 419)) {
+        window.location.reload();
+        return;
+      }
       errorMessage.value = errors.error || errors.amount || errors.action || 'Failed to update balance. Please check the server configuration.';
+      setTimeout(() => errorMessage.value = '', 5000);
       fetchData();
     },
   });
@@ -160,11 +217,11 @@ const updateBalance = (action) => {
       </h1>
 
           <!-- Flash Messages -->
-          <div v-if="page.props.flash?.success" class="mb-6 p-4 rounded-xl bg-green-100/80 border border-green-200 text-green-700 text-sm flex items-center gap-2 backdrop-blur-sm">
-            {{ page.props.flash.success }}
+          <div v-if="flashMessage" :class="flashClass" class="mb-6 p-4 rounded-xl bg-green-100/80 border border-green-200 text-green-700 text-sm flex items-center gap-2 backdrop-blur-sm">
+            {{ flashMessage }}
           </div>
-          <div v-if="page.props.flash?.error || errorMessage" class="mb-6 p-4 rounded-xl bg-red-100/80 border border-red-200 text-red-700 text-sm flex items-center gap-2 backdrop-blur-sm">
-            {{ page.props.flash.error || errorMessage }}
+          <div v-if="errorMessage" class="mb-6 p-4 rounded-xl bg-red-100/80 border border-red-200 text-red-700 text-sm flex items-center gap-2 backdrop-blur-sm">
+            {{ errorMessage }}
           </div>
 
           <!-- Balance Section -->

@@ -152,12 +152,16 @@ const videoError = ref('');
 const isBlocked = ref(false);
 
 // Configure axios with CSRF token and credentials
-axios.defaults.headers.common['X-CSRF-TOKEN'] = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+axios.defaults.headers.common['X-CSRF-TOKEN'] = page.props.csrf_token || document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
 axios.defaults.withCredentials = true;
 
 const loadMessages = async () => {
     try {
-        const response = await axios.get('/chat/messages');
+        const response = await axios.get('/chat/messages', {
+            headers: {
+                'X-CSRF-TOKEN': page.props.csrf_token
+            }
+        });
         // Sort messages by created_at in ascending order
         messages.value = response.data.sort((a, b) => 
             new Date(a.created_at) - new Date(b.created_at)
@@ -185,7 +189,10 @@ const sendMessage = async () => {
         const messageText = newMessage.value;
         newMessage.value = ''; // Clear immediately
 
-        const response = await axios.post('/chat/broadcast', { message: messageText });
+        const response = await axios.post('/chat/broadcast', { 
+            message: messageText,
+            _token: page.props.csrf_token
+        });
         const data = response.data;
         
         // Add message immediately to UI (Echo will handle real-time for admin)
@@ -235,6 +242,7 @@ const handleImageUpload = async (event) => {
 
     const formData = new FormData();
     formData.append('image', file);
+    formData.append('_token', page.props.csrf_token);
     await axios.post('/chat/send', formData);
     event.target.value = '';
 };
@@ -251,6 +259,7 @@ const handleVideoUpload = async (event) => {
 
     const formData = new FormData();
     formData.append('video', file);
+    formData.append('_token', page.props.csrf_token);
     await axios.post('/chat/send', formData);
     event.target.value = '';
 };
@@ -344,7 +353,11 @@ onMounted(() => {
 
 const checkBlockStatus = async () => {
     try {
-        const response = await axios.get('/chat/block-status');
+        const response = await axios.get('/chat/block-status', {
+            headers: {
+                'X-CSRF-TOKEN': page.props.csrf_token
+            }
+        });
         isBlocked.value = response.data.is_blocked;
     } catch (error) {
         console.error('Error checking block status:', error);

@@ -23,6 +23,7 @@ const form = useForm({
     name: user.name || t('Not set'),
     mobile_number: user.mobile_number || t('Not set'),
     invitation_code: user.invitation_code || t('Not set'),
+    _token: page.props.csrf_token,
 });
 </script>
 

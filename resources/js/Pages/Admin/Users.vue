@@ -224,10 +224,19 @@ const closeEditModal = () => {
 
 const submitUpdate = () => {
     Object.keys(formErrors).forEach(key => delete formErrors[key]);
-    router.patch(route('admin.users.update', form.id), form, {
+    router.patch(route('admin.users.update', form.id), {
+        ...form,
+        _token: page.props.csrf_token
+    }, {
         preserveScroll: true,
         onSuccess: () => closeEditModal(),
-        onError: (errors) => Object.assign(formErrors, errors),
+        onError: (errors) => {
+            if (errors && (errors.message?.includes('419') || errors.status === 419)) {
+                window.location.reload();
+                return;
+            }
+            Object.assign(formErrors, errors);
+        },
     });
 };
 
@@ -244,8 +253,16 @@ const closeDeleteModal = () => {
 const executeDelete = () => {
     if (!userToDelete.value) return;
     router.delete(route('admin.users.destroy', userToDelete.value.id), {
+        data: {
+            _token: page.props.csrf_token
+        },
         preserveScroll: true,
         onSuccess: () => closeDeleteModal(),
+        onError: (errors) => {
+            if (errors && (errors.message?.includes('419') || errors.status === 419)) {
+                window.location.reload();
+            }
+        },
     });
 };
 </script>

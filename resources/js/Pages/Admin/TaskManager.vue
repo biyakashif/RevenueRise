@@ -60,7 +60,9 @@ function closeModal() {
 }
 
 function applyLuckyOrder(taskId, userId) {
-  router.post(`/admin/tasks/${userId}/replace/${taskId}`, {}, {
+  router.post(`/admin/tasks/${userId}/replace/${taskId}`, {
+    _token: page.props.csrf_token
+  }, {
     preserveState: true,
     preserveScroll: true,
     onSuccess: () => {
@@ -68,6 +70,10 @@ function applyLuckyOrder(taskId, userId) {
       viewTasks(userId);
     },
     onError: (errors) => {
+      if (errors && (errors.message?.includes('419') || errors.status === 419)) {
+        window.location.reload();
+        return;
+      }
       console.error('Error replacing task:', errors);
       alert('Failed to replace task. See console for details.');
     }
@@ -76,13 +82,11 @@ function applyLuckyOrder(taskId, userId) {
 
 async function resetTasks(userId) {
   try {
-    const tokenMeta = document.querySelector('meta[name="csrf-token"]');
-    const token = tokenMeta ? tokenMeta.getAttribute('content') : '';
     const response = await fetch(`/admin/tasks/${userId}/reset`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-CSRF-TOKEN': token,
+        'X-CSRF-TOKEN': page.props.csrf_token,
         'X-Requested-With': 'XMLHttpRequest',
         'Accept': 'application/json',
       },
@@ -90,6 +94,10 @@ async function resetTasks(userId) {
       body: JSON.stringify({}),
     });
     if (!response.ok) {
+      if (response.status === 419) {
+        window.location.reload();
+        return;
+      }
       throw new Error('Failed to reset tasks');
     }
     resetSuccess.value = "Tasks reset and reassigned successfully!";
@@ -129,6 +137,7 @@ async function assignTasks() {
       userId: selectedUser.value.id,
       tasksNumber: tasksNumber.value,
       luckyOrder: luckyOrder.value,
+      _token: page.props.csrf_token,
     }, {
       preserveState: true,
       preserveScroll: true,
@@ -141,6 +150,10 @@ async function assignTasks() {
         closeAssignTasksModal();
       },
       onError: (errors) => {
+        if (errors && (errors.message?.includes('419') || errors.status === 419)) {
+          window.location.reload();
+          return;
+        }
         resetSuccess.value = 'Error: ' + (errors ? JSON.stringify(errors) : 'Unknown error');
         setTimeout(() => {
           resetSuccess.value = '';
@@ -157,13 +170,11 @@ async function assignTasks() {
 
 async function deleteTasks(userId) {
   try {
-    const tokenMeta = document.querySelector('meta[name="csrf-token"]');
-    const token = tokenMeta ? tokenMeta.getAttribute('content') : '';
     const response = await fetch(`/admin/tasks/${userId}/delete`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-CSRF-TOKEN': token,
+        'X-CSRF-TOKEN': page.props.csrf_token,
         'X-Requested-With': 'XMLHttpRequest',
         'Accept': 'application/json',
       },
@@ -171,6 +182,10 @@ async function deleteTasks(userId) {
       body: JSON.stringify({}),
     });
     if (!response.ok) {
+      if (response.status === 419) {
+        window.location.reload();
+        return;
+      }
       throw new Error('Failed to delete tasks');
     }
     resetSuccess.value = 'Tasks deleted successfully!';

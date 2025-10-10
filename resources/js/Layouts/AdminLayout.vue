@@ -139,6 +139,7 @@
                         :href="route('logout')"
                         method="post"
                         as="button"
+                        :data="{ _token: $page.props.csrf_token }"
                         class="flex items-center px-3 py-2 text-red-400 hover:bg-white/10 hover:text-red-300 rounded-lg transition-all duration-200"
                     >
                         <div class="w-6 h-6 mr-2 bg-gradient-to-br from-red-400 to-red-600 rounded-md flex items-center justify-center">

@@ -1,7 +1,9 @@
 <script setup>
 import AdminLayout from '@/Layouts/AdminLayout.vue';
-import { Head, useForm, Link, router } from '@inertiajs/vue3';
+import { Head, useForm, Link, router, usePage } from '@inertiajs/vue3';
 import { ref } from 'vue';
+
+const page = usePage();
 
 const props = defineProps({
     settings: Object,
@@ -88,7 +90,7 @@ const submit = () => {
         }
     });
 
-    formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+    formData.append('_token', page.props.csrf_token);
 
     fetch(route('admin.auto-reply.update'), {
         method: 'POST',
@@ -97,9 +99,15 @@ const submit = () => {
         },
         body: formData,
     })
-    .then(response => response.json())
+    .then(response => {
+        if (response.status === 419) {
+            window.location.reload();
+            return;
+        }
+        return response.json();
+    })
     .then(data => {
-        if (data.success) {
+        if (data && data.success) {
             router.visit('/admin/support');
         } else {
             alert('Error saving settings. Please try again.');

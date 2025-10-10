@@ -1,7 +1,9 @@
 <script setup>
 import AdminLayout from '@/Layouts/AdminLayout.vue';
-import { Head, router } from '@inertiajs/vue3';
+import { Head, router, usePage } from '@inertiajs/vue3';
 import { ref } from 'vue';
+
+const page = usePage();
 
 const props = defineProps({
   withdraw: Object,
@@ -13,9 +15,16 @@ const cryptoWallet = ref(props.withdraw.crypto_wallet);
 const submit = (e) => {
   const data = {
     amount_withdraw: amount.value,
-    crypto_wallet: cryptoWallet.value
+    crypto_wallet: cryptoWallet.value,
+    _token: page.props.csrf_token
   };
-  router.post(route('admin.withdrawals.update', props.withdraw.id), data);
+  router.post(route('admin.withdrawals.update', props.withdraw.id), data, {
+    onError: (errors) => {
+      if (errors && (errors.message?.includes('419') || errors.status === 419)) {
+        window.location.reload();
+      }
+    }
+  });
 };
 </script>
 

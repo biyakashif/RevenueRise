@@ -79,7 +79,11 @@ const fetchCryptoDetails = async (symbol, showLoading = true) => {
         const id = symbolToId[symbol] || symbol.toLowerCase();
 
         // Use backend API instead of direct CoinGecko call to avoid CORS
-        const response = await fetch(`/crypto-details?crypto_id=${id}`);
+        const response = await fetch(`/crypto-details?crypto_id=${id}`, {
+            headers: {
+                'X-CSRF-TOKEN': page.props.csrf_token
+            }
+        });
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -131,7 +135,8 @@ const fetchHistory = async (showLoading = true, page = 1, perPage = 20) => {
         const response = await fetch(`/deposit/history?page=${page}&per_page=${perPage}`, {
             headers: {
                 'Cache-Control': 'no-cache',
-                'Pragma': 'no-cache'
+                'Pragma': 'no-cache',
+                'X-CSRF-TOKEN': page.props.csrf_token
             }
         });
         if (!response.ok) {
@@ -394,6 +399,7 @@ const submitDeposit = () => {
     formData.append('amount', form.value.amount);
     formData.append('slip', form.value.slip);
     formData.append('crypto_id', form.value.crypto_id);
+    formData.append('_token', page.props.csrf_token);
     if (form.value.vip) {
         formData.append('vip', form.value.vip);
     }

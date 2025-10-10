@@ -1,6 +1,8 @@
 <script setup>
 import AdminLayout from '@/Layouts/AdminLayout.vue';
-import { Head, useForm } from '@inertiajs/vue3';
+import { Head, useForm, usePage } from '@inertiajs/vue3';
+
+const page = usePage();
 
 const props = defineProps({
     settings: Object,
@@ -15,11 +17,18 @@ const form = useForm({
     telegram: props.settings.telegram || '',
     show_office: props.settings.show_office || false,
     office_address: props.settings.office_address || '',
+    _token: page.props.csrf_token,
 });
 
 const submit = () => {
+    form._token = page.props.csrf_token;
     form.post(route('admin.contact-settings.update'), {
         preserveScroll: true,
+        onError: (errors) => {
+            if (errors && (errors.message?.includes('419') || errors.status === 419)) {
+                window.location.reload();
+            }
+        },
     });
 };
 </script>

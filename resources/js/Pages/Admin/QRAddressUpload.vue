@@ -1,12 +1,14 @@
 <script setup>
 import AdminLayout from '@/Layouts/AdminLayout.vue';
-import { Head, useForm } from '@inertiajs/vue3';
+import { Head, useForm, usePage } from '@inertiajs/vue3';
 import { ref, watch, computed } from 'vue';
 
 const props = defineProps({
     cryptoList: { type: Array, default: () => [] },
     existingCryptos: { type: Array, default: () => [] },
 });
+
+const page = usePage();
 
 // Destructure props to ensure they're available in scope
 const { cryptoList } = props;
@@ -59,6 +61,7 @@ const form = useForm({
     address: '',
     currency: '',
     network: '',
+    _token: page.props.csrf_token,
 });
 
 const editingCrypto = ref(null);
@@ -126,6 +129,9 @@ const onFileChange = (event) => {
 };
 
 const submit = () => {
+    // Ensure CSRF token is always fresh
+    form._token = page.props.csrf_token;
+    
     if (editingCrypto.value) {
         form.transform((data) => ({
             ...data,
@@ -135,12 +141,16 @@ const submit = () => {
             preserveScroll: true,
             onSuccess: () => {
                 form.reset();
+                form._token = page.props.csrf_token;
                 editingCrypto.value = null;
                 showForm.value = false;
                 networkManuallyModified.value = false;
             },
             onError: (errors) => {
-                // Errors are displayed in form
+                // Handle 419 errors by refreshing CSRF token
+                if (errors && errors.message && errors.message.includes('419')) {
+                    window.location.reload();
+                }
             },
         });
     } else {
@@ -149,12 +159,16 @@ const submit = () => {
             preserveScroll: true,
             onSuccess: () => {
                 form.reset();
+                form._token = page.props.csrf_token;
                 editingCrypto.value = null;
                 showForm.value = false;
                 networkManuallyModified.value = false;
             },
             onError: (errors) => {
-                // Errors are displayed in form
+                // Handle 419 errors by refreshing CSRF token
+                if (errors && errors.message && errors.message.includes('419')) {
+                    window.location.reload();
+                }
             },
         });
     }
@@ -179,12 +193,21 @@ const deleteCrypto = (crypto) => {
 };
 
 const confirmDelete = () => {
+    // Ensure CSRF token is fresh for delete request
+    form._token = page.props.csrf_token;
+    
     form.delete(route('admin.qr-address-upload.destroy', deletingCrypto.value.id), {
         preserveState: true,
         preserveScroll: true,
         onSuccess: () => {
             showDeleteModal.value = false;
             deletingCrypto.value = null;
+        },
+        onError: (errors) => {
+            // Handle 419 errors by refreshing CSRF token
+            if (errors && errors.message && errors.message.includes('419')) {
+                window.location.reload();
+            }
         }
     });
 };
@@ -197,6 +220,7 @@ const cancelDelete = () => {
 const addNew = () => {
     editingCrypto.value = null;
     form.reset();
+    form._token = page.props.csrf_token;
     networkManuallyModified.value = false;
     showForm.value = true;
 };
@@ -209,6 +233,7 @@ props.existingCryptos.forEach(crypto => {
 const cancelEdit = () => {
     editingCrypto.value = null;
     form.reset();
+    form._token = page.props.csrf_token;
     networkManuallyModified.value = false;
     showForm.value = false;
 };

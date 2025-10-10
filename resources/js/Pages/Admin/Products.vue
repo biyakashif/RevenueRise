@@ -38,6 +38,7 @@ const form = useForm({
   selling_price: "",
   commission_percentage: "",
   image: null,
+  _token: page.props.csrf_token,
 });
 
 // Messages
@@ -60,19 +61,29 @@ function handleFileChange(e) {
 function submit() {
   successMessage.value = "";
   errorMessage.value = "";
+  
+  // Refresh CSRF token
+  form._token = page.props.csrf_token;
 
   form.post(route("admin.products.store"), {
     preserveScroll: true,
     forceFormData: true,
     onSuccess: () => {
       successMessage.value = "✅ Product uploaded successfully!";
+      setTimeout(() => successMessage.value = "", 3000);
       form.reset();
       form.type = "VIP1";
+      form._token = page.props.csrf_token;
       searchQuery.value = "";
       showModal.value = false;
     },
     onError: (errors) => {
+      if (errors && (errors.message?.includes('419') || errors.status === 419)) {
+        window.location.reload();
+        return;
+      }
       errorMessage.value = "❌ Failed to upload product: " + JSON.stringify(errors);
+      setTimeout(() => errorMessage.value = "", 5000);
     },
   });
 }
@@ -88,13 +99,22 @@ function deleteProduct(id) {
 function confirmDelete() {
   router.delete(route("admin.products.destroy", deleteProductId.value), {
     preserveScroll: true,
+    data: {
+      _token: page.props.csrf_token
+    },
     onSuccess: () => {
       successMessage.value = "🗑️ Product deleted successfully!";
+      setTimeout(() => successMessage.value = "", 3000);
       showDeleteModal.value = false;
       deleteProductId.value = null;
     },
     onError: (errors) => {
+      if (errors && (errors.message?.includes('419') || errors.status === 419)) {
+        window.location.reload();
+        return;
+      }
       errorMessage.value = "❌ Failed to delete product: " + JSON.stringify(errors);
+      setTimeout(() => errorMessage.value = "", 5000);
       showDeleteModal.value = false;
       deleteProductId.value = null;
     },
@@ -111,6 +131,7 @@ const editForm = useForm({
   selling_price: "",
   commission_percentage: "",
   image: null,
+  _token: page.props.csrf_token,
 });
 
 function startEdit(product) {
@@ -131,16 +152,25 @@ function handleEditFile(e) {
 function updateProduct(id) {
   successMessage.value = "";
   errorMessage.value = "";
+  
+  // Refresh CSRF token
+  editForm._token = page.props.csrf_token;
 
   editForm.post(route("admin.products.update", id), {
     preserveScroll: true,
     forceFormData: true,
     onSuccess: () => {
       successMessage.value = "✏️ Product updated successfully!";
+      setTimeout(() => successMessage.value = "", 3000);
       editing.value = null;
     },
     onError: (errors) => {
+      if (errors && (errors.message?.includes('419') || errors.status === 419)) {
+        window.location.reload();
+        return;
+      }
       errorMessage.value = "❌ Failed to update product: " + JSON.stringify(errors);
+      setTimeout(() => errorMessage.value = "", 5000);
     },
   });
 }
