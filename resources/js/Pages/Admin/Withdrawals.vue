@@ -9,9 +9,6 @@ const users = ref([]);
 const currentPage = ref(1);
 const lastPage = ref(1);
 const searchQuery = ref('');
-let pollingInterval = null;
-
-
 
 const fetchUsers = async (search = '') => {
   try {
@@ -33,11 +30,52 @@ const fetchUsers = async (search = '') => {
 
 onMounted(() => {
   fetchUsers(searchQuery.value);
-  pollingInterval = setInterval(() => fetchUsers(searchQuery.value), 4000);
+  
+  console.log('[Withdrawals] Component mounted');
+  
+  // Wait for Echo to be ready
+  const setupEchoListeners = () => {
+    if (!window.Echo) {
+      console.log('[Withdrawals] Echo not ready, waiting...');
+      setTimeout(setupEchoListeners, 100);
+      return;
+    }
+    
+    console.log('[Withdrawals] Echo ready, setting up listeners');
+    
+    window.Echo.channel('withdrawals')
+      .listen('WithdrawalCreated', (e) => {
+        console.log('[Withdrawals] ✅ WithdrawalCreated event received:', e);
+        // Refresh to show new withdrawal
+        fetchUsers(searchQuery.value);
+      })
+      .listen('WithdrawalStatusUpdated', (e) => {
+        console.log('[Withdrawals] ✅ WithdrawalStatusUpdated event received:', e);
+        
+        // Update specific withdrawal in the list without full refresh
+        if (e?.withdrawal?.id && e?.withdrawal?.user_id) {
+          const user = users.value.find(u => u.id === e.withdrawal.user_id);
+          if (user && user.withdraws) {
+            const withdrawIndex = user.withdraws.findIndex(w => w.id === e.withdrawal.id);
+            if (withdrawIndex !== -1) {
+              user.withdraws[withdrawIndex].status = e.withdrawal.status;
+              // Trigger reactivity
+              users.value = [...users.value];
+            }
+          }
+        }
+      });
+    
+    console.log('[Withdrawals] Withdrawal channel listeners attached');
+  };
+  
+  setupEchoListeners();
 });
 
 onUnmounted(() => {
-  clearInterval(pollingInterval);
+  if (window.Echo) {
+    window.Echo.leaveChannel('withdrawals');
+  }
 });
 
 const searchUsers = () => {

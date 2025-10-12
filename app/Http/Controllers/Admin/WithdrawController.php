@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Events\WithdrawalStatusUpdated;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Withdraw;
@@ -86,6 +87,10 @@ class WithdrawController extends Controller
         $withdraw->approved_at = now();
         $withdraw->save();
 
+        // Broadcast the withdrawal status update
+        $withdraw->load('user');
+        broadcast(new WithdrawalStatusUpdated($withdraw));
+
         if (($request->wantsJson() || $request->ajax()) && !$request->header('X-Inertia')) {
             return response()->json([
                 'success' => true,
@@ -122,6 +127,10 @@ class WithdrawController extends Controller
 
         // Broadcast balance update to user
         broadcast(new \App\Events\BalanceUpdated($user));
+        
+        // Broadcast the withdrawal status update
+        $withdraw->load('user');
+        broadcast(new WithdrawalStatusUpdated($withdraw));
 
         if (($request->wantsJson() || $request->ajax()) && !$request->header('X-Inertia')) {
             return response()->json([

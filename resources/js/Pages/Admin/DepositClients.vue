@@ -15,8 +15,7 @@ const currentPage = ref(props.initialPage);
 const lastPage = ref(props.initialLastPage);
 const searchQuery = ref(props.search);
 const errorMessage = ref('');
-
-let pollingInterval = null;
+const userPendingDeposits = ref({});
 
 const fetchUsers = async (search = '') => {
   try {
@@ -29,6 +28,7 @@ const fetchUsers = async (search = '') => {
     if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
     const data = await response.json();
     users.value = data.data || [];
+    userPendingDeposits.value = data.pending_deposits || {};
     errorMessage.value = '';
   } catch (error) {
   // suppressed: error fetching deposit clients
@@ -37,13 +37,58 @@ const fetchUsers = async (search = '') => {
   }
 };
 
+// Expose function to window for AdminLayout to call
+window.depositUpdated = () => {
+  fetchUsers(searchQuery.value);
+};
+
 onMounted(() => {
   fetchUsers(searchQuery.value);
-  pollingInterval = setInterval(() => fetchUsers(searchQuery.value), 5000);
+  
+  console.log('[DepositClients] Component mounted');
+  
+  // Wait for Echo to be ready
+  const setupEchoListeners = () => {
+    if (!window.Echo) {
+      console.log('[DepositClients] Echo not ready, waiting...');
+      setTimeout(setupEchoListeners, 100);
+      return;
+    }
+    
+    console.log('[DepositClients] Echo ready, setting up listeners');
+    
+    window.Echo.channel('deposits')
+      .listen('DepositCreated', (e) => {
+        console.log('[DepositClients] ✅ DepositCreated event received:', e);
+        // Update specific user's pending count
+        if (e?.deposit?.user_id && userPendingDeposits.value[e.deposit.user_id] !== undefined) {
+          userPendingDeposits.value[e.deposit.user_id]++;
+        } else {
+          // Refresh all users if new user or not in current list
+          fetchUsers(searchQuery.value);
+        }
+      })
+      .listen('DepositStatusUpdated', (e) => {
+        console.log('[DepositClients] ✅ DepositStatusUpdated event received:', e);
+        // Refresh to get updated counts
+        fetchUsers(searchQuery.value);
+      });
+    
+    console.log('[DepositClients] Deposit channel listeners attached');
+  };
+  
+  setupEchoListeners();
 });
 
 onUnmounted(() => {
-  clearInterval(pollingInterval);
+  // Clean up window reference
+  if (window.depositUpdated) {
+    delete window.depositUpdated;
+  }
+  
+  if (window.Echo) {
+    window.Echo.leaveChannel('deposits');
+  }
 });
 
 const searchUsers = () => {
@@ -96,7 +141,10 @@ const goToUpdateWallet = (userId) => {
                     :key="user.id"
                     class="border-t border-white/20 hover:bg-white/10 transition-all duration-200"
                   >
-                    <td class="p-4 text-sm text-slate-800 font-medium">{{ user.name }}</td>
+                    <td class="p-4 text-sm text-slate-800 font-medium relative">
+                      {{ user.name }}
+                      <span v-if="userPendingDeposits[user.id] > 0" class="ml-2 bg-red-500 text-white text-xs rounded-full h-4 w-4 inline-flex items-center justify-center">{{ userPendingDeposits[user.id] }}</span>
+                    </td>
                     <td class="p-4 text-sm text-slate-700">{{ user.mobile_number }}</td>
                     <td class="p-4 text-sm text-slate-700 font-semibold">${{ (user.balance ?? 0).toFixed(2) }}</td>
                     <td class="p-4 text-sm text-slate-700 font-semibold">${{ (user.frozen_balance ?? 0).toFixed(2) }}</td>

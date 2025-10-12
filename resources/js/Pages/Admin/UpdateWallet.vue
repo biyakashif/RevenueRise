@@ -20,6 +20,7 @@ const userName = ref(props.userName);
 const mobileNumber = ref(props.mobile_number);
 const amount = ref('');
 const errorMessage = ref('');
+const pendingCount = computed(() => localDeposits.value.filter(d => d.status === 'pending').length);
 
 // Flash message handling
 const flashMessage = ref('');
@@ -51,8 +52,6 @@ watch(() => page.props.flash, (flash) => {
     }
 }, { deep: true });
 
-let pollingInterval = null;
-
 const fetchData = async () => {
   if (!props.selectedUserId) return;
   try {
@@ -75,11 +74,60 @@ const fetchData = async () => {
 
 onMounted(() => {
   fetchData();
-  pollingInterval = setInterval(fetchData, 5000);
+  
+  console.log('[UpdateWallet] Component mounted for user:', props.selectedUserId);
+  
+  // Wait for Echo to be ready
+  const setupEchoListeners = () => {
+    if (!window.Echo) {
+      console.log('[UpdateWallet] Echo not ready, waiting...');
+      setTimeout(setupEchoListeners, 100);
+      return;
+    }
+    
+    if (!props.selectedUserId) {
+      console.log('[UpdateWallet] No user selected, skipping Echo setup');
+      return;
+    }
+    
+    console.log('[UpdateWallet] Echo ready, setting up listeners');
+    
+    window.Echo.channel('deposits')
+      .listen('DepositCreated', (e) => {
+        console.log('[UpdateWallet] ✅ DepositCreated event received:', e);
+        // Only update if deposit is for the selected user
+        if (e?.deposit?.user_id && String(e.deposit.user_id) === String(props.selectedUserId)) {
+          console.log('[UpdateWallet] Deposit is for current user, fetching data');
+          fetchData();
+        }
+      })
+      .listen('DepositStatusUpdated', (e) => {
+        console.log('[UpdateWallet] ✅ DepositStatusUpdated event received:', e);
+        // Only update if deposit is for the selected user
+        if (e?.deposit?.user_id && String(e.deposit.user_id) === String(props.selectedUserId)) {
+          console.log('[UpdateWallet] Status update is for current user');
+          // Update the specific deposit in the list without full refresh
+          const depositIndex = localDeposits.value.findIndex(d => d.id === e.deposit.id);
+          if (depositIndex !== -1) {
+            localDeposits.value[depositIndex].status = e.deposit.status;
+            // Trigger reactivity
+            localDeposits.value = [...localDeposits.value];
+          }
+          // Refresh balance
+          fetchData();
+        }
+      });
+    
+    console.log('[UpdateWallet] Deposit channel listeners attached');
+  };
+  
+  setupEchoListeners();
 });
 
 onUnmounted(() => {
-  clearInterval(pollingInterval);
+  if (window.Echo) {
+    window.Echo.leaveChannel('deposits');
+  }
 });
 
 const updateDepositStatus = async (depositId, action) => {
@@ -210,6 +258,7 @@ const updateBalance = (action) => {
         Update Wallet
         <span v-if="selectedUserId && userName" class="block text-base font-medium text-slate-700">
           for {{ userName }}
+          <span v-if="pendingCount > 0" class="ml-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 inline-flex items-center justify-center">{{ pendingCount }}</span>
         </span>
         <span v-if="selectedUserId && mobileNumber" class="text-sm font-medium text-slate-600">
           Mobile: {{ mobileNumber }}

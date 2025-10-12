@@ -21,7 +21,7 @@
                     <!-- Support Chat -->
                     <Link
                         :href="route('admin.support')"
-                        class="flex items-center px-3 py-2 text-white hover:bg-white/10 hover:text-white/90 rounded-lg transition-all duration-200"
+                        class="flex items-center px-3 py-2 text-white hover:bg-white/10 hover:text-white/90 rounded-lg transition-all duration-200 relative"
                         :class="{ 'bg-white/10 text-white': route().current('admin.support') }"
                         @click="supportHasNewMessage = false"
                     >
@@ -29,7 +29,9 @@
                             <i class="fas fa-headset text-white text-xs"></i>
                         </div>
                         <span class="text-sm">Support Chat</span>
+                        <span v-if="supportHasNewMessage" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center animate-pulse">!</span>
                     </Link>
+
                     <!-- User Info -->
                     <Link
                         :href="route('admin.users')"
@@ -46,7 +48,7 @@
                     <!-- Task Manager -->
                     <Link
                         :href="route('admin.task-manager')"
-                        class="flex items-center px-3 py-2 text-white hover:bg-white/10 hover:text-white/90 rounded-lg transition-all duration-200"
+                        class="flex items-center px-3 py-2 text-white hover:bg-white/10 hover:text-white/90 rounded-lg transition-all duration-200 relative"
                         :class="{ 'bg-white/10 text-white': route().current('admin.task-manager') }"
                     >
                         <div class="w-6 h-6 mr-2 bg-gradient-to-br from-green-400 to-green-600 rounded-md flex items-center justify-center">
@@ -55,11 +57,12 @@
                             </svg>
                         </div>
                         <span class="text-sm">Task Manager</span>
+                        <span v-if="unassignedUsersCount > 0" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">{{ unassignedUsersCount }}</span>
                     </Link>
                     <!-- Deposit Manager -->
                     <Link
                         :href="route('admin.deposit-clients')"
-                        class="flex items-center px-3 py-2 text-white hover:bg-white/10 hover:text-white/90 rounded-lg transition-all duration-200"
+                        class="flex items-center px-3 py-2 text-white hover:bg-white/10 hover:text-white/90 rounded-lg transition-all duration-200 relative"
                         :class="{ 'bg-white/10 text-white': route().current('admin.deposit-clients') }"
                     >
                         <div class="w-6 h-6 mr-2 bg-gradient-to-br from-orange-400 to-orange-600 rounded-md flex items-center justify-center">
@@ -68,11 +71,12 @@
                             </svg>
                         </div>
                         <span class="text-sm">Deposit Manager</span>
+                        <span v-if="pendingDepositsCount > 0" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">{{ pendingDepositsCount }}</span>
                     </Link>
                     <!-- Withdraw Manager -->
                     <Link
                         :href="route('admin.withdrawals')"
-                        class="flex items-center px-3 py-2 text-white hover:bg-white/10 hover:text-white/90 rounded-lg transition-all duration-200"
+                        class="flex items-center px-3 py-2 text-white hover:bg-white/10 hover:text-white/90 rounded-lg transition-all duration-200 relative"
                         :class="{ 'bg-white/10 text-white': route().current('admin.withdrawals') }"
                     >
                         <div class="w-6 h-6 mr-2 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-md flex items-center justify-center">
@@ -81,6 +85,7 @@
                             </svg>
                         </div>
                         <span class="text-sm">Withdraw Manager</span>
+                        <span v-if="pendingWithdrawalsCount > 0" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">{{ pendingWithdrawalsCount }}</span>
                     </Link>
                     <!-- QR & Address -->
                     <Link
@@ -180,49 +185,269 @@ import { ref, onMounted, watch } from 'vue';
 const page = usePage(); // Ensure usePage is properly used
 const isCollapsed = ref(false);
 const supportHasNewMessage = ref(false);
+const usersWithNewMessages = ref(new Set());
+
+// Load notifications from sessionStorage
+const loadNotifications = () => {
+    const stored = sessionStorage.getItem('adminChatNotifications');
+    if (stored) {
+        usersWithNewMessages.value = new Set(JSON.parse(stored));
+        supportHasNewMessage.value = usersWithNewMessages.value.size > 0;
+    }
+};
+
+// Save notifications to sessionStorage
+const saveNotifications = () => {
+    sessionStorage.setItem('adminChatNotifications', JSON.stringify([...usersWithNewMessages.value]));
+};
+
+// Update support badge based on pending notifications
+const updateSupportBadge = () => {
+    const stored = sessionStorage.getItem('adminChatNotifications');
+    if (stored) {
+        const notifications = JSON.parse(stored);
+        supportHasNewMessage.value = notifications.length > 0;
+    } else {
+        supportHasNewMessage.value = false;
+    }
+};
+const pendingDepositsCount = ref(0);
+const pendingWithdrawalsCount = ref(0);
+const unassignedUsersCount = ref(0);
 
 const toggleSidebar = () => {
     isCollapsed.value = !isCollapsed.value;
 };
 
-// Clear the indicator when navigating to support route
+// Simple notification system
+window.adminNotifications = {
+    addNotification: (userId, isGuest) => {
+        const userKey = `${isGuest ? 'guest' : 'user'}-${userId}`;
+        if (!window.pendingNotifications) {
+            window.pendingNotifications = new Set();
+        }
+        window.pendingNotifications.add(userKey);
+        sessionStorage.setItem('adminChatNotifications', JSON.stringify([...window.pendingNotifications]));
+        
+        // Update badge immediately
+        if (window.updateAdminLayoutBadge) {
+            window.updateAdminLayoutBadge();
+        }
+    },
+    clearNotification: (userId, isGuest) => {
+        const userKey = `${isGuest ? 'guest' : 'user'}-${userId}`;
+        if (!window.pendingNotifications) {
+            window.pendingNotifications = new Set();
+        }
+        window.pendingNotifications.delete(userKey);
+        sessionStorage.setItem('adminChatNotifications', JSON.stringify([...window.pendingNotifications]));
+        
+        // Update badge immediately
+        if (window.updateAdminLayoutBadge) {
+            window.updateAdminLayoutBadge();
+        }
+    },
+    hasNotification: (userId, isGuest) => {
+        if (!window.pendingNotifications) {
+            window.pendingNotifications = new Set();
+        }
+        const userKey = `${isGuest ? 'guest' : 'user'}-${userId}`;
+        return window.pendingNotifications.has(userKey);
+    },
+    clearAllNotifications: () => {
+        window.pendingNotifications = new Set();
+        sessionStorage.setItem('adminChatNotifications', JSON.stringify([]));
+        
+        // Update badge immediately
+        if (window.updateAdminLayoutBadge) {
+            window.updateAdminLayoutBadge();
+        }
+    }
+};
+
+// Load from session on page load
+const stored = sessionStorage.getItem('adminChatNotifications');
+if (stored) {
+    window.pendingNotifications = new Set(JSON.parse(stored));
+} else {
+    window.pendingNotifications = new Set();
+}
+
+// Expose function to update badge
+window.updateAdminLayoutBadge = () => {
+    updateSupportBadge();
+};
+
+// Only clear main badge when visiting support, keep individual user badges
 watch(
     () => page.url,
     () => {
         if (route().current('admin.support')) {
-            supportHasNewMessage.value = false;
+            // Don't clear notifications here - let Support.vue handle it when user clicks on chat
+            updateSupportBadge();
         }
     },
     { immediate: true }
 );
 
+const fetchPendingDeposits = async () => {
+    try {
+        const response = await fetch('/admin/pending-deposits-count', {
+            headers: { 'Accept': 'application/json' }
+        });
+        if (response.ok) {
+            const data = await response.json();
+            pendingDepositsCount.value = data.count || 0;
+        }
+    } catch (error) {
+        // Silent fail
+    }
+};
+
+const fetchPendingWithdrawals = async () => {
+    try {
+        const response = await fetch('/admin/pending-withdrawals-count', {
+            headers: { 'Accept': 'application/json' }
+        });
+        if (response.ok) {
+            const data = await response.json();
+            pendingWithdrawalsCount.value = data.count || 0;
+        }
+    } catch (error) {
+        // Silent fail
+    }
+};
+
+const fetchUnassignedUsers = async () => {
+    try {
+        const response = await fetch('/admin/unassigned-users-count', {
+            headers: { 'Accept': 'application/json' }
+        });
+        if (response.ok) {
+            const data = await response.json();
+            unassignedUsersCount.value = data.count || 0;
+            console.log('[AdminLayout] Unassigned users count:', unassignedUsersCount.value);
+        }
+    } catch (error) {
+        console.error('[AdminLayout] Failed to fetch unassigned users:', error);
+    }
+};
+
+// Expose function to window for TaskManager to call
+window.taskAssignmentUpdated = () => {
+    console.log('[AdminLayout] Task assignment updated, refreshing count...');
+    fetchUnassignedUsers();
+};
+
 onMounted(() => {
-    // Subscribe to admin private channel and toggle the sidebar dot on new messages
+    loadNotifications();
+    fetchPendingDeposits();
+    fetchPendingWithdrawals();
+    fetchUnassignedUsers();
+    
+    // Initialize currentSelectedUser if not set
+    if (!window.currentSelectedUser) {
+        window.currentSelectedUser = null;
+    }
+    
+    // Update badge on mount
+    updateSupportBadge();
+    
+    // Set interval to check for notifications every second
+    setInterval(() => {
+        updateSupportBadge();
+    }, 1000);
+
     const adminId = page.props.auth?.user?.id;
-    if (adminId && window?.Echo) {
+    
+    // Wait for Echo to be ready
+    const setupEchoListeners = () => {
+        if (!window.Echo) {
+            console.log('[AdminLayout] Echo not ready, waiting...');
+            setTimeout(setupEchoListeners, 100);
+            return;
+        }
+        
+        console.log('[AdminLayout] Echo ready, setting up listeners');
+        console.log('[AdminLayout] Admin ID:', adminId);
+        
+        // Listen for deposit events on public channel
+        window.Echo.channel('deposits')
+            .listen('DepositCreated', (e) => {
+                console.log('[AdminLayout] ✅ DepositCreated event received:', e);
+                // Increment badge count immediately
+                pendingDepositsCount.value++;
+                
+                // Trigger update in other components
+                if (window.depositUpdated) {
+                    window.depositUpdated();
+                }
+            })
+            .listen('DepositStatusUpdated', (e) => {
+                console.log('[AdminLayout] ✅ DepositStatusUpdated event received:', e);
+                // Refresh count when status changes
+                fetchPendingDeposits();
+                
+                // Trigger update in other components
+                if (window.depositUpdated) {
+                    window.depositUpdated();
+                }
+            });
+        
+        console.log('[AdminLayout] Deposit channel listeners attached');
+        
+        // Listen for withdrawal events on public channel
+        const withdrawalsChannel = window.Echo.channel('withdrawals');
+        console.log('[AdminLayout] Attempting to join withdrawals channel...', withdrawalsChannel);
+        
+        withdrawalsChannel
+            .listen('WithdrawalCreated', (e) => {
+                console.log('[AdminLayout] ✅ WithdrawalCreated event received:', e);
+                // Increment badge count immediately
+                pendingWithdrawalsCount.value++;
+            })
+            .listen('WithdrawalStatusUpdated', (e) => {
+                console.log('[AdminLayout] ✅ WithdrawalStatusUpdated event received:', e);
+                // Refresh count when status changes
+                fetchPendingWithdrawals();
+            });
+        
+        console.log('[AdminLayout] Withdrawal channel listeners attached');
+        
         // Listen for regular chat messages
         window.Echo.private(`chat.${adminId}`)
             .listen('NewChatMessage', (e) => {
-                // If user isn't on the support page, show a dot
-                if (!route().current('admin.support')) {
-                    // Only mark when message originated from a user (not admin self)
-                    if (e?.chat?.sender_id && String(e.chat.sender_id) !== String(adminId)) {
-                        supportHasNewMessage.value = true;
+                // Only add notification if message is from someone else and they're not currently selected
+                if (e?.chat?.sender_id && String(e.chat.sender_id) !== String(adminId)) {
+                    // Check if this user is currently selected in Support.vue
+                    const isCurrentlySelected = window.currentSelectedUser && 
+                        !window.currentSelectedUser.is_guest && 
+                        String(window.currentSelectedUser.id) === String(e.chat.sender_id);
+                    
+                    if (!isCurrentlySelected) {
+                        window.adminNotifications.addNotification(e.chat.sender_id, false);
+                        updateSupportBadge();
                     }
                 }
-            });
-
-        // Listen for guest chat messages
-        window.Echo.private('guest-chat')
+            })
             .listen('NewGuestChatMessage', (e) => {
-                // If user isn't on the support page, show notification
-                if (!route().current('admin.support')) {
-                    // Only mark when message originated from guest (not admin self)
-                    if (e?.message?.sender_id && String(e.message.sender_id) !== String(adminId)) {
-                        supportHasNewMessage.value = true;
+                // Only add notification if message is from a guest and they're not currently selected
+                if (e?.message?.sender_id && e?.message?.is_guest) {
+                    // Check if this guest is currently selected in Support.vue
+                    const isCurrentlySelected = window.currentSelectedUser && 
+                        window.currentSelectedUser.is_guest && 
+                        String(window.currentSelectedUser.session_id) === String(e.message.sender_id);
+                    
+                    if (!isCurrentlySelected) {
+                        window.adminNotifications.addNotification(e.message.sender_id, true);
+                        updateSupportBadge();
                     }
                 }
             });
+    };
+    
+    if (adminId) {
+        setupEchoListeners();
     }
 });
 </script>

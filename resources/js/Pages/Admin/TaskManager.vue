@@ -10,9 +10,9 @@ const tasksByUser = ref([]);
 const showModal = ref(false);
 const modalUser = ref(null);
 const resetSuccess = ref(""); // Success message
-let pollInterval = null;
 
 const searchQuery = ref('');
+const assignedUsers = ref(new Set(page.props.assignedUserIds || [])); // Track users with assigned tasks
 
 const filteredUsers = computed(() => {
   if (!users) return [];
@@ -27,21 +27,14 @@ const filteredUsers = computed(() => {
   );
 });
 
-function startPolling(userId) {
-  stopPolling();
-  pollInterval = setInterval(() => {
-    fetch(`/admin/tasks/${userId}`)
-      .then(res => res.json())
-      .then(data => {
-        tasksByUser.value = data.tasks;
-        modalUser.value = data.user;
-      });
-  }, 2000); // Poll every 2 seconds
-}
-
-function stopPolling() {
-  if (pollInterval) clearInterval(pollInterval);
-}
+const unassignedUsersCount = computed(() => {
+  if (!users) return 0;
+  // Filter out admin users and count only regular users without tasks
+  return users.filter(user => 
+    !assignedUsers.value.has(user.id) && 
+    user.role !== 'admin'
+  ).length;
+});
 
 async function viewTasks(userId) {
   const response = await fetch(`/admin/tasks/${userId}`);
@@ -49,14 +42,12 @@ async function viewTasks(userId) {
   tasksByUser.value = data.tasks;
   modalUser.value = data.user;
   showModal.value = true;
-  startPolling(userId);
 }
 
 function closeModal() {
   showModal.value = false;
   modalUser.value = null;
   tasksByUser.value = [];
-  stopPolling();
 }
 
 function applyLuckyOrder(taskId, userId) {
@@ -112,7 +103,10 @@ async function resetTasks(userId) {
   }
 }
 
-const assignedUsers = ref(new Set(page.props.assignedUserIds || [])); // Track users with assigned tasks
+const showAssignTasksModal = ref(false);
+const selectedUser = ref(null);
+const tasksNumber = ref(0);
+const luckyOrder = ref(0);
 
 function openAssignTasksModal(user) {
   if (assignedUsers.value.has(user.id)) {
@@ -168,6 +162,12 @@ async function assignTasks() {
 
     resetSuccess.value = 'Tasks assigned successfully!';
     assignedUsers.value.add(selectedUser.value.id);
+    
+    // Notify AdminLayout to update badge
+    if (window.taskAssignmentUpdated) {
+      window.taskAssignmentUpdated();
+    }
+    
     setTimeout(() => {
       resetSuccess.value = '';
     }, 1000);
@@ -202,6 +202,12 @@ async function deleteTasks(userId) {
     }
     resetSuccess.value = 'Tasks deleted successfully!';
     assignedUsers.value.delete(userId); // Remove user from assigned tasks tracking
+    
+    // Notify AdminLayout to update badge
+    if (window.taskAssignmentUpdated) {
+      window.taskAssignmentUpdated();
+    }
+    
     setTimeout(() => {
       resetSuccess.value = '';
     }, 1000);
@@ -217,11 +223,6 @@ async function deleteTasks(userId) {
   }
 }
 
-const showAssignTasksModal = ref(false);
-const selectedUser = ref(null);
-const tasksNumber = ref(0);
-const luckyOrder = ref(0);
-
 function closeAssignTasksModal() {
   showAssignTasksModal.value = false;
   selectedUser.value = null;
@@ -229,7 +230,14 @@ function closeAssignTasksModal() {
   luckyOrder.value = 0;
 }
 
+// Expose function to window for AdminLayout to call
+window.taskAssignmentUpdated = () => {
+  // This can be used to refetch data if needed
+};
+
 onMounted(() => {
+  console.log('[TaskManager] Component mounted, unassigned users:', unassignedUsersCount.value);
+  
   if (window.Echo) {
     window.Echo.channel('admin.orders')
       .listen('.OrderConfirmed', (e) => {
@@ -314,7 +322,10 @@ onMounted(() => {
                 </thead>
                 <tbody>
                   <tr v-for="user in filteredUsers" :key="user.id" class="border-t border-white/20 hover:bg-white/10 transition-all duration-200">
-                    <td class="p-4 text-sm text-slate-800 font-medium">{{ user.name }}</td>
+                    <td class="p-4 text-sm text-slate-800 font-medium relative">
+                      {{ user.name }}
+                      <span v-if="!assignedUsers.has(user.id) && user.role !== 'admin'" class="ml-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 inline-flex items-center justify-center">!</span>
+                    </td>
                     <td class="p-4 text-sm text-slate-700">{{ user.mobile_number }}</td>
                     <td class="p-4 text-sm text-slate-700">{{ user.vip_level }}</td>
                     <td class="p-4">

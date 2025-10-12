@@ -11,6 +11,7 @@ use App\Models\Task;
 use App\Models\User;
 use App\Models\UserOrder;
 use App\Models\BalanceRecord;
+use App\Models\Withdraw;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -103,7 +104,8 @@ class AdminController extends Controller
             $usersQuery->where(function ($query) use ($search) {
                 $query->where('mobile_number', 'like', "%{$search}%")
                     ->orWhere('invitation_code', 'like', "%{$search}%")
-                    ->orWhere('name', 'like', "%{$search}%");
+                    ->orWhere('name', 'like', "%{$search}%")
+                    ->orWhere('vip_level', 'like', "%{$search}%");
             });
         }
 
@@ -467,8 +469,18 @@ class AdminController extends Controller
                 return $user;
             });
 
+        // Get pending deposits count per user
+        $pendingDeposits = Deposit::where('status', 'pending')
+            ->selectRaw('user_id, COUNT(*) as count')
+            ->groupBy('user_id')
+            ->pluck('count', 'user_id')
+            ->toArray();
+
         if ($request->wantsJson()) {
-            return response()->json($users);
+            return response()->json([
+                'data' => $users->items(),
+                'pending_deposits' => $pendingDeposits
+            ]);
         }
 
         return Inertia::render('Admin/DepositClients', [
@@ -476,6 +488,7 @@ class AdminController extends Controller
             'initialPage' => $users->currentPage(),
             'initialLastPage' => $users->lastPage(),
             'search' => $search,
+            'pendingDeposits' => $pendingDeposits,
         ]);
     }
 
@@ -637,7 +650,7 @@ class AdminController extends Controller
 
         $deposit->save();
 
-        // Broadcast the deposit status update to the user
+        // Broadcast the deposit status update to the user and admin
         $deposit->load('user');
         broadcast(new \App\Events\DepositStatusUpdated($deposit));
 
@@ -973,11 +986,15 @@ class AdminController extends Controller
 
     public function assignTasks(Request $request)
     {
-        $request->validate([
-            'userId' => 'required|exists:users,id',
-            'tasksNumber' => 'required|integer|min:1',
-            'luckyOrder' => 'nullable|integer|min:0',
-        ]);
+        try {
+            $request->validate([
+                'userId' => 'required|exists:users,id',
+                'tasksNumber' => 'required|integer|min:1',
+                'luckyOrder' => 'nullable|integer|min:0',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json(['message' => 'Validation failed', 'errors' => $e->errors()], 400);
+        }
 
         Log::info('Assign Tasks Request:', $request->all());
 
@@ -1076,7 +1093,7 @@ class AdminController extends Controller
             return response()->json(['message' => 'Failed to assign tasks.'], 500);
         }
 
-    return redirect()->back()->with('success', 'Tasks assigned successfully.');
+        return response()->json(['message' => 'Tasks assigned successfully.'], 200);
     }
 
     public function getAssignedUsers()
@@ -1214,5 +1231,30 @@ class AdminController extends Controller
     {
         $blockedUsers = \App\Models\UserBlock::with('user')->latest('blocked_at')->get();
         return Inertia::render('Admin/BlockedUsers', ['blockedUsers' => $blockedUsers]);
+    }
+
+    public function getPendingDepositsCount()
+    {
+        $count = Deposit::where('status', 'pending')->count();
+        return response()->json(['count' => $count]);
+    }
+
+    public function getPendingWithdrawalsCount()
+    {
+        $count = Withdraw::where('status', 'under review')->count();
+        return response()->json(['count' => $count]);
+    }
+
+    public function getUnassignedUsersCount()
+    {
+        // Get all user IDs that have tasks assigned
+        $assignedUserIds = Task::distinct('user_id')->pluck('user_id');
+        
+        // Count users who don't have any tasks (excluding admins)
+        $count = User::whereNotIn('id', $assignedUserIds)
+                    ->where('role', '!=', 'admin')
+                    ->count();
+        
+        return response()->json(['count' => $count]);
     }
 }

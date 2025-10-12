@@ -95,8 +95,9 @@ class DepositController extends Controller
 
         $deposit = Deposit::create($data);
 
-        // Fire event for real-time updates
-        broadcast(new DepositCreated($deposit))->toOthers();
+        // Fire event for real-time updates to all admins
+        $deposit->load('user');
+        broadcast(new DepositCreated($deposit));
 
         return redirect()->back()->with('success', 'Deposit submitted successfully! Awaiting approval.');
     }

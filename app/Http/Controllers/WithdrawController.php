@@ -98,6 +98,10 @@ class WithdrawController extends Controller
             'crypto_wallet' => $validated['crypto_wallet'],
         ]);
 
+        // Fire event for real-time updates to all admins
+        $withdraw->load('user');
+        broadcast(new \App\Events\WithdrawalCreated($withdraw));
+
         if ($request->wantsJson() && !$request->header('X-Inertia')) {
             return response()->json([
                 'success' => true,

@@ -3,13 +3,14 @@
 namespace App\Events;
 
 use App\Models\Deposit;
+use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class DepositStatusUpdated implements ShouldBroadcast
+class DepositStatusUpdated implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
@@ -30,7 +31,10 @@ class DepositStatusUpdated implements ShouldBroadcast
      */
     public function broadcastOn()
     {
-        return new PrivateChannel('user.' . $this->userId);
+        return [
+            new PrivateChannel('user.' . $this->userId),
+            new Channel('deposits'), // Public channel for admin
+        ];
     }
 
     /**
@@ -41,6 +45,7 @@ class DepositStatusUpdated implements ShouldBroadcast
         return [
             'deposit' => [
                 'id' => $this->deposit->id,
+                'user_id' => $this->deposit->user_id,
                 'status' => $this->deposit->status,
                 'amount' => $this->deposit->amount,
                 'symbol' => $this->deposit->symbol,

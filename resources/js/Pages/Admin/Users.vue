@@ -23,7 +23,7 @@
                     v-model="search"
                     @input="fetchUsers"
                     type="text"
-                    placeholder="Search by name, mobile, or invitation code..."
+                    placeholder="Search by name, mobile, invitation code, or VIP level..."
                     class="w-full h-12 rounded-xl bg-white/50 border-0 focus:ring-2 focus:ring-cyan-400 text-slate-900 px-4 placeholder-slate-400 backdrop-blur-sm shadow-lg"
                 />
             </div>

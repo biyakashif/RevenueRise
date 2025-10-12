@@ -42,7 +42,7 @@
                                      @click="selectUser(user)"
                                      class="relative p-4 hover:bg-white/10 cursor-pointer transition-all duration-200 rounded-xl mx-2 mb-2"
                                      :class="{
-                                         'bg-white/20': selectedUser?.id === user.id,
+                                         'bg-white/20': selectedUser?.id === user.id && selectedUser?.is_guest === user.is_guest,
                                          'opacity-60': user.is_blocked,
                                          'border-l-4 border-red-500': user.is_blocked
                                      }">
@@ -57,19 +57,22 @@
                                             <div v-else class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
                                                 <i class="fas fa-user text-gray-400"></i>
                                             </div>
-                                            <div>
-                                                <div class="font-medium text-slate-800">
-                                                    {{ user.name }}
-                                                    <span v-if="user.is_guest" class="ml-2 px-2 py-1 bg-orange-100 text-orange-800 text-xs rounded-full">Guest</span>
+                                            <div class="flex items-center space-x-2">
+                                                <div>
+                                                    <div class="font-medium text-slate-800 flex items-center space-x-2">
+                                                        <span>{{ user.name }}</span>
+                                                        <span v-if="user.is_guest" class="px-2 py-1 bg-orange-100 text-orange-800 text-xs rounded-full">Guest</span>
+                                                        <!-- Notification badge on name -->
+                                                        <span v-if="user.hasNotification" 
+                                                              class="bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs animate-pulse">
+                                                            !
+                                                        </span>
+                                                    </div>
+                                                    <div class="text-xs text-slate-600">{{ user.mobile_number }}</div>
                                                 </div>
-                                                <div class="text-xs text-slate-600">{{ user.mobile_number }}</div>
                                             </div>
                                         </div>
                                         <div class="flex items-center space-x-2">
-                                            <div v-if="user.unread_count" 
-                                                 class="bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center animate-bounce">
-                                                {{ user.unread_count }}
-                                            </div>
                                             <div class="flex flex-col space-y-1">
                                                 <button v-if="user.is_guest && !user.is_blocked" 
                                                         @click.stop="blockGuestUser(user)" 
@@ -275,7 +278,7 @@
 
 <script setup>
 import AdminLayout from '@/Layouts/AdminLayout.vue';
-import { ref, onMounted, nextTick, computed } from 'vue';
+import { ref, onMounted, onUnmounted, nextTick, computed } from 'vue';
 import { usePage, Link, router } from '@inertiajs/vue3';
 import axios from 'axios';
 
@@ -284,6 +287,7 @@ const users = ref([]);
 const selectedUser = ref(null);
 const messages = ref([]);
 const messageCache = ref(new Map()); // Cache messages for each user
+const guestUserCache = ref(new Map()); // Cache guest users by session ID
 
 const newMessage = ref('');
 const imageInput = ref(null);
@@ -298,14 +302,25 @@ const lastUsersUpdate = ref(0);
 const lastMessagesUpdate = ref(0);
 const filteredUsers = computed(() => {
     const query = searchQuery.value.toLowerCase();
+    
     return users.value
         .filter(user => {
             const name = user.name ? user.name.toLowerCase() : '';
             const mobile = user.mobile_number ? user.mobile_number.toString() : '';
             return name.includes(query) || mobile.includes(query);
         })
+        .map(user => {
+            const hasNotification = window.adminNotifications?.hasNotification(user.id, user.is_guest) || false;
+            return {
+                ...user,
+                hasNotification,
+                unread_count: hasNotification && !user.unread_count ? 1 : user.unread_count
+            };
+        })
         .sort((a, b) => {
-            // Sort by last message time descending (most recent first)
+            if (a.hasNotification && !b.hasNotification) return -1;
+            if (!a.hasNotification && b.hasNotification) return 1;
+            
             const aTime = new Date(a.last_message_at || 0);
             const bTime = new Date(b.last_message_at || 0);
             return bTime - aTime;
@@ -344,34 +359,58 @@ const loadUsers = async (force = false) => {
             is_blocked: u.is_blocked || false,
         }));
         
-        const guestUsers = (guestResponse.data || []).map(u => ({
-            ...u,
-            mobile_number: u.mobile_number != null ? String(u.mobile_number) : u.mobile_number,
-            unread_count: u.unread_count ?? 0,
-            is_guest: true,
-            last_message_at: u.last_message_at,
-        }));
-        
-        const newUsers = [...chatUsers, ...guestUsers];
-        
-        // Remove duplicates by creating a Map with unique keys
-        const userMap = new Map();
-        newUsers.forEach(user => {
-            const key = `${user.is_guest ? 'guest' : 'user'}-${user.id}`;
-            userMap.set(key, user);
+        const guestUsers = (guestResponse.data || []).map(u => {
+            const guestUser = {
+                ...u,
+                mobile_number: u.mobile_number != null ? String(u.mobile_number) : u.mobile_number,
+                unread_count: u.unread_count ?? 0,
+                is_guest: true,
+                last_message_at: u.last_message_at,
+            };
+            // Cache guest user by session ID
+            guestUserCache.value.set(u.session_id, guestUser);
+            return guestUser;
         });
         
-        // Add dynamic guest users that don't exist in database
-        users.value.filter(u => 
-            u.is_guest && !guestUsers.some(gu => gu.id === u.id)
-        ).forEach(user => {
-            const key = `guest-${user.id}`;
-            if (!userMap.has(key)) {
-                userMap.set(key, user);
+        // Create a map to store unique users, using session_id as the primary key for deduplication
+        const userMap = new Map();
+        
+        // First process guest users
+        guestUsers.forEach(guestUser => {
+            const sessionKey = guestUser.id; // guest id is the session_id
+            userMap.set(sessionKey, {
+                ...guestUser,
+                is_guest: true // Ensure guest flag is set
+            });
+        });
+        
+        // Then add chat users, overwriting guest entries if they match by session_id
+        chatUsers.forEach(user => {
+            const sessionKey = user.session_id || user.id;
+            // If this user already exists as a guest, merge the data
+            if (userMap.has(sessionKey)) {
+                const existingUser = userMap.get(sessionKey);
+                userMap.set(sessionKey, {
+                    ...existingUser,
+                    ...user,
+                    is_guest: true // Maintain guest status
+                });
+            } else {
+                userMap.set(sessionKey, user);
             }
         });
         
-        const allUsers = Array.from(userMap.values());
+        // Convert map to array and ensure no duplicates by session_id
+        const allUsers = Array.from(userMap.values()).reduce((acc, user) => {
+            const isDuplicate = acc.some(existingUser => 
+                (user.session_id && existingUser.session_id === user.session_id) ||
+                (user.id && existingUser.id === user.id)
+            );
+            if (!isDuplicate) {
+                acc.push(user);
+            }
+            return acc;
+        }, []);
         
         // Check for new messages by comparing with previous state
         if (users.value.length > 0) {
@@ -413,8 +452,29 @@ const selectUser = async (user) => {
         selectedUser.value = user;
         lastMessagesUpdate.value = Date.now();
         
+        // Track currently selected user globally so AdminLayout can check
+        window.currentSelectedUser = {
+            id: user.id,
+            session_id: user.session_id,
+            is_guest: user.is_guest
+        };
+        
         // Create unique key for user
         const userKey = `${user.is_guest ? 'guest' : 'user'}-${user.id}`;
+        
+        // Clear notification immediately when user is selected
+        if (window.adminNotifications) {
+            window.adminNotifications.clearNotification(user.id, user.is_guest);
+        }
+        
+        // Update user badge in the list
+        const idx = users.value.findIndex(u => u.id === user.id && u.is_guest === user.is_guest);
+        if (idx !== -1) {
+            const u = users.value[idx];
+            u.unread_count = 0;
+            u.hasNotification = false;
+            users.value.splice(idx, 1, { ...u });
+        }
         
         // Check if we have cached messages for this user
         if (messageCache.value.has(userKey)) {
@@ -429,14 +489,6 @@ const selectUser = async (user) => {
         messages.value.forEach(msg => {
             receivedMessageIds.add(String(msg.id));
         });
-        
-        // Clear unread badge immediately for instant UI feedback
-        const idx = users.value.findIndex(u => u.id === user.id && u.is_guest === user.is_guest);
-        if (idx !== -1) {
-            const u = users.value[idx];
-            u.unread_count = 0;
-            users.value.splice(idx, 1, { ...u });
-        }
         
         // Scroll to bottom immediately if we have cached messages
         if (messageCache.value.has(userKey)) {
@@ -673,10 +725,15 @@ const handleAvatarError = (e) => {
 
 
 
+let echoChannel = null;
+
 onMounted(() => {
+    // Initialize currently selected user tracking
+    window.currentSelectedUser = null;
+    
     notificationSound.src = '/notification.mp3';
     notificationSound.load();
-
+    
     if (localStorage.getItem('soundEnabled') === '1') {
         soundEnabled.value = true;
     } else {
@@ -687,6 +744,19 @@ onMounted(() => {
         Notification.requestPermission();
     }
 
+    // Clear users array and guest cache on mount to prevent duplicates
+    users.value = [];
+    guestUserCache.value.clear();
+    
+    // Remove any existing Echo listeners to prevent duplicates
+    if (window.Echo) {
+        try {
+            window.Echo.leaveAllChannels();
+        } catch (e) {
+            console.log('No existing channels to leave');
+        }
+    }
+    
     // Initial load - only once
     loadUsers(true);
 
@@ -697,7 +767,7 @@ onMounted(() => {
         console.log('🔄 Setting up Echo listeners for admin chat...');
         
         // Listen to admin's own channel for user messages
-        window.Echo.private(`chat.${page.props.auth.user.id}`)
+        echoChannel = window.Echo.private(`chat.${page.props.auth.user.id}`)
             .listen('NewChatMessage', (e) => {
                 console.log('📨 Received NewChatMessage event:', e);
                 // Handle all messages on admin channel
@@ -717,17 +787,23 @@ onMounted(() => {
                     // Find or create user in list
                     let userIndex = users.value.findIndex(u => u.id === e.chat.sender_id && !u.is_guest);
                     if (userIndex === -1) {
-                        const newUser = {
-                            id: e.chat.sender_id,
-                            name: `User ${e.chat.sender_id}`,
-                            mobile_number: '',
-                            avatar_url: null,
-                            unread_count: 1,
-                            is_guest: false,
-                            last_message_at: e.chat.created_at
-                        };
-                        users.value.push(newUser);
-                        console.log('👥 Created new user from message:', newUser);
+                        // Only add if user doesn't exist in any form
+                        const existsInAnyForm = users.value.some(u => u.id === e.chat.sender_id);
+                        if (!existsInAnyForm) {
+                            const newUser = {
+                                id: e.chat.sender_id,
+                                name: `User ${e.chat.sender_id}`,
+                                mobile_number: '',
+                                avatar_url: null,
+                                unread_count: 1,
+                                is_guest: false,
+                                last_message_at: e.chat.created_at,
+                                hasNotification: true
+                            };
+                            users.value.push(newUser);
+                            window.adminNotifications.addNotification(e.chat.sender_id, false);
+                            console.log('👥 Created new user from message:', newUser);
+                        }
                     } else {
                         const user = users.value[userIndex];
                         user.last_message_at = e.chat.created_at;
@@ -735,7 +811,7 @@ onMounted(() => {
                         const userKey = `user-${user.id}`;
                         
                         if (selectedUser.value && !selectedUser.value.is_guest && selectedUser.value.id === user.id) {
-                            // If selected, add to messages
+                            // If selected, add to messages (no notification needed)
                             if (!receivedMessageIds.has(String(e.chat.id))) {
                                 const newMsg = {
                                     id: e.chat.id,
@@ -755,8 +831,9 @@ onMounted(() => {
                                 console.log('📨 Added user message to chat:', newMsg);
                             }
                             user.unread_count = 0;
+                            user.hasNotification = false;
                         } else {
-                            // Add to cache even if not selected
+                            // Add to cache and show notification badge
                             const cachedMessages = messageCache.value.get(userKey) || [];
                             if (!cachedMessages.some(m => m.id === e.chat.id)) {
                                 const newMsg = {
@@ -773,6 +850,8 @@ onMounted(() => {
                                 messageCache.value.set(userKey, cachedMessages);
                             }
                             user.unread_count = (user.unread_count || 0) + 1;
+                            user.hasNotification = true;
+                            window.adminNotifications.addNotification(user.id, false);
                         }
                         
                         users.value.splice(userIndex, 1, { ...user });
@@ -797,26 +876,53 @@ onMounted(() => {
                             });
                         }
                         
-                        // Find or create guest user
-                        let userIndex = users.value.findIndex(u => u.id === e.message.sender_id && u.is_guest);
-                        if (userIndex === -1) {
-                            const newGuestUser = {
-                                id: e.message.sender_id,
-                                name: e.message.guest_name || `Guest ${e.message.sender_id.substring(0, 8)}`,
-                                mobile_number: e.message.guest_mobile || 'N/A',
-                                avatar_url: null,
-                                unread_count: 1,
-                                is_guest: true,
-                                is_blocked: false,
-                                last_message_at: e.message.created_at
-                            };
-                            users.value.push(newGuestUser);
-                            console.log('👥 Created new guest user from admin chat channel:', newGuestUser);
+                        // Check cache first, then find or create guest user
+                        const sessionId = e.message.sender_id;
+                        let cachedGuest = guestUserCache.value.get(sessionId);
+                        let userIndex = -1;
+                        
+                        if (cachedGuest) {
+                            // Use cached guest user
+                            userIndex = users.value.findIndex(u => u.id === cachedGuest.id && u.is_guest);
+                            if (userIndex === -1) {
+                                users.value.push(cachedGuest);
+                                userIndex = users.value.length - 1;
+                            }
                         } else {
+                            // Create new guest user and cache it
+                            userIndex = users.value.findIndex(u => u.id === sessionId && u.is_guest);
+                            if (userIndex === -1) {
+                                const newGuestUser = {
+                                    id: sessionId,
+                                    session_id: sessionId,
+                                    name: e.message.guest_name || `Guest ${sessionId.substring(0, 8)}`,
+                                    mobile_number: e.message.guest_mobile || 'N/A',
+                                    avatar_url: null,
+                                    unread_count: 1,
+                                    is_guest: true,
+                                    is_blocked: false,
+                                    last_message_at: e.message.created_at
+                                };
+                                guestUserCache.value.set(sessionId, newGuestUser);
+                                users.value.push(newGuestUser);
+                                userIndex = users.value.length - 1;
+                                console.log('👥 Created new guest user from admin chat channel:', newGuestUser);
+                            }
+                        }
+                        
+                        // Handle message for existing or newly created user (ALWAYS runs)
+                        if (userIndex !== -1) {
                             const user = users.value[userIndex];
                             user.last_message_at = e.message.created_at;
                             
                             const userKey = `guest-${user.id}`;
+                            
+                            console.log('🔍 Checking if guest is selected:', {
+                                selectedUserId: selectedUser.value?.id,
+                                selectedUserIsGuest: selectedUser.value?.is_guest,
+                                currentUserId: user.id,
+                                match: selectedUser.value && selectedUser.value.is_guest && selectedUser.value.id === user.id
+                            });
                             
                             if (selectedUser.value && selectedUser.value.is_guest && selectedUser.value.id === user.id) {
                                 if (!receivedMessageIds.has(String(e.message.id))) {
@@ -828,18 +934,20 @@ onMounted(() => {
                                         created_at: e.message.created_at,
                                         sender_id: e.message.sender_id,
                                         recipient_id: page.props.auth.user.id,
+                                        is_guest: true
                                     };
                                     
                                     messages.value.push(newMsg);
                                     messages.value.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
-                                    messageCache.value.set(userKey, [...messages.value]); // Update cache
+                                    messageCache.value.set(userKey, [...messages.value]);
                                     scrollToBottom();
                                     receivedMessageIds.add(String(e.message.id));
-                                    console.log('📨 Added guest message from admin chat channel:', newMsg);
+                                    console.log('✅ Added guest message from admin chat channel to UI:', newMsg);
                                 }
                                 user.unread_count = 0;
+                                user.hasNotification = false;
                             } else {
-                                // Add to cache even if not selected
+                                // Add to cache and show notification badge
                                 const cachedMessages = messageCache.value.get(userKey) || [];
                                 if (!cachedMessages.some(m => m.id === e.message.id)) {
                                     const newMsg = {
@@ -850,19 +958,23 @@ onMounted(() => {
                                         created_at: e.message.created_at,
                                         sender_id: e.message.sender_id,
                                         recipient_id: page.props.auth.user.id,
+                                        is_guest: true
                                     };
                                     cachedMessages.push(newMsg);
                                     cachedMessages.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
                                     messageCache.value.set(userKey, cachedMessages);
+                                    console.log('📦 Cached guest message for later:', newMsg);
                                 }
                                 user.unread_count = (user.unread_count || 0) + 1;
+                                user.hasNotification = true;
+                                window.adminNotifications.addNotification(user.id, true);
                             }
                             
                             users.value.splice(userIndex, 1, { ...user });
                         }
                     }
                 }
-            });
+            })
 
         // Listen for guest chat messages on admin channel
         window.Echo.private('guest-chat')
@@ -883,22 +995,39 @@ onMounted(() => {
                             });
                         }
                         
-                        // Find or create guest user
-                        let userIndex = users.value.findIndex(u => u.id === e.message.sender_id && u.is_guest);
-                        if (userIndex === -1) {
-                            const newGuestUser = {
-                                id: e.message.sender_id,
-                                name: e.message.guest_name || `Guest ${e.message.sender_id.substring(0, 8)}`,
-                                mobile_number: e.message.guest_mobile || 'N/A',
-                                avatar_url: null,
-                                unread_count: 1,
-                                is_guest: true,
-                                is_blocked: false,
-                                last_message_at: e.message.created_at
-                            };
-                            users.value.push(newGuestUser);
-                            console.log('👥 Created new guest user from message:', newGuestUser);
+                        // Check cache first, then find or create guest user
+                        const sessionId = e.message.sender_id;
+                        let cachedGuest = guestUserCache.value.get(sessionId);
+                        
+                        if (cachedGuest) {
+                            // Use cached guest user
+                            let userIndex = users.value.findIndex(u => u.id === cachedGuest.id && u.is_guest);
+                            if (userIndex === -1) {
+                                users.value.push(cachedGuest);
+                                userIndex = users.value.length - 1;
+                            }
                         } else {
+                            // Create new guest user and cache it
+                            let userIndex = users.value.findIndex(u => u.id === sessionId && u.is_guest);
+                            if (userIndex === -1) {
+                                const newGuestUser = {
+                                    id: sessionId,
+                                    session_id: sessionId,
+                                    name: e.message.guest_name || `Guest ${sessionId.substring(0, 8)}`,
+                                    mobile_number: e.message.guest_mobile || 'N/A',
+                                    avatar_url: null,
+                                    unread_count: 1,
+                                    is_guest: true,
+                                    is_blocked: false,
+                                    last_message_at: e.message.created_at
+                                };
+                                guestUserCache.value.set(sessionId, newGuestUser);
+                                users.value.push(newGuestUser);
+                                userIndex = users.value.length - 1;
+                                console.log('👥 Created new guest user from message:', newGuestUser);
+                            }
+                            
+                            // Handle message for existing or newly created user
                             const user = users.value[userIndex];
                             user.last_message_at = e.message.created_at;
                             
@@ -915,6 +1044,7 @@ onMounted(() => {
                                         created_at: e.message.created_at,
                                         sender_id: e.message.sender_id,
                                         recipient_id: page.props.auth.user.id,
+                                        is_guest: true
                                     };
                                     
                                     messages.value.push(newMsg);
@@ -925,8 +1055,9 @@ onMounted(() => {
                                     console.log('📨 Added guest message to chat:', newMsg);
                                 }
                                 user.unread_count = 0;
+                                user.hasNotification = false;
                             } else {
-                                // Add to cache even if not selected
+                                // Add to cache and show notification badge
                                 const cachedMessages = messageCache.value.get(userKey) || [];
                                 if (!cachedMessages.some(m => m.id === e.message.id)) {
                                     const newMsg = {
@@ -937,19 +1068,22 @@ onMounted(() => {
                                         created_at: e.message.created_at,
                                         sender_id: e.message.sender_id,
                                         recipient_id: page.props.auth.user.id,
+                                        is_guest: true
                                     };
                                     cachedMessages.push(newMsg);
                                     cachedMessages.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
                                     messageCache.value.set(userKey, cachedMessages);
                                 }
                                 user.unread_count = (user.unread_count || 0) + 1;
+                                user.hasNotification = true;
+                                window.adminNotifications.addNotification(user.id, true);
                             }
                             
                             users.value.splice(userIndex, 1, { ...user });
                         }
                     }
                 }
-            });
+            })
             
         // Listen for chat deletion events
         window.Echo.private(`chat.${page.props.auth.user.id}`)
@@ -997,6 +1131,18 @@ onMounted(() => {
     return () => {
         // No intervals to clear
     };
+});
+
+onUnmounted(() => {
+    // Clear currently selected user tracking
+    window.currentSelectedUser = null;
+    
+    // Clean up Echo listeners
+    if (echoChannel) {
+        echoChannel.stopListening('NewChatMessage');
+        echoChannel.stopListening('NewGuestChatMessage');
+        echoChannel.stopListening('ChatDeleted');
+    }
 });
 
 // Explicit user gesture to enable/prime audio

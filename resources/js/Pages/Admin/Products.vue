@@ -55,6 +55,35 @@ const deleteProductId = ref(null);
 // File change handler
 function handleFileChange(e) {
   form.image = e.target.files[0];
+  if (form.image) {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      imagePreview.value = event.target.result;
+    };
+    reader.readAsDataURL(form.image);
+  }
+}
+
+// Handle paste event for screenshots
+function handlePaste(e) {
+  const items = e.clipboardData?.items;
+  if (!items) return;
+  
+  for (let i = 0; i < items.length; i++) {
+    if (items[i].type.indexOf('image') !== -1) {
+      const blob = items[i].getAsFile();
+      form.image = blob;
+      e.target.value = ''; // Clear textarea
+      
+      // Show preview
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        imagePreview.value = event.target.result;
+      };
+      reader.readAsDataURL(blob);
+      break;
+    }
+  }
 }
 
 // Upload product
@@ -74,6 +103,7 @@ function submit() {
       form.reset();
       form.type = "VIP1";
       form._token = page.props.csrf_token;
+      imagePreview.value = null;
       searchQuery.value = "";
       showModal.value = false;
     },
@@ -123,6 +153,8 @@ function confirmDelete() {
 
 // Edit product
 const editing = ref(null);
+const imagePreview = ref(null);
+
 const editForm = useForm({
   title: "",
   description: "",
@@ -239,116 +271,137 @@ function closeLightbox() {
     <transition name="modal">
       <div
         v-if="showModal"
-        class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4"
+        class="fixed inset-0 bg-black bg-opacity-40 flex items-start justify-center z-50 p-4 overflow-y-auto"
         @click="showModal = false"
       >
         <div
-          class="bg-white rounded-lg shadow-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+          class="bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl rounded-2xl p-6 w-full max-w-2xl mx-4 border border-white/20 shadow-2xl my-8"
           @click.stop
         >
-          <h2 class="text-xl font-semibold text-gray-900 mb-6">Add New Product</h2>
-          <form @submit.prevent="submit" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Title</label>
-              <input
-                v-model="form.title"
-                type="text"
-                class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition"
-                required
-              />
-              <span v-if="form.errors.title" class="text-red-500 text-xs mt-1">{{ form.errors.title }}</span>
+          <h2 class="text-lg font-semibold text-white text-center mb-4">Add New Product</h2>
+          <form @submit.prevent="submit" class="space-y-3">
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-medium text-white mb-1">Title</label>
+                <input
+                  v-model="form.title"
+                  type="text"
+                  class="w-full h-9 rounded-lg bg-white/50 border-0 focus:ring-2 focus:ring-cyan-400 text-slate-900 px-3 text-sm placeholder-slate-400 backdrop-blur-sm shadow-lg"
+                  required
+                />
+                <span v-if="form.errors.title" class="text-red-500 text-xs mt-1">{{ form.errors.title }}</span>
+              </div>
+
+              <div>
+                <label class="block text-xs font-medium text-white mb-1">Type</label>
+                <select
+                  v-model="form.type"
+                  class="w-full h-9 rounded-lg bg-white/50 border-0 focus:ring-2 focus:ring-cyan-400 text-slate-900 px-3 text-sm backdrop-blur-sm shadow-lg"
+                  required
+                >
+                  <option value="VIP1">VIP1</option>
+                  <option value="VIP2">VIP2</option>
+                  <option value="VIP3">VIP3</option>
+                  <option value="VIP4">VIP4</option>
+                  <option value="VIP5">VIP5</option>
+                  <option value="VIP6">VIP6</option>
+                  <option value="VIP7">VIP7</option>
+                  <option value="Lucky Order">Lucky Order</option>
+                </select>
+                <span v-if="form.errors.type" class="text-red-500 text-xs mt-1">{{ form.errors.type }}</span>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2">
+              <div>
+                <label class="block text-xs font-medium text-white mb-1">Purchase Price</label>
+                <input
+                  v-model="form.purchase_price"
+                  type="number"
+                  step="0.01"
+                  class="w-full h-9 rounded-lg bg-white/50 border-0 focus:ring-2 focus:ring-cyan-400 text-slate-900 px-2 text-sm placeholder-slate-400 backdrop-blur-sm shadow-lg"
+                  required
+                />
+                <span v-if="form.errors.purchase_price" class="text-red-500 text-xs mt-1">{{ form.errors.purchase_price }}</span>
+              </div>
+
+              <div>
+                <label class="block text-xs font-medium text-white mb-1">Selling Price</label>
+                <input
+                  v-model="form.selling_price"
+                  type="number"
+                  step="0.01"
+                  class="w-full h-9 rounded-lg bg-white/50 border-0 focus:ring-2 focus:ring-cyan-400 text-slate-900 px-2 text-sm placeholder-slate-400 backdrop-blur-sm shadow-lg"
+                  required
+                />
+                <span v-if="form.errors.selling_price" class="text-red-500 text-xs mt-1">{{ form.errors.selling_price }}</span>
+              </div>
+
+              <div>
+                <label class="block text-xs font-medium text-white mb-1">Commission %</label>
+                <input
+                  v-model="form.commission_percentage"
+                  type="number"
+                  step="0.01"
+                  max="100"
+                  class="w-full h-9 rounded-lg bg-white/50 border-0 focus:ring-2 focus:ring-cyan-400 text-slate-900 px-2 text-sm placeholder-slate-400 backdrop-blur-sm shadow-lg"
+                  required
+                />
+                <span v-if="form.errors.commission_percentage" class="text-red-500 text-xs mt-1">{{ form.errors.commission_percentage }}</span>
+              </div>
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Type</label>
-              <select
-                v-model="form.type"
-                class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition"
-                required
-              >
-                <option value="VIP1">VIP1</option>
-                <option value="VIP2">VIP2</option>
-                <option value="VIP3">VIP3</option>
-                <option value="VIP4">VIP4</option>
-                <option value="VIP5">VIP5</option>
-                <option value="VIP6">VIP6</option>
-                <option value="VIP7">VIP7</option>
-                <option value="Lucky Order">Lucky Order</option>
-              </select>
-              <span v-if="form.errors.type" class="text-red-500 text-xs mt-1">{{ form.errors.type }}</span>
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Purchase Price</label>
-              <input
-                v-model="form.purchase_price"
-                type="number"
-                step="0.01"
-                class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition"
-                required
-              />
-              <span v-if="form.errors.purchase_price" class="text-red-500 text-xs mt-1">{{ form.errors.purchase_price }}</span>
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Selling Price</label>
-              <input
-                v-model="form.selling_price"
-                type="number"
-                step="0.01"
-                class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition"
-                required
-              />
-              <span v-if="form.errors.selling_price" class="text-red-500 text-xs mt-1">{{ form.errors.selling_price }}</span>
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Commission Percentage (%)</label>
-              <input
-                v-model="form.commission_percentage"
-                type="number"
-                step="0.01"
-                max="100"
-                class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition"
-                required
-              />
-              <span v-if="form.errors.commission_percentage" class="text-red-500 text-xs mt-1">{{ form.errors.commission_percentage }}</span>
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Product Image</label>
-              <input
-                type="file"
-                @change="handleFileChange"
-                accept="image/*"
-                class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:bg-purple-50 file:text-purple-700 file:hover:bg-purple-100"
-                required
-              />
+              <label class="block text-xs font-medium text-white mb-1">Product Image</label>
+              <div class="space-y-2">
+                <input
+                  type="file"
+                  @change="handleFileChange"
+                  accept="image/*"
+                  class="w-full text-xs text-white file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-white/50 file:text-slate-900 file:hover:bg-white/70 file:text-xs backdrop-blur-sm"
+                />
+                <div class="flex items-center gap-2">
+                  <div class="flex-1 h-px bg-white/30"></div>
+                  <span class="text-xs text-white/70">OR</span>
+                  <div class="flex-1 h-px bg-white/30"></div>
+                </div>
+                <div class="border-2 border-dashed border-white/30 rounded-lg p-2 hover:border-cyan-400 transition">
+                  <textarea
+                    @paste="handlePaste"
+                    placeholder="Paste image (Ctrl+V)"
+                    class="w-full border-0 text-xs focus:ring-0 focus:outline-none resize-none bg-transparent text-white placeholder-white/50"
+                    rows="1"
+                  ></textarea>
+                </div>
+                <div v-if="imagePreview" class="mt-2">
+                  <img :src="imagePreview" class="h-16 w-16 object-cover rounded border border-white/30" />
+                </div>
+              </div>
               <span v-if="form.errors.image" class="text-red-500 text-xs mt-1">{{ form.errors.image }}</span>
             </div>
 
-            <div class="md:col-span-2">
-              <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+            <div>
+              <label class="block text-xs font-medium text-white mb-1">Description</label>
               <textarea
                 v-model="form.description"
-                class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition"
-                rows="4"
+                class="w-full rounded-lg bg-white/50 border-0 focus:ring-2 focus:ring-cyan-400 text-slate-900 px-3 py-2 text-sm placeholder-slate-400 backdrop-blur-sm shadow-lg resize-none"
+                rows="2"
               ></textarea>
               <span v-if="form.errors.description" class="text-red-500 text-xs mt-1">{{ form.errors.description }}</span>
             </div>
 
-            <div class="md:col-span-2 flex justify-end gap-3">
+            <div class="flex justify-end gap-2 pt-2">
               <button
                 type="button"
                 @click="showModal = false"
-                class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md text-sm font-medium hover:bg-gray-300 focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 transition"
+                class="px-4 py-2 bg-white/20 backdrop-blur-sm rounded-lg text-sm hover:bg-white/30 text-white border border-white/30"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 :disabled="form.processing"
-                class="px-4 py-2 bg-purple-600 text-white rounded-md text-sm font-medium hover:bg-purple-700 focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 transition"
+                class="px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg text-sm hover:from-green-600 hover:to-green-700 transform hover:scale-105 transition-all duration-200 disabled:opacity-50"
               >
                 Add Product
               </button>

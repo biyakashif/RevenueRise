@@ -143,9 +143,11 @@
               <div class="flex items-start justify-between">
                 <div class="flex items-start">
                   <img
-                    :src="currentTaskProduct.image_path ? '/storage/' + currentTaskProduct.image_path : 'https://via.placeholder.com/80?text=No+Image'"
+                    v-if="currentTaskProduct.image_path"
+                    :src="'/storage/' + currentTaskProduct.image_path"
                     :alt="currentTaskProduct.title"
-                    class="w-16 h-16 object-cover rounded-lg mr-3 shadow-lg border border-cyan-300/20"
+                    class="w-16 h-16 rounded-lg mr-3 shadow-lg border border-cyan-300/20"
+                    style="object-fit: fill; width: 4rem; height: 4rem;"
                   />
                   <div class="flex-1">
                     <h4 class="text-xs font-semibold mb-1 text-white">{{ currentTaskProduct.title }}</h4>

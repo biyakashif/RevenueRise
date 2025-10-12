@@ -119,6 +119,9 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->name('admin.')->group(fun
     Route::post('/users/{user}/block', [AdminController::class, 'blockUser'])->name('users.block');
     Route::post('/users/{user}/unblock', [AdminController::class, 'unblockUser'])->name('users.unblock');
     Route::get('/blocked-users', [AdminController::class, 'blockedUsers'])->name('blocked-users');
+    Route::get('/pending-deposits-count', [AdminController::class, 'getPendingDepositsCount'])->name('pending-deposits-count');
+    Route::get('/pending-withdrawals-count', [AdminController::class, 'getPendingWithdrawalsCount'])->name('pending-withdrawals-count');
+    Route::get('/unassigned-users-count', [AdminController::class, 'getUnassignedUsersCount'])->name('unassigned-users-count');
 });
 
 // ================= AUTHENTICATED USER ROUTES =================
