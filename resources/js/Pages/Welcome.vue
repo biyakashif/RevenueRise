@@ -174,38 +174,33 @@ const startGuestChat = async () => {
                         </nav>
                         
                         <!-- Right Section -->
-                        <div class="flex items-center space-x-3">
+                        <div class="flex items-center space-x-3 relative">
                             <!-- Language Dropdown -->
                             <div class="relative">
                                 <button
                                     @click="dropdownOpen = !dropdownOpen"
-                                    class="flex items-center px-3 py-2 rounded-lg text-white font-semibold transition-all duration-300 hover:bg-white/10 hover:scale-105"
+                                    class="flex items-center px-2 py-1 rounded-lg bg-gradient-to-r from-cyan-400/30 via-blue-500/20 to-indigo-600/30 text-xs text-white font-medium shadow-sm border border-cyan-300/30 focus:outline-none"
                                 >
-                                    <img :src="currentLanguage.flag" alt="Lang" class="h-4 w-auto mr-2 rounded-sm" />
-                                    <span class="text-sm">{{ t('Language') }}</span>
-                                    <svg class="ml-1 h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <img :src="currentLanguage.flag" alt="Lang" class="w-4 h-4 mr-1 rounded-full" />
+                                    <span class="text-xs">{{ t('Language') }}</span>
+                                    <svg class="ml-1 w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                                     </svg>
                                 </button>
 
-                                <div
-                                    v-if="dropdownOpen"
-                                    class="absolute right-0 mt-2 w-40 bg-white/95 backdrop-blur-md border border-white/30 rounded-lg shadow-xl z-[9999]"
-                                >
-                                    <ul>
-                                        <li v-for="lang in languages" :key="lang.code">
-                                            <button
-                                                @click="changeLanguage(lang.code)"
-                                                class="flex items-center w-full px-3 py-2 text-sm text-gray-800 font-medium hover:bg-blue-50 transition-all duration-300 first:rounded-t-lg last:rounded-b-lg"
-                                            >
-                                                <img :src="lang.flag" :alt="lang.name" class="h-4 w-auto mr-2 rounded-sm" />
-                                                <span>{{ lang.name }}</span>
-                                            </button>
-                                        </li>
-                                    </ul>
-                                </div>
+                                <transition name="fade">
+                                    <div
+                                        v-if="dropdownOpen"
+                                        class="absolute left-0 mt-2 w-32 sm:w-40 z-50 bg-gradient-to-br from-cyan-400/90 via-blue-500/80 to-indigo-600/90 rounded-xl shadow-xl border border-cyan-300/40 py-1 px-1"
+                                        style="min-width:7rem;"
+                                    >
+                                        <div v-for="lang in languages" :key="lang.code" @click="changeLanguage(lang.code)" class="flex items-center gap-2 px-2 py-1 rounded-lg cursor-pointer hover:bg-cyan-400/30 transition-all text-xs text-white font-medium">
+                                            <img :src="lang.flag" :alt="lang.name" class="w-3 h-3 rounded-full" />
+                                            <span class="text-xs">{{ lang.name }}</span>
+                                        </div>
+                                    </div>
+                                </transition>
                             </div>
-                            
                             <!-- Mobile Menu Button -->
                             <button @click="mobileNavOpen = !mobileNavOpen" 
                                     class="md:hidden p-2 rounded-lg text-white hover:bg-white/10 transition-colors duration-200">

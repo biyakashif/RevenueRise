@@ -10,13 +10,15 @@ const page = usePage();
 const searchQuery = ref("");
 const searchType = ref("");
 
-// Filter products by product_id and type
+// Filter products by product_id, title, and type
 const filteredProducts = computed(() => {
   let filtered = page.props.products;
   
   if (searchQuery.value) {
+    const query = searchQuery.value.toLowerCase();
     filtered = filtered.filter(product =>
-      product.product_id.toString().includes(searchQuery.value)
+      product.product_id.toString().includes(searchQuery.value) ||
+      (product.title && product.title.toLowerCase().includes(query))
     );
   }
   
@@ -231,7 +233,7 @@ function closeLightbox() {
                 <input
                   v-model="searchQuery"
                   type="text"
-                  placeholder="Search by Product ID..."
+                  placeholder="Search by Product ID or Title..."
                   class="flex-1 h-12 rounded-xl bg-white/50 border-0 focus:ring-2 focus:ring-cyan-400 text-slate-900 px-4 placeholder-slate-400 backdrop-blur-sm shadow-lg"
                 />
                 <select

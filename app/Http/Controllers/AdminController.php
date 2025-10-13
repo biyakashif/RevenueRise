@@ -843,6 +843,7 @@ class AdminController extends Controller
             ->map(function ($task) use ($user) {
                 $order = UserOrder::where('user_id', $user->id)
                     ->where('product_id', $task->product_id)
+                    ->where('order_number', $task->position)
                     ->first();
                 return [
                     'id' => $task->id,

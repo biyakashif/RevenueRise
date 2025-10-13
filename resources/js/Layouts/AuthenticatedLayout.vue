@@ -90,7 +90,7 @@ const openChat = () => {
 <template>
     <div class="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 flex flex-col">
 
-        <div class="flex flex-1" :class="hideBottomNav ? '' : 'pb-16 sm:pb-0'">
+        <div class="flex flex-1" :class="hideBottomNav ? '' : 'pb-[calc(3.75rem+env(safe-area-inset-bottom))] sm:pb-0'">
             <!-- Sidebar (visible on sm and larger) -->
             <aside class="hidden sm:flex flex-col w-64 bg-white/10 backdrop-blur-xl border-r border-white/20 shadow-2xl">
                 <nav class="flex flex-col p-4 space-y-2">
@@ -152,8 +152,8 @@ const openChat = () => {
             </aside>
 
             <!-- Main Content -->
-            <main class="flex-1 min-h-[calc(100vh-4rem)] sm:min-h-screen bg-gradient-to-br from-white/95 via-blue-50/90 to-indigo-50/95 backdrop-blur-xl mx-2 sm:mx-4 mt-2 sm:mt-4 mb-2 sm:mb-0 rounded-2xl sm:rounded-3xl shadow-2xl border border-white/40 overflow-auto">
-                <div class="h-full">
+            <main class="flex-1 sm:min-h-screen bg-gradient-to-br from-white/95 via-blue-50/90 to-indigo-50/95 backdrop-blur-xl mx-2 sm:mx-4 mt-2 sm:mt-4 mb-0 rounded-2xl sm:rounded-3xl shadow-2xl border border-white/40 overflow-hidden flex flex-col">
+                <div class="flex-1">
                     <div v-if="$slots.header" class="mb-2 sm:mb-6">
                         <slot name="header" />
                     </div>
@@ -171,55 +171,56 @@ const openChat = () => {
             </main>
 
             <!-- Bottom Bar (visible on small screens) -->
-            <nav v-if="!hideBottomNav" class="sm:hidden fixed bottom-0 left-0 right-0 bg-gradient-to-br from-white/60 via-blue-50/50 to-indigo-50/50 backdrop-blur-xl border-t border-white/20 shadow-2xl z-10 rounded-t-2xl">
-                <div class="flex justify-around items-center pb-[env(safe-area-inset-bottom)]">
+            <nav v-if="!hideBottomNav" class="sm:hidden fixed bottom-0 left-0 right-0 bg-gradient-to-br from-white/60 via-blue-50/50 to-indigo-50/50 backdrop-blur-xl border-t border-white/20 shadow-2xl z-50 safe-bottom">
+                <div class="flex justify-around items-center h-14 px-1">
                     <Link
                         href="/dashboard"
-                        class="flex flex-col items-center justify-center min-w-0 flex-1 py-1 px-1 text-black hover:text-gray-700 transition-colors duration-200"
+                        class="flex flex-col items-center justify-center flex-1 h-full text-black hover:text-gray-700 transition-colors duration-200"
                     >
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0H9" />
                         </svg>
-                        <span class="text-[10px] font-medium mt-0.5">{{ t('Home') }}</span>
+                        <span class="text-[9px] font-medium mt-0.5 leading-tight">{{ t('Home') }}</span>
                     </Link>
                     <Link
                         href="/my-orders"
-                        class="flex flex-col items-center justify-center min-w-0 flex-1 py-1 px-1 text-black hover:text-gray-700 transition-colors duration-200"
+                        class="flex flex-col items-center justify-center flex-1 h-full text-black hover:text-gray-700 transition-colors duration-200"
                     >
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
                         </svg>
-                        <span class="text-[10px] font-medium mt-0.5">{{ t('Order') }}</span>
+                        <span class="text-[9px] font-medium mt-0.5 leading-tight">{{ t('Order') }}</span>
                     </Link>
                     <Link
                         href="/deposit"
-                        class="flex flex-col items-center justify-center min-w-0 flex-1 py-1 px-1 text-black hover:text-gray-700 transition-colors duration-200"
+                        class="flex flex-col items-center justify-center flex-1 h-full text-black hover:text-gray-700 transition-colors duration-200"
                     >
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                         </svg>
-                        <span class="text-[10px] font-medium mt-0.5">{{ t('Deposit') }}</span>
+                        <span class="text-[9px] font-medium mt-0.5 leading-tight">{{ t('Deposit') }}</span>
                     </Link>
                     <Link
                         :href="route('chat.index')"
-                        class="flex flex-col items-center justify-center min-w-0 flex-1 py-1 px-1 text-black hover:text-gray-700 transition-colors duration-200 relative"
+                        class="flex flex-col items-center justify-center flex-1 h-full text-black hover:text-gray-700 transition-colors duration-200 relative"
                     >
-                        <div class="relative">
+                        <div class="relative flex-shrink-0">
                             <i class="fas fa-headset text-lg"></i>
                             <span v-if="unreadCount > 0" class="absolute -top-1 -right-1 bg-red-500 text-white text-[8px] leading-none rounded-full h-3 w-3 flex items-center justify-center">{{ unreadCount }}</span>
                         </div>
-                        <span class="text-[10px] font-medium mt-0.5">{{ t('Support') }}</span>
+                        <span class="text-[9px] font-medium mt-0.5 leading-tight">{{ t('Support') }}</span>
                     </Link>
                     <Link
                         :href="route('profile.index')"
-                        class="flex flex-col items-center justify-center min-w-0 flex-1 py-1 px-1 text-black hover:text-gray-700 transition-colors duration-200"
+                        class="flex flex-col items-center justify-center flex-1 h-full text-black hover:text-gray-700 transition-colors duration-200"
                     >
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                         </svg>
-                        <span class="text-[10px] font-medium mt-0.5">{{ t('Profile') }}</span>
+                        <span class="text-[9px] font-medium mt-0.5 leading-tight">{{ t('Profile') }}</span>
                     </Link>
                 </div>
+                <div class="h-[env(safe-area-inset-bottom)] bg-gradient-to-br from-white/60 via-blue-50/50 to-indigo-50/50"></div>
             </nav>
         </div>
     </div>
@@ -238,3 +239,13 @@ const openChat = () => {
     opacity: 1;
 }
 </style>
+
+.safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+}
+
+@supports (padding: max(0px)) {
+    .safe-bottom {
+        padding-bottom: max(0px, env(safe-area-inset-bottom));
+    }
+}

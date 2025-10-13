@@ -2,61 +2,52 @@
   <AuthenticatedLayout>
     <Head :title="t('My Orders')" />
 
-    <div class="bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-2xl border border-cyan-300/30 h-full overflow-y-auto">
-      <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+    <div class="h-full bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl p-3 sm:p-6 rounded-2xl sm:rounded-3xl shadow-2xl border border-cyan-300/30 flex flex-col">
         <!-- User Info Section -->
-        <div class="bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-2xl border border-cyan-300/30 mb-4 sm:mb-6">
-          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4">
+        <div class="bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl p-3 sm:p-6 rounded-2xl sm:rounded-3xl shadow-2xl border border-cyan-300/30 mb-3 sm:mb-6">
+          <div class="flex items-center justify-between mb-2 sm:mb-3">
             <div>
-              <h1 class="text-xl font-bold text-slate-800 drop-shadow-sm">{{ t('Hi') }}, {{ user.name || t('User') }}</h1>
-              <p class="inline-block mt-2 px-3 py-1 rounded-full bg-gradient-to-r from-emerald-400/80 to-green-400/80 text-white text-xs font-semibold shadow-sm">
+              <h1 class="text-base sm:text-xl font-bold text-slate-800 drop-shadow-sm">{{ t('Hi') }}, {{ user.name || t('User') }}</h1>
+              <p class="inline-block mt-1 px-2 py-0.5 rounded-full bg-gradient-to-r from-emerald-400/80 to-green-400/80 text-white text-[10px] sm:text-xs font-semibold shadow-sm">
                 {{ user.vip_level }}
               </p>
             </div>
           </div>
 
-          <!-- Stats Cards -->
-          <div class="grid grid-cols-1 sm:grid-cols-4 gap-2">
-            <div class="bg-gradient-to-r from-white/40 via-white/30 to-white/20 backdrop-blur-sm p-2 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border border-white/30">
-              <div class="flex justify-between w-full items-center">
-                <p class="text-xs text-slate-600 font-medium">{{ t('Total Balance') }}</p>
-                <p class="text-sm font-bold text-slate-800 flex items-center gap-1">
-                  {{ (user.balance || 0).toFixed(2) }}
-                  <span class="text-xs text-slate-500">USDT</span>
-                </p>
+          <!-- Stats Cards - Combined -->
+          <div class="bg-gradient-to-r from-white/40 via-white/30 to-white/20 backdrop-blur-sm p-2 sm:p-3 rounded-xl shadow-lg border border-white/30">
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex-1 space-y-1">
+                <div class="flex justify-between items-center">
+                  <p class="text-[10px] sm:text-xs text-slate-600 font-medium">{{ t('Total Balance') }}</p>
+                  <p class="text-xs sm:text-sm font-bold text-slate-800">{{ (user.balance || 0).toFixed(2) }} <span class="text-[9px] sm:text-xs text-slate-500">USDT</span></p>
+                </div>
+                <div class="flex justify-between items-center">
+                  <p class="text-[10px] sm:text-xs text-slate-600 font-medium">{{ t('Frozen Balance') }}</p>
+                  <p class="text-xs sm:text-sm font-bold text-slate-800">{{ Number(user.frozen_balance ?? 0).toFixed(2) }} <span class="text-[9px] sm:text-xs text-slate-500">USDT</span></p>
+                </div>
+                <div class="flex justify-between items-center">
+                  <p class="text-[10px] sm:text-xs text-slate-600 font-medium">{{ t("Today's Profit") }}</p>
+                  <p class="text-xs sm:text-sm font-bold text-slate-800">{{ (user.todays_profit || 0).toFixed(2) }} <span class="text-[9px] sm:text-xs text-slate-500">USDT</span></p>
+                </div>
               </div>
+              <Link href="/balance/records" class="flex-shrink-0 flex flex-col items-center justify-center px-2 py-1 hover:bg-white/20 rounded-lg transition-all">
+                <svg class="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+                <p class="text-[9px] sm:text-[10px] text-blue-600 font-semibold text-center leading-tight">{{ t('Details') }}</p>
+              </Link>
             </div>
-            <div class="bg-gradient-to-r from-white/40 via-white/30 to-white/20 backdrop-blur-sm p-2 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border border-white/30">
-              <div class="flex justify-between w-full items-center">
-                <p class="text-xs text-slate-600 font-medium">{{ t('Frozen Balance') }}</p>
-                <p class="text-sm font-bold text-slate-800 flex items-center gap-1">
-                  {{ Number(user.frozen_balance ?? 0).toFixed(2) }}
-                  <span class="text-xs text-slate-500">USDT</span>
-                </p>
-              </div>
-            </div>
-            <div class="bg-gradient-to-r from-white/40 via-white/30 to-white/20 backdrop-blur-sm p-2 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border border-white/30">
-              <div class="flex justify-between w-full items-center">
-                <p class="text-xs text-slate-600 font-medium">{{ t("Today's Profit") }}</p>
-                <p class="text-sm font-bold text-slate-800 flex items-center gap-1">
-                  {{ (user.todays_profit || 0).toFixed(2) }}
-                  <span class="text-xs text-slate-500">USDT</span>
-                </p>
-              </div>
-            </div>
-            <Link href="/balance/records" class="bg-gradient-to-r from-white/40 via-white/30 to-white/20 backdrop-blur-sm p-2 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border border-white/30 flex items-center justify-center cursor-pointer">
-              <p class="text-xs text-slate-600 font-medium">{{ t('Balance Details') }}</p>
-            </Link>
           </div>
         </div>
 
         <!-- Today's Progress Section -->
-        <div class="bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-2xl border border-cyan-300/30 mb-4 sm:mb-6">
-          <div class="flex justify-between items-center mb-3">
-            <h3 class="text-sm font-semibold text-slate-800 drop-shadow-sm">{{ t("Today's Progress") }}</h3>
-            <span class="text-sm font-bold text-slate-700 bg-white/30 px-2 py-1 rounded-full backdrop-blur-sm">{{ taskProgress }}/{{ taskItemsCount }}</span>
+        <div class="bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl p-3 sm:p-6 rounded-2xl sm:rounded-3xl shadow-2xl border border-cyan-300/30 mb-3 sm:mb-6">
+          <div class="flex justify-between items-center mb-2">
+            <h3 class="text-xs sm:text-sm font-semibold text-slate-800 drop-shadow-sm">{{ t("Today's Progress") }}</h3>
+            <span class="text-xs sm:text-sm font-bold text-slate-700 bg-white/30 px-2 py-0.5 rounded-full backdrop-blur-sm">{{ taskProgress }}/{{ taskItemsCount }}</span>
           </div>
-          <div class="w-full h-3 bg-white/20 rounded-full overflow-hidden backdrop-blur-sm">
+          <div class="w-full h-2 sm:h-3 bg-white/20 rounded-full overflow-hidden backdrop-blur-sm">
             <div
               class="h-full bg-gradient-to-r from-emerald-400 to-green-500 transition-all duration-500 shadow-sm"
               :style="{ width: taskItemsCount > 0 ? ((taskProgress / taskItemsCount) * 100) + '%' : '0%' }"
@@ -67,50 +58,51 @@
         <!-- Task Container -->
         <div
           v-if="activeTask && activeTask.products && activeTask.products.length"
-          class="bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-2xl"
+          class="flex-1 bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl p-3 sm:p-6 rounded-2xl sm:rounded-3xl shadow-2xl mb-0 flex flex-col justify-center"
         >
-          <div class="text-center mb-4">
-            <h2 class="text-xl font-bold text-slate-800 drop-shadow-sm mb-2">{{ t('Order Task Set') }}</h2>
-            <p v-if="balanceErrorMessage" class="text-xs text-red-600 font-medium text-center mb-2">{{ balanceErrorMessage }}</p>
-            <p class="text-sm text-slate-600 font-medium">{{ activeTask.name }}</p>
+          <div class="text-center mb-3">
+            <h2 class="text-base sm:text-xl font-bold text-slate-800 drop-shadow-sm mb-1">{{ t('Order Task Set') }}</h2>
+            <p v-if="balanceErrorMessage" class="text-[10px] sm:text-xs text-red-600 font-medium text-center mb-1">{{ balanceErrorMessage }}</p>
+            <p class="text-xs sm:text-sm text-slate-600 font-medium">{{ activeTask.name }}</p>
           </div>
 
-          <div class="flex flex-col sm:flex-row justify-center items-center gap-4">
-            <div class="bg-white/20 backdrop-blur-sm p-3 rounded-xl">
-              <p class="text-xs text-slate-600 font-medium text-center">{{ t('Progress') }}</p>
-              <p class="text-lg font-bold text-slate-800 text-center">{{ taskProgress }}/{{ taskItemsCount }}</p>
+          <div class="flex flex-col sm:flex-row justify-center items-center gap-2 sm:gap-4 min-h-[120px] sm:min-h-[80px]">
+            <div class="bg-white/20 backdrop-blur-sm p-2 sm:p-3 rounded-xl">
+              <p class="text-[10px] sm:text-xs text-slate-600 font-medium text-center">{{ t('Progress') }}</p>
+              <p class="text-sm sm:text-lg font-bold text-slate-800 text-center">{{ taskProgress }}/{{ taskItemsCount }}</p>
             </div>
 
-            <div v-if="taskProgress >= taskItemsCount && taskItemsCount > 0" class="bg-gradient-to-r from-emerald-400/20 to-green-400/20 backdrop-blur-sm text-emerald-700 p-4 rounded-xl text-sm font-medium text-center shadow-lg max-w-xs">
-              {{ t("Congratulations you have done your today's task, your next task will be updated after midnight") }}
+            <div class="flex-1 flex items-center justify-center">
+              <div v-if="taskProgress >= taskItemsCount && taskItemsCount > 0" class="bg-gradient-to-r from-emerald-400/20 to-green-400/20 backdrop-blur-sm text-emerald-700 p-3 sm:p-4 rounded-xl text-xs sm:text-sm font-medium text-center shadow-lg max-w-xs">
+                {{ t("Congratulations you have done your today's task, your next task will be updated after midnight") }}
+              </div>
+              <button
+                v-else
+                @click="grabOrders"
+                class="px-4 py-2 sm:px-6 sm:py-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl text-xs sm:text-sm font-medium transition-all duration-300 transform hover:scale-[1.02] shadow-lg hover:shadow-xl flex items-center gap-2"
+                :class="{ 'opacity-70 cursor-not-allowed': isGrabbing || isSubmitting || showModal }"
+                :aria-busy="isGrabbing"
+                :disabled="activeTask.products.length === 0 || isGrabbing || isSubmitting || showModal"
+              >
+                <svg v-if="isGrabbing" class="animate-spin h-3 w-3 sm:h-4 sm:w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                </svg>
+                <span>{{ t('Grab Orders') }}</span>
+              </button>
             </div>
-            <button
-              v-else
-              @click="grabOrders"
-              class="px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl font-medium transition-all duration-300 transform hover:scale-[1.02] shadow-lg hover:shadow-xl flex items-center gap-2"
-              :class="{ 'opacity-70 cursor-not-allowed': isGrabbing || isSubmitting || showModal }"
-              :aria-busy="isGrabbing"
-              :disabled="activeTask.products.length === 0 || isGrabbing || isSubmitting || showModal"
-            >
-              <svg v-if="isGrabbing" class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-              </svg>
-              <span>{{ t('Grab Orders') }}</span>
-            </button>
 
-            <div class="bg-white/20 backdrop-blur-sm p-3 rounded-xl">
-              <p class="text-xs text-slate-600 font-medium text-center">{{ t('Reward') }}</p>
-              <p class="text-lg font-bold text-slate-800 text-center">{{ (user.order_reward && user.order_reward > 0 ? user.order_reward : lastReward).toFixed(2) }} USDT</p>
+            <div class="bg-white/20 backdrop-blur-sm p-2 sm:p-3 rounded-xl">
+              <p class="text-[10px] sm:text-xs text-slate-600 font-medium text-center">{{ t('Reward') }}</p>
+              <p class="text-sm sm:text-lg font-bold text-slate-800 text-center">{{ (user.order_reward && user.order_reward > 0 ? user.order_reward : lastReward).toFixed(2) }} USDT</p>
             </div>
           </div>
         </div>
 
         <!-- No tasks available -->
-    <div v-if="!taskItemsCount" class="bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl p-6 rounded-2xl sm:rounded-3xl shadow-2xl border border-cyan-300/30 text-center">
-      <p class="text-slate-600 font-medium">{{ t('No tasks available for your VIP level') }}</p>
-    </div>
-      </div>
+        <div v-if="!taskItemsCount" class="flex-1 bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-2xl border border-cyan-300/30 text-center mb-0 flex items-center justify-center">
+          <p class="text-xs sm:text-sm text-slate-600 font-medium">{{ t('No tasks available for your VIP level') }}</p>
+        </div>
     </div>
 
     <!-- Product Modal (centered on all screens) -->
@@ -162,11 +154,11 @@
             <div class="text-xs space-y-1">
               <div class="flex justify-between">
                 <span class="text-slate-300">{{ t('Purchase Price') }}</span>
-                <span class="font-semibold text-white">{{ currentTaskProduct.selling_price }} USDT</span>
+                <span class="font-semibold text-white">{{ currentTaskProduct.purchase_price }} USDT</span>
               </div>
               <div class="flex justify-between">
                 <span class="text-slate-300">{{ t('Selling Price') }}</span>
-                <span class="font-semibold text-white">{{ (parseFloat(currentTaskProduct.selling_price) + 0.112).toFixed(3) }} USDT</span>
+                <span class="font-semibold text-white">{{ currentTaskProduct.selling_price }} USDT</span>
               </div>
               <div class="flex justify-between">
                 <span class="text-slate-300">{{ t('Commission') }} ({{ currentTaskProduct.commission_percentage }}%)</span>

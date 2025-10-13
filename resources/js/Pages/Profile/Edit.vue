@@ -302,7 +302,7 @@ const logout = async () => {
 
             <div class="flex-1">
               <div class="flex items-center">
-                <h3 class="text-lg font-semibold text-slate-800 leading-none drop-shadow-sm">
+                <h3 class="text-sm font-semibold text-slate-800 leading-none drop-shadow-sm">
                   {{ user?.name || t('Not set') }}
                 </h3>
                 <span class="ml-3 inline-flex items-center justify-center bg-gradient-to-r from-slate-800 to-slate-900 text-white text-xs font-semibold rounded-full px-3 py-1 shadow-lg">
@@ -333,13 +333,13 @@ const logout = async () => {
           <div class="flex justify-between space-x-2 bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-2xl border border-cyan-300/30">
             <div class="text-center">
               <p class="text-xs font-medium text-slate-600 drop-shadow-sm">{{ t('Available Balance') }}</p>
-              <p class="text-sm font-semibold text-slate-800 drop-shadow-sm">
+              <p class="text-xs font-semibold text-slate-800 drop-shadow-sm">
                 {{ balance.toFixed(2) }} USDT
               </p>
             </div>
             <div class="text-center">
               <p class="text-xs font-medium text-slate-600 drop-shadow-sm">{{ t('Frozen Balance') }}</p>
-              <p class="text-sm font-semibold text-slate-800 drop-shadow-sm">
+              <p class="text-xs font-semibold text-slate-800 drop-shadow-sm">
                 {{ frozenBalance.toFixed(2) }} USDT
               </p>
             </div>

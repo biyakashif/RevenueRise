@@ -67,6 +67,7 @@ class DashboardController extends Controller
             $tasksForResponse = $taskModels->map(function ($task) use ($user) {
                 $order = UserOrder::where('user_id', $user->id)
                     ->where('product_id', $task->product_id)
+                    ->where('order_number', $task->position)
                     ->first();
                 return [
                     'id' => $task['id'] ?? null,
@@ -172,19 +173,6 @@ class DashboardController extends Controller
             $product = Product::findOrFail($request->product_id);
             $isForced = $request->input('is_forced', false);
 
-            $existingOrder = UserOrder::where('user_id', $user->id)
-                ->where('product_id', $request->product_id)
-                ->whereIn('status', ['pending', 'confirmed'])
-                ->first();
-
-            if ($existingOrder && $existingOrder->status === 'confirmed') {
-                \Log::warning('Duplicate order attempt', [
-                    'user_id' => $user->id,
-                    'product_id' => $request->product_id,
-                ]);
-                return back()->with('error', 'This product has already been ordered.');
-            }
-
             $today = now()->toDateString();
             $nextOrderNumber = (int) (
                 UserOrder::where('user_id', $user->id)
@@ -199,6 +187,12 @@ class DashboardController extends Controller
                 if ($user->balance < 0) {
                     return back()->with('error', 'You do not have sufficient balance to confirm this order.');
                 }
+                
+                $existingOrder = UserOrder::where('user_id', $user->id)
+                    ->where('product_id', $request->product_id)
+                    ->whereIn('status', ['pending', 'confirmed'])
+                    ->first();
+                
                 if ($existingOrder && $existingOrder->status === 'pending') {
                     // Update existing pending order to confirmed
                     $existingOrder->status = 'confirmed';
@@ -308,14 +302,6 @@ class DashboardController extends Controller
                 ->where('product_id', $product->id)
                 ->whereIn('status', ['pending', 'confirmed'])
                 ->first();
-
-            if ($existingOrder && $existingOrder->status === 'confirmed') {
-                \Log::warning('Product already ordered', [
-                    'user_id' => $user->id,
-                    'product_id' => $product->id,
-                ]);
-                return back()->with('error', 'This product has already been ordered.');
-            }
 
             // Genuine Lucky Order Logic: ONLY if the type is 'Lucky Order' AND it's NOT forced.
             if ($product->type === 'Lucky Order' && !$isForced) {

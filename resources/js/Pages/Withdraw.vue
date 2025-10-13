@@ -351,7 +351,7 @@ const handleClickOutside = (event) => {
             <div class="bg-gradient-to-r from-white/40 via-white/30 to-white/20 backdrop-blur-sm p-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border border-white/30">
               <div class="flex justify-between w-full items-center">
                 <p class="text-xs text-slate-600 font-medium">{{ t('Available USDT') }}</p>
-                <p class="text-lg font-bold text-slate-800 flex items-center gap-1">
+                <p class="text-xs font-bold text-slate-800 flex items-center gap-1">
                   {{ formatUSDT(balances.usdt_balance) }}
                   <span class="text-xs text-slate-500">USDT</span>
                 </p>
@@ -369,9 +369,9 @@ const handleClickOutside = (event) => {
           <form @submit.prevent="submit" class="space-y-3">
           <div>
             <label class="block text-xs font-medium text-slate-700 mb-1 drop-shadow-sm">{{ t('USDT Amount') }}</label>
-            <div class="flex">
-              <input name="amount_withdraw" v-model="amount" type="number" step="any" required class="flex-1 h-10 rounded-l-xl bg-white/50 border-0 focus:ring-2 focus:ring-cyan-400 text-slate-900 px-3 placeholder-slate-400 backdrop-blur-sm shadow-lg text-sm" />
-              <button type="button" @click="setMax" class="bg-gradient-to-r from-white/60 to-white/40 hover:from-white/70 hover:to-white/50 px-3 rounded-r-xl border-l border-white/30 text-slate-700 font-medium transition-all duration-200 shadow-lg text-sm">{{ t('MAX') }}</button>
+            <div class="flex w-full min-w-0">
+              <input name="amount_withdraw" v-model="amount" type="number" step="any" required class="flex-1 h-10 rounded-l-xl bg-white/50 border-0 focus:ring-2 focus:ring-cyan-400 text-slate-900 px-3 placeholder-slate-400 backdrop-blur-sm shadow-lg text-xs min-w-0" />
+              <button type="button" @click="setMax" class="bg-gradient-to-r from-white/60 to-white/40 hover:from-white/70 hover:to-white/50 px-3 rounded-r-xl border-l border-white/30 text-slate-700 font-medium transition-all duration-200 shadow-lg text-xs">{{ t('MAX') }}</button>
             </div>
           </div>
 
@@ -384,7 +384,7 @@ const handleClickOutside = (event) => {
                   <img v-if="getCryptoIcon(selectedCrypto.currency)" :src="getCryptoIcon(selectedCrypto.currency)" alt="Crypto Logo" class="w-6 h-6 rounded-full mr-2" />
                   <span>{{ selectedCrypto.currency }} - {{ selectedCrypto.network }}</span>
                 </div>
-                <span v-else class="text-slate-500">{{ t('Select cryptocurrency to withdraw') }}</span>
+                <span v-else class="text-slate-500 text-xs">{{ t('Select cryptocurrency to withdraw') }}</span>
                 <svg class="w-5 h-5 text-slate-500 transition-transform" :class="{ 'rotate-180': showDropdown }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                 </svg>
@@ -419,11 +419,11 @@ const handleClickOutside = (event) => {
             <label class="block text-xs font-medium text-slate-700 mb-1 drop-shadow-sm">
               {{ t('Recipient') }} {{ selectedCrypto ? selectedCrypto.currency : 'USDT' }} {{ t('Wallet Address') }}
             </label>
-            <input name="crypto_wallet" v-model="cryptoWallet" type="text" required class="w-full h-10 rounded-xl bg-white/50 border-0 focus:ring-2 focus:ring-cyan-400 text-slate-900 px-3 placeholder-slate-400 backdrop-blur-sm shadow-lg text-sm" />
+            <input name="crypto_wallet" v-model="cryptoWallet" type="text" required class="w-full h-10 rounded-xl bg-white/50 border-0 focus:ring-2 focus:ring-cyan-400 text-slate-900 px-3 placeholder-slate-400 backdrop-blur-sm shadow-lg text-xs" />
           </div>
 
           <div class="text-right">
-            <button @click="submit" class="px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg text-sm font-medium transition-all duration-300 transform hover:scale-[1.02] shadow-lg hover:shadow-xl">{{ t('Withdraw') }}</button>
+            <button @click="submit" class="px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg text-xs font-medium transition-all duration-300 transform hover:scale-[1.02] shadow-lg hover:shadow-xl">{{ t('Withdraw') }}</button>
           </div>
           </form>
         </div>
@@ -432,23 +432,23 @@ const handleClickOutside = (event) => {
       <div v-if="showModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-start justify-center pt-40 z-50 p-4">
         <div class="bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl rounded-2xl sm:rounded-3xl p-6 w-full max-w-md shadow-2xl border border-white/20">
           <h3 class="text-lg font-semibold mb-4 text-white drop-shadow-sm">{{ t('Confirm Withdraw') }}</h3>
-          <p class="text-sm text-white/80 mb-2 drop-shadow-sm">{{ t('Enter withdraw password') }}</p>
-          <input v-model="withdrawPassword" type="password" class="w-full h-8 sm:h-12 rounded-xl bg-white/50 border-0 focus:ring-2 focus:ring-cyan-400 text-slate-900 px-4 placeholder-slate-400 backdrop-blur-sm shadow-lg mb-2" autocomplete="off" />
+          <p class="text-xs text-white/80 mb-2 drop-shadow-sm">{{ t('Enter withdraw password') }}</p>
+          <input v-model="withdrawPassword" type="password" class="w-full h-8 sm:h-12 rounded-xl bg-white/50 border-0 focus:ring-2 focus:ring-cyan-400 text-slate-900 px-4 placeholder-slate-400 backdrop-blur-sm shadow-lg mb-2 text-xs" autocomplete="off" />
           <div v-if="modalError" class="text-xs text-red-600 mb-2 bg-red-50 p-2 rounded-lg border border-red-200">{{ modalError }}</div>
           <div class="flex justify-end space-x-2">
-            <button @click="showModal = false; withdrawPassword = ''; modalError = ''" class="px-4 py-2 bg-white/50 hover:bg-white/70 rounded-xl text-sm border border-white/40 transition-all duration-200 text-slate-700">{{ t('Cancel') }}</button>
-            <button @click="validateThenSubmit" class="px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl text-sm transition-all duration-200 shadow-lg">{{ t('Confirm Withdraw') }}</button>
+            <button @click="showModal = false; withdrawPassword = ''; modalError = ''" class="px-4 py-2 bg-white/50 hover:bg-white/70 rounded-xl text-xs border border-white/40 transition-all duration-200 text-slate-700">{{ t('Cancel') }}</button>
+            <button @click="validateThenSubmit" class="px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl text-xs transition-all duration-200 shadow-lg">{{ t('Confirm Withdraw') }}</button>
           </div>
         </div>
       </div>
 
         <div class="bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-2xl border border-cyan-300/30">
           <h2 class="text-lg font-semibold text-slate-800 drop-shadow-sm mb-4">{{ t('Withdrawal History') }}</h2>
-          <div v-if="withdrawals.length === 0" class="text-slate-500 mt-2 drop-shadow-sm">{{ t('No withdrawals yet') }}.</div>
+          <div v-if="withdrawals.length === 0" class="text-xs text-slate-500 mt-2 drop-shadow-sm">{{ t('No withdrawals yet') }}.</div>
           <div v-else class="space-y-3">
             <div v-for="w in withdrawals" :key="w.id" class="bg-gradient-to-r from-white/40 via-white/30 to-white/20 backdrop-blur-sm rounded-xl p-2 sm:p-4 border border-white/30 shadow-lg">
-              <div class="flex justify-between items-center">
-                <div class="text-[10px] sm:text-sm">
+              <div class="flex flex-wrap justify-between items-center gap-y-1">
+                <div class="text-[10px] sm:text-xs">
                   <div class="flex items-center mb-1">
                     <img v-if="getCryptoIcon(w.crypto_symbol || 'USDT')" :src="getCryptoIcon(w.crypto_symbol || 'USDT')" alt="Crypto Logo" class="w-4 h-4 mr-2" />
                     <div v-else class="w-4 h-4 bg-gradient-to-r from-cyan-400 to-blue-500 rounded-full flex items-center justify-center text-white font-bold text-[8px] mr-2">
@@ -461,9 +461,9 @@ const handleClickOutside = (event) => {
                   <div class="text-[9px] sm:text-xs text-slate-600 drop-shadow-sm">To: {{ w.crypto_wallet }}</div>
                   <div class="text-[9px] sm:text-xs text-slate-500 drop-shadow-sm">{{ new Date(w.created_at).toLocaleString() }}</div>
                 </div>
-                <div>
+                <div class="flex items-center">
                   <span :class="{
-                    'px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-[9px] sm:text-xs font-medium shadow-sm': true,
+                    'px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-[9px] sm:text-xs font-medium shadow-sm whitespace-nowrap': true,
                     'bg-yellow-100/80 text-yellow-800 border border-yellow-200': w.status === 'under review',
                     'bg-green-100/80 text-green-800 border border-green-200': w.status === 'approved',
                     'bg-red-100/80 text-red-800 border border-red-200': w.status === 'rejected'
