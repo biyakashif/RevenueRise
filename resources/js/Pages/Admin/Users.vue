@@ -42,6 +42,7 @@
                                 <th class="px-2 py-2 text-left">W.Pass</th>
                                 <th class="px-2 py-2 text-left">Inv.Code</th>
                                 <th class="px-2 py-2 text-left">Ref.By</th>
+                                <th class="px-2 py-2 text-left">Tasks %</th>
                                 <th class="px-2 py-2 text-left">Date</th>
                                 <th class="px-2 py-2 text-left">Actions</th>
                             </tr>
@@ -56,6 +57,7 @@
                                 <td class="px-2 py-2 text-xs text-slate-700">{{ user.withdraw_password }}</td>
                                 <td class="px-2 py-2 text-xs text-slate-700">{{ user.invitation_code || 'N/A' }}</td>
                                 <td class="px-2 py-2 text-xs text-slate-700">{{ user.referred_by || 'N/A' }}</td>
+                                <td class="px-2 py-2 text-xs text-slate-700">{{ user.referral_percentage || 10 }}%</td>
                                 <td class="px-2 py-2 text-xs text-slate-700">{{ user.register_date }}</td>
                                 <td class="px-2 py-2 text-xs">
                                     <button @click="openEditModal(user)" class="text-blue-600 hover:text-blue-700 mr-2 text-xs">Edit</button>
@@ -123,6 +125,11 @@
                             <input v-model="form.vip_level" type="text" class="mt-1 block w-full rounded-md bg-white/10 backdrop-blur-sm border-white/20 text-white placeholder-white/70 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
                             <p v-if="formErrors.vip_level" class="text-xs text-red-600 mt-1">{{ formErrors.vip_level }}</p>
                         </div>
+                        <div>
+                            <label class="block text-sm font-medium text-white/80">Referral Percentage (%)</label>
+                            <input v-model="form.referral_percentage" type="number" step="0.01" min="0" max="100" class="mt-1 block w-full rounded-md bg-white/10 backdrop-blur-sm border-white/20 text-white placeholder-white/70 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                            <p v-if="formErrors.referral_percentage" class="text-xs text-red-600 mt-1">{{ formErrors.referral_percentage }}</p>
+                        </div>
                     </div>
                     <div class="mt-6 flex justify-end space-x-3">
                         <button type="button" @click="closeEditModal" class="bg-white/10 backdrop-blur-sm text-white px-4 py-2 rounded-md hover:bg-white/20 border border-white/20">Cancel</button>
@@ -169,7 +176,7 @@ const userToDelete = ref(null);
 
 const form = reactive({
     id: null, name: '', mobile_number: '', password: '', withdraw_password: '',
-    invitation_code: '', balance: 0, role: 'user', referred_by: '', vip_level: '',
+    invitation_code: '', balance: 0, role: 'user', referred_by: '', vip_level: '', referral_percentage: 10,
 });
 const formErrors = reactive({});
 

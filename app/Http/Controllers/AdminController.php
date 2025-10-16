@@ -142,6 +142,7 @@ class AdminController extends Controller
             'role' => 'required|string|in:user,admin',
             'referred_by' => 'nullable|string|exists:users,invitation_code',
             'vip_level' => 'required|string|max:255',
+            'referral_percentage' => 'required|numeric|min:0|max:100',
         ]);
 
         if (empty($validatedData['password'])) {
@@ -843,15 +844,14 @@ class AdminController extends Controller
             ->map(function ($task) use ($user) {
                 $order = UserOrder::where('user_id', $user->id)
                     ->where('product_id', $task->product_id)
-                    ->where('order_number', $task->position)
                     ->first();
                 return [
                     'id' => $task->id,
-                    'name' => $task->product_type, // Use product_type as name
+                    'name' => $task->product_type,
                     'product_id' => $task->product_id,
                     'product_type' => $task->product_type,
                     'position' => $task->position,
-                    'status' => $order ? $order->status : 'pending', // Set status from user_orders
+                    'status' => $order ? $order->status : 'pending',
                     'product' => $task->product ? [
                         'id' => $task->product->id,
                         'product_id' => $task->product->product_id,
@@ -870,9 +870,21 @@ class AdminController extends Controller
         return response()->json(['user' => $user, 'tasks' => $tasks]);
     }
 
-    public function replaceWithLuckyOrder(User $user, Task $task)
+    public function getLuckyOrderProducts()
     {
-        $luckyProduct = Product::where('type', 'Lucky Order')->inRandomOrder()->first();
+        $products = Product::where('type', 'Lucky Order')->get();
+        return response()->json(['products' => $products]);
+    }
+
+    public function replaceWithLuckyOrder(Request $request, User $user, Task $task)
+    {
+        $request->validate([
+            'product_id' => 'required|exists:products,id'
+        ]);
+
+        $luckyProduct = Product::where('id', $request->product_id)
+            ->where('type', 'Lucky Order')
+            ->first();
 
         if ($luckyProduct) {
             $task->product_id = $luckyProduct->id;
@@ -880,7 +892,7 @@ class AdminController extends Controller
             $task->save();
         }
 
-        return redirect()->back()->with('success', 'Task replaced with Lucky Order.');
+        return response()->json(['success' => true, 'message' => 'Task replaced with Lucky Order.']);
     }
 
     public function resetUserTasks(User $user)
@@ -991,7 +1003,6 @@ class AdminController extends Controller
             $request->validate([
                 'userId' => 'required|exists:users,id',
                 'tasksNumber' => 'required|integer|min:1',
-                'luckyOrder' => 'nullable|integer|min:0',
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json(['message' => 'Validation failed', 'errors' => $e->errors()], 400);
@@ -1001,58 +1012,32 @@ class AdminController extends Controller
 
         $user = User::findOrFail($request->userId);
         $tasksNumber = $request->tasksNumber;
-        $luckyOrder = $request->luckyOrder;
 
         $products = Product::where('type', $user->vip_level)->inRandomOrder()->get();
-        $luckyProducts = Product::where('type', 'Lucky Order')->inRandomOrder()->get();
 
         if ($products->isEmpty()) {
             Log::error('No products found for user VIP level:', ['vip_level' => $user->vip_level]);
             return response()->json(['message' => "No products found for user VIP level: {$user->vip_level}."], 400);
         }
 
-        if ($luckyProducts->isEmpty() && $luckyOrder > 0) {
-            Log::error('No lucky order products found.');
-            return response()->json(['message' => 'No lucky order products found.'], 400);
-        }
-
         $tasks = [];
-        $luckyOrderPositions = [];
-        if ($luckyOrder > 0) {
-            $interval = (int) floor($tasksNumber / $luckyOrder);
-            for ($i = 1; $i <= $luckyOrder; $i++) {
-                $luckyOrderPositions[] = $i * $interval;
-            }
-        }
 
-        $regularProducts = Product::where('type', $user->vip_level)->inRandomOrder()->limit($tasksNumber - $luckyOrder)->get()->shuffle();
-        $luckyOrderProducts = Product::where('type', 'Lucky Order')->inRandomOrder()->limit($luckyOrder)->get()->shuffle();
+        $regularProducts = Product::where('type', $user->vip_level)->inRandomOrder()->limit($tasksNumber)->get()->shuffle();
 
         for ($i = 1; $i <= $tasksNumber; $i++) {
             $product = null;
-            $isLucky = in_array($i, $luckyOrderPositions);
 
-            if ($isLucky) {
-                if ($luckyOrderProducts->isNotEmpty()) {
-                    $product = $luckyOrderProducts->pop();
-                }
-            } else {
-                if ($regularProducts->isNotEmpty()) {
-                    $product = $regularProducts->pop();
-                }
+            if ($regularProducts->isNotEmpty()) {
+                $product = $regularProducts->pop();
             }
 
             // Fallback if we run out of unique products
             if (!$product) {
-                if ($isLucky) {
-                    $product = Product::where('type', 'Lucky Order')->inRandomOrder()->first();
-                } else {
-                    $product = Product::where('type', $user->vip_level)->inRandomOrder()->first();
-                }
+                $product = Product::where('type', $user->vip_level)->inRandomOrder()->first();
             }
 
             if (!$product) {
-                Log::error('Failed to fetch a product for task assignment.', ['is_lucky' => $isLucky]);
+                Log::error('Failed to fetch a product for task assignment.');
                 continue; // Skip this task if no product can be found
             }
 

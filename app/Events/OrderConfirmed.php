@@ -7,10 +7,10 @@ use App\Models\UserOrder;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 
-class OrderConfirmed implements ShouldBroadcast
+class OrderConfirmed implements ShouldBroadcastNow
 {
     use Dispatchable, SerializesModels;
 
@@ -25,12 +25,10 @@ class OrderConfirmed implements ShouldBroadcast
 
     public function broadcastOn()
     {
-        // private channel for that user
-        return new PrivateChannel('orders.' . $this->userId);
-         return [
-        new PrivateChannel('orders.' . $this->userId),   // per-user
-        new Channel('admin.orders')                     // admin-wide
-    ];
+        return [
+            new PrivateChannel('orders.' . $this->userId),
+            new Channel('admin.orders')
+        ];
     }
 
     public function broadcastAs()
@@ -38,5 +36,15 @@ class OrderConfirmed implements ShouldBroadcast
         return 'OrderConfirmed';
     }
 
-
+    public function broadcastWith()
+    {
+        return [
+            'order' => [
+                'id' => $this->order->id,
+                'user_id' => $this->order->user_id,
+                'product_id' => $this->order->product_id,
+                'status' => $this->order->status,
+            ]
+        ];
+    }
 }

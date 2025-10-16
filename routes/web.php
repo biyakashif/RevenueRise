@@ -85,6 +85,7 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->name('admin.')->group(fun
     // Task Management
     Route::get('/task-manager', [AdminController::class, 'taskManager'])->name('task-manager');
     Route::get('/tasks/{user}', [AdminController::class, 'userTasks'])->name('tasks.details');
+    Route::get('/products/lucky-orders', [AdminController::class, 'getLuckyOrderProducts']);
     Route::post('/tasks/{user}/replace/{task}', [AdminController::class, 'replaceWithLuckyOrder']);
     Route::post('/toggle-lucky-order-flag', [AdminController::class, 'toggleLuckyOrderFlag'])->name('toggle-lucky-order-flag');
     Route::post('/tasks/{user}/reset', [AdminController::class, 'resetUserTasks']);

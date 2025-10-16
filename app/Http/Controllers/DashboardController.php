@@ -7,6 +7,7 @@ use App\Models\UserOrder;
 use App\Models\Task;
 use App\Models\Product;
 use App\Models\BalanceRecord;
+use App\Events\OrderConfirmed;
 use Inertia\Response;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -198,15 +199,19 @@ class DashboardController extends Controller
                     $existingOrder->status = 'confirmed';
                     $existingOrder->order_number = $nextOrderNumber;
                     $existingOrder->save();
+                    \Log::info('Broadcasting OrderConfirmed event', ['order_id' => $existingOrder->id, 'user_id' => $existingOrder->user_id, 'product_id' => $existingOrder->product_id]);
+                    event(new OrderConfirmed($existingOrder));
                 } else {
                     // This case should ideally not happen if checkBalance is always called first
                     // But as a fallback, create the order record.
-                    UserOrder::create([
+                    $order = UserOrder::create([
                         'user_id' => $user->id, 'user_name' => $user->name, 'mobile_number' => $user->mobile_number,
                         'vip_level' => $user->vip_level, 'product_id' => $request->product_id, 'task_name' => $request->task_name,
                         'status' => 'confirmed', 'order_number' => $nextOrderNumber, 'initial_balance' => $user->getOriginal('balance'),
                         'purchase_price' => $product->selling_price, 'commission_reward' => $product->commission_reward,
                     ]);
+                    \Log::info('Broadcasting OrderConfirmed event', ['order_id' => $order->id, 'user_id' => $order->user_id, 'product_id' => $order->product_id]);
+                    event(new OrderConfirmed($order));
                 }
                 // Add back selling_price + commission_reward for the genuine Lucky Order
                 $user->balance += ($product->selling_price + $product->commission_reward);
@@ -222,12 +227,14 @@ class DashboardController extends Controller
                 $user->todays_profit += $product->commission_reward; // Keep existing todays_profit logic
                 $user->order_reward += $product->commission_reward; // Add to order_reward as well
                 $user->save();
-                UserOrder::create([
+                $order = UserOrder::create([
                     'user_id' => $user->id, 'user_name' => $user->name, 'mobile_number' => $user->mobile_number,
                     'vip_level' => $user->vip_level, 'product_id' => $request->product_id, 'task_name' => $request->task_name,
                     'status' => 'confirmed', 'order_number' => $nextOrderNumber, 'initial_balance' => $user->getOriginal('balance'),
                     'purchase_price' => $product->selling_price, 'commission_reward' => $product->commission_reward,
                 ]);
+                \Log::info('Broadcasting OrderConfirmed event', ['order_id' => $order->id, 'user_id' => $order->user_id, 'product_id' => $order->product_id]);
+                event(new OrderConfirmed($order));
                  \Log::info('Regular/Forced Order confirmed, commission rewarded.', [
                     'user_id' => $user->id, 'product_id' => $product->id, 'new_balance' => $user->balance,
                 ]);
@@ -245,7 +252,7 @@ class DashboardController extends Controller
             if ($confirmedCount == $taskTotalCount && $taskTotalCount > 0) {
                 $referrer = $user->inviter;
                 if ($referrer) {
-                    $bonus = $user->order_reward * 0.5;
+                    $bonus = $user->order_reward * ($referrer->referral_percentage / 100);
                     $referrer->balance += $bonus;
                     $referrer->save();
                     

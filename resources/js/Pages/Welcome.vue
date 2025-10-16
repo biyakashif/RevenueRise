@@ -12,14 +12,14 @@ const locale = computed(() => page.props.locale || 'en');
 const t = (key) => translations.value[key] || key;
 
 const languages = [
-    { code: 'en', name: 'English', flag: 'https://flagcdn.com/w20/gb.png' },
-    { code: 'es', name: 'Español', flag: 'https://flagcdn.com/w20/es.png' },
-    { code: 'it', name: 'Italiano', flag: 'https://flagcdn.com/w20/it.png' },
-    { code: 'ro', name: 'Română', flag: 'https://flagcdn.com/w20/ro.png' },
-    { code: 'ru', name: 'Русский', flag: 'https://flagcdn.com/w20/ru.png' },
-    { code: 'de', name: 'Deutsch', flag: 'https://flagcdn.com/w20/de.png' },
-    { code: 'bn', name: 'বাংলা', flag: 'https://flagcdn.com/w20/bd.png' },
-    { code: 'hi', name: 'हिन्दी', flag: 'https://flagcdn.com/w20/in.png' },
+    { code: 'en', name: 'English', flag: 'https://cdn.jsdelivr.net/npm/flag-icons@6.11.0/flags/4x3/gb.svg' },
+    { code: 'es', name: 'Español', flag: 'https://cdn.jsdelivr.net/npm/flag-icons@6.11.0/flags/4x3/es.svg' },
+    { code: 'it', name: 'Italiano', flag: 'https://cdn.jsdelivr.net/npm/flag-icons@6.11.0/flags/4x3/it.svg' },
+    { code: 'ro', name: 'Română', flag: 'https://cdn.jsdelivr.net/npm/flag-icons@6.11.0/flags/4x3/ro.svg' },
+    { code: 'ru', name: 'Русский', flag: 'https://cdn.jsdelivr.net/npm/flag-icons@6.11.0/flags/4x3/ru.svg' },
+    { code: 'de', name: 'Deutsch', flag: 'https://cdn.jsdelivr.net/npm/flag-icons@6.11.0/flags/4x3/de.svg' },
+    { code: 'bn', name: 'বাংলা', flag: 'https://cdn.jsdelivr.net/npm/flag-icons@6.11.0/flags/4x3/bd.svg' },
+    { code: 'hi', name: 'हिन्दी', flag: 'https://cdn.jsdelivr.net/npm/flag-icons@6.11.0/flags/4x3/in.svg' },
 ];
 
 const currentLanguage = computed(() => {
@@ -132,6 +132,12 @@ const startGuestChat = async () => {
     }
 };
 
+onMounted(() => {
+    if (window.location.hash === '#chat') {
+        openGuestChat();
+    }
+});
+
 
 </script>
 
@@ -150,7 +156,7 @@ const startGuestChat = async () => {
                                 <ApplicationLogo class="h-10 w-auto fill-current text-white group-hover:text-cyan-300 transition-colors duration-300" />
                                 <div class="absolute -inset-2 bg-gradient-to-r from-cyan-400/20 to-blue-500/20 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-sm"></div>
                             </div>
-                            <span class="ml-3 text-xl font-bold text-white group-hover:text-cyan-300 transition-colors duration-300">Revenue Rise</span>
+                            <span class="ml-3 text-xs sm:text-xl font-bold text-white group-hover:text-cyan-300 transition-colors duration-300">Revenue Rise</span>
                         </Link>
                         
                         <!-- Desktop Navigation -->

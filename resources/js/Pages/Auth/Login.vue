@@ -67,18 +67,18 @@ const submit = async () => {
 
         <div class="bg-gradient-to-br from-white/95 via-blue-50/90 to-indigo-50/95 backdrop-blur-xl p-4 md:p-8 rounded-b-3xl rounded-t-none shadow-2xl max-w-md w-full border border-white/40 border-t-0 mx-auto">
 
-            <div v-if="status" class="mb-4 md:mb-6 p-4 bg-green-50 border border-green-200 rounded-xl text-sm font-medium text-green-700 text-center">
+            <div v-if="status" class="mb-4 p-4 bg-green-50 border border-green-200 rounded-xl text-sm font-medium text-green-700 text-center">
                 {{ status }}
             </div>
 
-            <form @submit.prevent="submit" class="space-y-4 md:space-y-6">
+            <form @submit.prevent="submit" class="space-y-4">
                 <!-- Mobile Number -->
                 <div>
-                    <InputLabel for="mobile_number" :value="t('Mobile Number')" class="text-sm font-medium text-gray-700 mb-1" />
+                    <InputLabel for="mobile_number" :value="t('Mobile Number')" class="text-xs font-medium text-gray-600" />
                     <TextInput
                         id="mobile_number"
                         type="text"
-                        class="w-full h-10 md:h-12 rounded-xl bg-gray-50 border-0 focus:ring-2 focus:ring-blue-500 text-gray-900 px-4 placeholder-gray-400"
+                        class="w-full h-9 rounded-lg bg-gray-50 border-0 focus:ring-1 focus:ring-blue-500 text-gray-900 px-3 text-sm placeholder:text-xs placeholder:text-gray-400 mt-1"
                         v-model="form.mobile_number"
                         :placeholder="t('Mobile Number')"
                         required
@@ -91,11 +91,11 @@ const submit = async () => {
 
                 <!-- Set Password -->
                 <div>
-                    <InputLabel for="password" :value="t('Password')" class="text-sm font-medium text-gray-700 mb-1" />
+                    <InputLabel for="password" :value="t('Password')" class="text-xs font-medium text-gray-600" />
                     <TextInput
                         id="password"
                         type="password"
-                        class="w-full h-10 md:h-12 rounded-xl bg-gray-50 border-0 focus:ring-2 focus:ring-blue-500 text-gray-900 px-4 placeholder-gray-400"
+                        class="w-full h-9 rounded-lg bg-gray-50 border-0 focus:ring-1 focus:ring-blue-500 text-gray-900 px-3 text-sm placeholder:text-xs placeholder:text-gray-400 mt-1"
                         v-model="form.password"
                         :placeholder="t('Password')"
                         required
@@ -109,9 +109,9 @@ const submit = async () => {
                 <div class="flex items-center justify-between">
                     <div class="flex items-center">
                         <Checkbox name="remember" v-model:checked="form.remember" class="rounded" />
-                        <span class="ml-2 text-sm text-gray-600">{{ t('Remember Me') }}</span>
+                        <span class="ml-2 text-xs text-gray-600">{{ t('Remember me') }}</span>
                     </div>
-                    <Link href="#" class="text-sm text-blue-600 hover:text-blue-800 transition-colors duration-200">
+                    <Link :href="route('welcome') + '#chat'" class="text-xs text-blue-600 hover:text-blue-800 transition-colors duration-200">
                         {{ t('Need Help') }}
                     </Link>
                 </div>
@@ -122,8 +122,8 @@ const submit = async () => {
                     :class="{ 'opacity-50 cursor-not-allowed': form.processing }"
                     :disabled="form.processing"
                 >
-                    <span v-if="form.processing">{{ t('Signing in') }}</span>
-                    <span v-else>{{ t('Signin') }}</span>
+                    <span v-if="form.processing">{{ t('Signing in...') }}</span>
+                    <span v-else>{{ t('Sign In') }}</span>
                 </PrimaryButton>
             </form>
         </div>
