@@ -39,12 +39,12 @@ const vipIcons = {
 
 const commissionMapping = {
   VIP1: { min: 3, max: 9 },
-  VIP2: { min: 10, max: 20 },
-  VIP3: { min: 25, max: 50 },
-  VIP4: { min: 40, max: 100 },
-  VIP5: { min: 50, max: 130 },
-  VIP6: { min: 60, max: 160 },
-  VIP7: { min: 70, max: 200 }
+  VIP2: { min: 20, max: 30 },
+  VIP3: { min: 30, max: 40 },
+  VIP4: { min: 40, max: 60 },
+  VIP5: { min: 60, max: 90 },
+  VIP6: { min: 90, max: 150 },
+  VIP7: { min: 150, max: 300 }
 };
 
 const vipColors = {

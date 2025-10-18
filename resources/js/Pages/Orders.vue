@@ -79,7 +79,7 @@
               <button
                 v-else
                 @click="grabOrders"
-                class="px-4 py-2 sm:px-6 sm:py-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl text-xs sm:text-sm font-medium transition-all duration-300 transform hover:scale-[1.02] shadow-lg hover:shadow-xl flex items-center gap-2"
+                class="px-10 py-2 sm:px-12 sm:py-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl text-s sm:text-sm font-medium transition-all duration-300 transform hover:scale-[1.02] shadow-lg hover:shadow-xl flex items-center gap-2"
                 :class="{ 'opacity-70 cursor-not-allowed': isGrabbing || isSubmitting || showModal }"
                 :aria-busy="isGrabbing"
                 :disabled="activeTask.products.length === 0 || isGrabbing || isSubmitting || showModal"
@@ -180,23 +180,7 @@
       </div>
     </transition>
 
-    <!-- Loading Modal for Insufficient Tasks -->
-    <transition name="fade" mode="out-in">
-      <div v-if="notEnoughTasks" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-        <div class="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl p-6 max-w-sm w-full text-center border border-white/40">
-          <p class="text-slate-700 font-medium mb-2">{{ t('Fetching orders...') }}</p>
-          <p class="text-xs text-slate-500">{{ t('There are not enough products available right now. Please wait.') }}</p>
-          <div class="mt-4">
-            <svg class="animate-spin h-6 w-6 text-blue-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-            </svg>
-          </div>
-        </div>
-      </div>
-    </transition>
 
-  <!-- Spinner moved to the Grab button only to avoid double loading overlay -->
   </AuthenticatedLayout>
 </template>
 
@@ -207,8 +191,6 @@ import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
 import { debounce } from 'lodash';
 
 const props = defineProps({
-  products: { type: Array, default: () => [] },
-  currentProductIndex: { type: Number, default: 0 },
   user: { type: Object, default: () => ({ balance: 0, frozen_balance: 0, todays_profit: 0, vip_level: 'VIP1' }) },
   tasks: { type: Array, default: () => [] },
   taskTotalCount: { type: Number, default: 0 },
@@ -221,8 +203,7 @@ const translations = computed(() => page.props.translations || {});
 const t = (key) => translations.value[key] || key;
 
 const balanceErrorMessage = ref('');
-const completionMessage = ref('');
-const modalErrorMessage = ref(''); // New state for modal-specific error messages
+const modalErrorMessage = ref('');
 
 // Cache reward; keep in sync with server including zero
 const lastReward = ref(props.user.order_reward ?? 0);
@@ -302,13 +283,9 @@ const buildActiveTaskFrom = (tasksArr) => {
 };
 
 // Reactive state
-const currentIndex = ref(props.currentProductIndex);
 const activeTask = ref(buildActiveTaskFrom(props.tasks));
 const taskProgress = ref(props.confirmedCount || 0);
 const taskItemsCount = ref(props.taskTotalCount || 0);
-
-// Small derived computed
-const notEnoughTasks = computed(() => false); // Always allow tasks to show, even if less than 40
 
 // Modal & loading state
 const showModal = ref(false);
@@ -510,7 +487,6 @@ const updateFromProps = () => {
   }
 
   if (taskProgress.value >= taskItemsCount.value && taskItemsCount.value > 0) {
-    completionMessage.value = "Congratulations you have done your today's task, your next task will be updated after midnight";
     showModal.value = false;
     modalProduct.value = null;
     clearModalState();

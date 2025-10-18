@@ -95,7 +95,7 @@ const refreshCSRFToken = async () => {
                                 type="text"
                                 class="w-full h-9 rounded-lg bg-gray-50 border-0 focus:ring-1 focus:ring-blue-500 text-gray-900 px-3 text-sm placeholder:text-xs placeholder:text-gray-400 mt-1"
                                 v-model="form.name"
-                                placeholder="Your full name"
+                                :placeholder="t('Enter your name')"
                                 required
                                 autofocus
                                 autocomplete="name"
@@ -110,7 +110,7 @@ const refreshCSRFToken = async () => {
                                 type="text"
                                 class="w-full h-9 rounded-lg bg-gray-50 border-0 focus:ring-1 focus:ring-blue-500 text-gray-900 px-3 text-sm placeholder:text-xs placeholder:text-gray-400 mt-1"
                                 v-model="form.mobile_number"
-                                placeholder="Mobile number"
+                                :placeholder="t('Enter mobile number')"
                                 required
                                 autocomplete="username"
                                 @input="form.mobile_number = form.mobile_number.replace(/[^0-9]/g, '')"
@@ -119,13 +119,14 @@ const refreshCSRFToken = async () => {
                         </div>
                     </div>
                     
-                    <div class="flex justify-center mt-4">
+                    <div class="flex justify-center mt-6">
                         <button
                             type="button"
                             @click="currentCard = 1"
-                            class="flex items-center justify-center w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 hover:bg-white/30 transition-all duration-300 transform hover:scale-110"
+                            class="flex items-center justify-center gap-2 px-6 py-2.5 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-medium text-sm transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
                         >
-                            <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <span>{{ t('Next') }}</span>
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                             </svg>
                         </button>
@@ -135,18 +136,9 @@ const refreshCSRFToken = async () => {
                 <!-- Card 2: Passwords -->
                 <div class="w-full flex-shrink-0 p-4 md:p-8 flex flex-col justify-between h-full">
                     <div class="space-y-4 md:space-y-6">
-                        <div class="flex items-center justify-between">
-                            <button
-                                type="button"
-                                @click="currentCard = 0"
-                                class="flex items-center justify-center w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 hover:bg-white/30 transition-all duration-300"
-                            >
-                                <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-                                </svg>
-                            </button>
-                            <span class="text-sm font-medium text-gray-700">{{ t('Set Password') }}</span>
-                            <div class="w-8"></div>
+                        <div class="text-center mb-4">
+                            <h3 class="text-base font-semibold text-gray-800">{{ t('Set Password') }}</h3>
+                            <p class="text-xs text-gray-600 mt-1">{{ t('Create a secure password for your account') }}</p>
                         </div>
 
                         <div>
@@ -156,7 +148,7 @@ const refreshCSRFToken = async () => {
                                 type="password"
                                 class="w-full h-9 rounded-lg bg-gray-50 border-0 focus:ring-1 focus:ring-blue-500 text-gray-900 px-3 text-sm placeholder:text-xs placeholder:text-gray-400 mt-1"
                                 v-model="form.password"
-                                placeholder="Password"
+                                :placeholder="t('Enter password')"
                                 required
                                 autocomplete="new-password"
                             />
@@ -170,7 +162,7 @@ const refreshCSRFToken = async () => {
                                 type="password"
                                 class="w-full h-9 rounded-lg bg-gray-50 border-0 focus:ring-1 focus:ring-blue-500 text-gray-900 px-3 text-sm placeholder:text-xs placeholder:text-gray-400 mt-1"
                                 v-model="form.password_confirmation"
-                                placeholder="Confirm password"
+                                :placeholder="t('Confirm password')"
                                 required
                                 autocomplete="new-password"
                             />
@@ -178,13 +170,24 @@ const refreshCSRFToken = async () => {
                         </div>
                     </div>
                     
-                    <div class="flex justify-center mt-4">
+                    <div class="flex justify-between items-center mt-6 gap-3">
+                        <button
+                            type="button"
+                            @click="currentCard = 0"
+                            class="flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-white/40 hover:bg-white/60 backdrop-blur-sm border border-white/50 text-gray-700 font-medium text-sm transition-all duration-300 transform hover:scale-105 shadow-md"
+                        >
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                            </svg>
+                            <span>{{ t('Back') }}</span>
+                        </button>
                         <button
                             type="button"
                             @click="currentCard = 2"
-                            class="flex items-center justify-center w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 hover:bg-white/30 transition-all duration-300 transform hover:scale-110"
+                            class="flex items-center justify-center gap-2 px-6 py-2.5 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-medium text-sm transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
                         >
-                            <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <span>{{ t('Next') }}</span>
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                             </svg>
                         </button>
@@ -194,18 +197,9 @@ const refreshCSRFToken = async () => {
                 <!-- Card 3: PIN & Register -->
                 <div class="w-full flex-shrink-0 p-4 md:p-8 flex flex-col h-full">
                     <div class="space-y-4">
-                        <div class="flex items-center justify-between">
-                            <button
-                                type="button"
-                                @click="currentCard = 1"
-                                class="flex items-center justify-center w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 hover:bg-white/30 transition-all duration-300"
-                            >
-                                <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-                                </svg>
-                            </button>
-                            <span class="text-sm font-medium text-gray-700">{{ t('Final Step') }}</span>
-                            <div class="w-8"></div>
+                        <div class="text-center mb-4">
+                            <h3 class="text-base font-semibold text-gray-800">{{ t('Final Step') }}</h3>
+                            <p class="text-xs text-gray-600 mt-1">{{ t('Set your withdrawal PIN and complete registration') }}</p>
                         </div>
 
                         <div class="grid grid-cols-2 gap-4">
@@ -216,7 +210,7 @@ const refreshCSRFToken = async () => {
                                     type="password"
                                     class="w-full h-9 rounded-lg bg-gray-50 border-0 focus:ring-1 focus:ring-blue-500 text-gray-900 px-3 text-sm placeholder:text-xs placeholder:text-gray-400 mt-1"
                                     v-model="form.withdraw_password"
-                                    placeholder="6-digit PIN"
+                                    :placeholder="t('6-digit PIN')"
                                     required
                                     autocomplete="off"
                                 />
@@ -230,7 +224,7 @@ const refreshCSRFToken = async () => {
                                     type="password"
                                     class="w-full h-9 rounded-lg bg-gray-50 border-0 focus:ring-1 focus:ring-blue-500 text-gray-900 px-3 text-sm placeholder:text-xs placeholder:text-gray-400 mt-1"
                                     v-model="form.withdraw_password_confirmation"
-                                    placeholder="Confirm PIN"
+                                    :placeholder="t('Confirm PIN')"
                                     required
                                     autocomplete="off"
                                 />
@@ -245,22 +239,34 @@ const refreshCSRFToken = async () => {
                                 type="text"
                                 class="w-full h-9 rounded-lg bg-gray-50 border-0 focus:ring-1 focus:ring-blue-500 text-gray-900 px-3 text-sm placeholder:text-xs placeholder:text-gray-400 mt-1"
                                 v-model="form.invitation_code"
-                                placeholder="Invitation code"
+                                :placeholder="t('Enter invitation code')"
                                 autocomplete="off"
                             />
                             <InputError class="mt-1 text-xs text-red-500" :message="form.errors.invitation_code" />
                         </div>
                     </div>
                     
-                    <PrimaryButton
-                        @click="submit"
-                        class="w-full h-9 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold text-sm transition-all duration-300 transform hover:scale-[1.02] shadow-lg hover:shadow-xl mt-4"
-                        :class="{ 'opacity-50 cursor-not-allowed': form.processing }"
-                        :disabled="form.processing"
-                    >
-                        <span v-if="form.processing">{{ t('Creating Account...') }}</span>
-                        <span v-else>{{ t('Create Account') }}</span>
-                    </PrimaryButton>
+                    <div class="flex justify-between items-center mt-6 gap-3">
+                        <button
+                            type="button"
+                            @click="currentCard = 1"
+                            class="flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-white/40 hover:bg-white/60 backdrop-blur-sm border border-white/50 text-gray-700 font-medium text-sm transition-all duration-300 transform hover:scale-105 shadow-md"
+                        >
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                            </svg>
+                            <span>{{ t('Back') }}</span>
+                        </button>
+                        <PrimaryButton
+                            @click="submit"
+                            class="flex-1 h-10 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold text-sm transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
+                            :class="{ 'opacity-50 cursor-not-allowed': form.processing }"
+                            :disabled="form.processing"
+                        >
+                            <span v-if="form.processing">{{ t('Creating Account...') }}</span>
+                            <span v-else>{{ t('Create Account') }}</span>
+                        </PrimaryButton>
+                    </div>
                 </div>
             </div>
         </div>

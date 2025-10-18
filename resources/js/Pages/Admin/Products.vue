@@ -31,6 +31,21 @@ const filteredProducts = computed(() => {
   return filtered;
 });
 
+// Product counts by type
+const productCounts = computed(() => {
+  const counts = {
+    VIP1: 0, VIP2: 0, VIP3: 0, VIP4: 0, VIP5: 0, VIP6: 0, VIP7: 0, 'Lucky Order': 0
+  };
+  page.props.products.forEach(product => {
+    if (counts.hasOwnProperty(product.type)) {
+      counts[product.type]++;
+    }
+  });
+  return counts;
+});
+
+const totalProducts = computed(() => page.props.products.length);
+
 // Upload Form
 const form = useForm({
   title: "",
@@ -217,12 +232,68 @@ function openLightbox(imageUrl) {
 function closeLightbox() {
   lightboxImage.value = null;
 }
+
+// Bulk Commission Update
+const showCommissionModal = ref(false);
+const commissionForm = useForm({
+  product_type: "VIP1",
+  commission_percentage: "",
+  _token: page.props.csrf_token,
+});
+
+function updateBulkCommission() {
+  successMessage.value = "";
+  errorMessage.value = "";
+  
+  // Refresh CSRF token
+  commissionForm._token = page.props.csrf_token;
+
+  commissionForm.post(route("admin.products.bulk-update-commission"), {
+    preserveScroll: true,
+    onSuccess: () => {
+      successMessage.value = `✅ Commission updated successfully for all ${commissionForm.product_type} products!`;
+      setTimeout(() => successMessage.value = "", 3000);
+      commissionForm.commission_percentage = "";
+      showCommissionModal.value = false;
+    },
+    onError: (errors) => {
+      if (errors && (errors.message?.includes('419') || errors.status === 419)) {
+        window.location.reload();
+        return;
+      }
+      errorMessage.value = "❌ Failed to update commission: " + JSON.stringify(errors);
+      setTimeout(() => errorMessage.value = "", 5000);
+    },
+  });
+}
 </script>
 
 <template>
   <AdminLayout>
     <div class="bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl p-4 rounded-2xl shadow-2xl border border-cyan-300/30 h-full overflow-y-auto">
       <h1 class="text-lg font-bold text-slate-800 drop-shadow-sm mb-4">Product Management</h1>
+
+      <!-- Product Statistics -->
+      <div class="bg-white/20 backdrop-blur-sm px-4 py-3 rounded-lg mb-4 border border-white/30">
+        <div class="flex items-center justify-between flex-wrap gap-3 text-xs text-slate-700">
+          <span class="font-semibold text-slate-800">Products:</span>
+          <span class="bg-white/30 px-2 py-1 rounded">VIP1: <strong>{{ productCounts.VIP1 }}</strong></span>
+          <span class="bg-white/30 px-2 py-1 rounded">VIP2: <strong>{{ productCounts.VIP2 }}</strong></span>
+          <span class="bg-white/30 px-2 py-1 rounded">VIP3: <strong>{{ productCounts.VIP3 }}</strong></span>
+          <span class="bg-white/30 px-2 py-1 rounded">VIP4: <strong>{{ productCounts.VIP4 }}</strong></span>
+          <span class="bg-white/30 px-2 py-1 rounded">VIP5: <strong>{{ productCounts.VIP5 }}</strong></span>
+          <span class="bg-white/30 px-2 py-1 rounded">VIP6: <strong>{{ productCounts.VIP6 }}</strong></span>
+          <span class="bg-white/30 px-2 py-1 rounded">VIP7: <strong>{{ productCounts.VIP7 }}</strong></span>
+          <span class="bg-yellow-100/50 px-2 py-1 rounded">Lucky: <strong>{{ productCounts['Lucky Order'] }}</strong></span>
+          <span class="bg-blue-100/50 px-2 py-1 rounded text-blue-700 font-semibold">Total: <strong>{{ totalProducts }}</strong></span>
+          <button
+            @click="showCommissionModal = true"
+            class="px-3 py-1 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white rounded-lg text-xs font-medium transition-all duration-300 transform hover:scale-[1.02] shadow-lg hover:shadow-xl ml-auto"
+          >
+            Change Commission
+          </button>
+        </div>
+      </div>
 
       <!-- Search Bar and Add Product Button -->
       <div class="bg-gradient-to-r from-white/40 via-white/30 to-white/20 backdrop-blur-sm p-4 rounded-xl shadow-lg border border-white/30 mb-6">
@@ -440,6 +511,80 @@ function closeLightbox() {
               Delete
             </button>
           </div>
+        </div>
+      </div>
+    </transition>
+
+    <!-- Bulk Commission Update Modal -->
+    <transition name="modal">
+      <div
+        v-if="showCommissionModal"
+        class="fixed inset-0 bg-black bg-opacity-40 flex items-start justify-center z-50 p-4 overflow-y-auto"
+        @click="showCommissionModal = false"
+      >
+        <div
+          class="bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl rounded-2xl p-6 w-full max-w-md mx-4 border border-white/20 shadow-2xl my-8"
+          @click.stop
+        >
+          <h2 class="text-lg font-semibold text-white text-center mb-6">Change Commission by Product Type</h2>
+          <form @submit.prevent="updateBulkCommission" class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-white mb-2">Select Product Type</label>
+              <select
+                v-model="commissionForm.product_type"
+                class="w-full h-11 rounded-lg bg-white/50 border-0 focus:ring-2 focus:ring-cyan-400 text-slate-900 px-4 text-sm backdrop-blur-sm shadow-lg"
+                required
+              >
+                <option value="VIP1">VIP1</option>
+                <option value="VIP2">VIP2</option>
+                <option value="VIP3">VIP3</option>
+                <option value="VIP4">VIP4</option>
+                <option value="VIP5">VIP5</option>
+                <option value="VIP6">VIP6</option>
+                <option value="VIP7">VIP7</option>
+                <option value="Lucky Order">Lucky Order</option>
+              </select>
+              <span v-if="commissionForm.errors.product_type" class="text-red-500 text-xs mt-1">{{ commissionForm.errors.product_type }}</span>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-white mb-2">New Commission Percentage</label>
+              <input
+                v-model="commissionForm.commission_percentage"
+                type="number"
+                step="0.01"
+                min="0"
+                max="100"
+                placeholder="Enter commission percentage"
+                class="w-full h-11 rounded-lg bg-white/50 border-0 focus:ring-2 focus:ring-cyan-400 text-slate-900 px-4 text-sm placeholder-slate-400 backdrop-blur-sm shadow-lg"
+                required
+              />
+              <span v-if="commissionForm.errors.commission_percentage" class="text-red-500 text-xs mt-1">{{ commissionForm.errors.commission_percentage }}</span>
+            </div>
+
+            <div class="bg-yellow-100/20 border border-yellow-300/30 rounded-lg p-3 mt-4">
+              <p class="text-xs text-white">
+                ⚠️ This will update the commission percentage for <strong>all products</strong> of type <strong>{{ commissionForm.product_type }}</strong>.
+              </p>
+            </div>
+
+            <div class="flex justify-end gap-3 pt-2">
+              <button
+                type="button"
+                @click="showCommissionModal = false"
+                class="px-4 py-2 bg-white/20 backdrop-blur-sm rounded-lg text-sm hover:bg-white/30 text-white border border-white/30 transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                :disabled="commissionForm.processing"
+                class="px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-lg text-sm hover:from-cyan-600 hover:to-blue-700 transform hover:scale-105 transition-all duration-200 disabled:opacity-50 font-medium"
+              >
+                Update Commission
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     </transition>

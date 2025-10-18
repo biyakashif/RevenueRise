@@ -44,15 +44,6 @@ const filteredLuckyOrderProducts = computed(() => {
   );
 });
 
-const unassignedUsersCount = computed(() => {
-  if (!users) return 0;
-  // Filter out admin users and count only regular users without tasks
-  return users.filter(user => 
-    !assignedUsers.value.has(user.id) && 
-    user.role !== 'admin'
-  ).length;
-});
-
 async function viewTasks(userId) {
   const response = await fetch(`/admin/tasks/${userId}`);
   const data = await response.json();

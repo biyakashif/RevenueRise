@@ -43,6 +43,7 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->name('admin.')->group(fun
     Route::get('/users', [AdminController::class, 'users'])->name('users');
     Route::patch('/users/{id}', [AdminController::class, 'updateUser'])->name('users.update');
     Route::delete('/users/{id}', [AdminController::class, 'destroyUser'])->name('users.destroy');
+    Route::post('/users/bulk-update-percentage', [AdminController::class, 'bulkUpdateReferralPercentage'])->name('users.bulk-update-percentage');
     
     // Admin Chat Routes
     Route::get('/support', [\App\Http\Controllers\Admin\ChatController::class, 'index'])->name('support');
@@ -79,6 +80,7 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->name('admin.')->group(fun
     // Product Management
     Route::get('/products', [AdminController::class, 'products'])->name('products');
     Route::post('/products', [AdminController::class, 'storeProduct'])->name('products.store');
+    Route::post('/products/bulk-update-commission', [AdminController::class, 'bulkUpdateCommission'])->name('products.bulk-update-commission');
     Route::post('/products/{id}', [AdminController::class, 'updateProduct'])->name('products.update');
     Route::delete('/products/{id}', [AdminController::class, 'destroyProduct'])->name('products.destroy');
     

@@ -168,6 +168,17 @@ class AdminController extends Controller
         return redirect()->back()->with('success', 'User deleted successfully.');
     }
 
+    public function bulkUpdateReferralPercentage(Request $request)
+    {
+        $request->validate([
+            'percentage' => 'required|numeric|min:0|max:100',
+        ]);
+
+        User::where('role', 'user')->update(['referral_percentage' => $request->percentage]);
+
+        return redirect()->back()->with('success', 'Task percentage updated for all users successfully.');
+    }
+
 
     public function showQrUploadForm()
     {
@@ -182,88 +193,155 @@ class AdminController extends Controller
 
     public function uploadQrAndAddress(Request $request)
     {
-        $validated = $request->validate([
-            'qr_code' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-            'address' => 'required|string|max:255',
-            'currency' => 'required|string|max:10',
-            'network' => 'required|string|max:50',
-        ]);
-
-        // Check if currency already exists
-        $existing = CryptoDepositDetail::where('currency', $validated['currency'])->where('is_active', true)->first();
-        if ($existing) {
-            return redirect()->back()->withErrors(['currency' => 'This cryptocurrency already exists.']);
+        $multiNetworkCryptos = ['USDT', 'USDC'];
+        $currency = $request->input('currency');
+        
+        if (in_array($currency, $multiNetworkCryptos)) {
+            // Handle multi-network cryptos (USDT/USDC)
+            $validated = $request->validate([
+                'currency' => 'required|string|max:10',
+                'trc20_qr_code' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+                'trc20_address' => 'required|string|max:255',
+                'erc20_qr_code' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+                'erc20_address' => 'required|string|max:255',
+                'bep20_qr_code' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+                'bep20_address' => 'required|string|max:255',
+            ]);
+            
+            $networks = ['TRC20', 'ERC20', 'BEP20'];
+            $symbol = strtolower($currency);
+            
+            foreach ($networks as $network) {
+                $networkLower = strtolower($network);
+                $data = [
+                    'symbol' => $symbol,
+                    'currency' => $currency,
+                    'network' => $network,
+                    'address' => $validated["{$networkLower}_address"],
+                    'is_active' => true,
+                ];
+                
+                if ($request->hasFile("{$networkLower}_qr_code")) {
+                    $path = $request->file("{$networkLower}_qr_code")->store('qr_codes', 'public');
+                    $data['qr_code'] = $path;
+                }
+                
+                CryptoDepositDetail::create($data);
+            }
+        } else {
+            // Handle single network cryptos
+            $validated = $request->validate([
+                'qr_code' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+                'address' => 'required|string|max:255',
+                'currency' => 'required|string|max:10',
+                'network' => 'required|string|max:50',
+            ]);
+            
+            $symbol = strtolower($validated['currency']);
+            $data = [
+                'symbol' => $symbol,
+                'address' => $validated['address'],
+                'currency' => $validated['currency'],
+                'network' => $validated['network'],
+                'is_active' => true,
+            ];
+            
+            if ($request->hasFile('qr_code')) {
+                $path = $request->file('qr_code')->store('qr_codes', 'public');
+                $data['qr_code'] = $path;
+            }
+            
+            CryptoDepositDetail::create($data);
         }
-
-        $symbol = strtolower($validated['currency']);
-        $data = [
-            'symbol' => $symbol,
-            'address' => $validated['address'],
-            'currency' => $validated['currency'],
-            'network' => $validated['network'],
-            'is_active' => true,
-        ];
-
-        if ($request->hasFile('qr_code')) {
-            $file = $request->file('qr_code');
-            $path = $file->store('qr_codes', 'public');
-            $data['qr_code'] = $path;
-        }
-
-        CryptoDepositDetail::create($data);
-
-        // Broadcast update to all users
+        
         $cryptos = CryptoDepositDetail::where('is_active', true)->get();
         broadcast(new CryptoUpdated($cryptos, 'added'));
-
+        
         return redirect()->back()->with('success', 'Cryptocurrency added successfully.');
     }
 
     public function updateQrAndAddress(Request $request, $id)
     {
         $crypto = CryptoDepositDetail::findOrFail($id);
+        $multiNetworkCryptos = ['USDT', 'USDC'];
+        $currency = $request->input('currency');
         
-        $validated = $request->validate([
-            'qr_code' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-            'address' => 'required|string|max:255',
-            'currency' => 'required|string|max:10',
-            'network' => 'required|string|max:50',
-        ]);
-
-        // Check if currency already exists (excluding current record)
-        $existing = CryptoDepositDetail::where('currency', $validated['currency'])
-            ->where('is_active', true)
-            ->where('id', '!=', $id)
-            ->first();
-        if ($existing) {
-            return redirect()->back()->withErrors(['currency' => 'This cryptocurrency already exists.']);
-        }
-
-        $symbol = strtolower($validated['currency']);
-        $data = [
-            'symbol' => $symbol,
-            'address' => $validated['address'],
-            'currency' => $validated['currency'],
-            'network' => $validated['network'],
-        ];
-
-        if ($request->hasFile('qr_code')) {
-            // Delete old QR code if exists
-            if ($crypto->qr_code) {
-                Storage::disk('public')->delete($crypto->qr_code);
+        if (in_array($currency, $multiNetworkCryptos)) {
+            // Handle multi-network cryptos (USDT/USDC)
+            $validated = $request->validate([
+                'currency' => 'required|string|max:10',
+                'trc20_qr_code' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+                'trc20_address' => 'nullable|string|max:255',
+                'erc20_qr_code' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+                'erc20_address' => 'nullable|string|max:255',
+                'bep20_qr_code' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+                'bep20_address' => 'nullable|string|max:255',
+            ]);
+            
+            $networks = ['TRC20', 'ERC20', 'BEP20'];
+            $symbol = strtolower($currency);
+            
+            foreach ($networks as $network) {
+                $networkLower = strtolower($network);
+                $existing = CryptoDepositDetail::where('currency', $currency)
+                    ->where('network', $network)
+                    ->first();
+                
+                if ($validated["{$networkLower}_address"]) {
+                    $data = [
+                        'symbol' => $symbol,
+                        'currency' => $currency,
+                        'network' => $network,
+                        'address' => $validated["{$networkLower}_address"],
+                        'is_active' => true,
+                    ];
+                    
+                    if ($request->hasFile("{$networkLower}_qr_code")) {
+                        if ($existing && $existing->qr_code) {
+                            Storage::disk('public')->delete($existing->qr_code);
+                        }
+                        $path = $request->file("{$networkLower}_qr_code")->store('qr_codes', 'public');
+                        $data['qr_code'] = $path;
+                    }
+                    
+                    if ($existing) {
+                        $existing->update($data);
+                    } else {
+                        CryptoDepositDetail::create($data);
+                    }
+                }
+            }
+        } else {
+            // Handle single network cryptos
+            $validated = $request->validate([
+                'qr_code' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+                'address' => 'required|string|max:255',
+                'currency' => 'required|string|max:10',
+                'network' => 'required|string|max:50',
+            ]);
+            
+            $symbol = strtolower($validated['currency']);
+            $data = [
+                'symbol' => $symbol,
+                'address' => $validated['address'],
+                'currency' => $validated['currency'],
+                'network' => $validated['network'],
+            ];
+            
+            if ($request->hasFile('qr_code')) {
+                if ($crypto->qr_code) {
+                    Storage::disk('public')->delete($crypto->qr_code);
+                }
+                $path = $request->file('qr_code')->store('qr_codes', 'public');
+                $data['qr_code'] = $path;
             }
             
-            $file = $request->file('qr_code');
-            $path = $file->store('qr_codes', 'public');
-            $data['qr_code'] = $path;
+            $crypto->update($data);
         }
-
-        $crypto->update($data);
-
-        // Broadcast update to all users
+        
         $cryptos = CryptoDepositDetail::where('is_active', true)->get();
         broadcast(new CryptoUpdated($cryptos, 'updated'));
-
+        
         return redirect()->back()->with('success', 'Cryptocurrency updated successfully.');
     }
 
@@ -768,6 +846,24 @@ class AdminController extends Controller
             return redirect()->route('admin.products')->with('success', 'Product deleted successfully!');
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Failed to delete product: ' . $e->getMessage());
+        }
+    }
+
+    public function bulkUpdateCommission(Request $request)
+    {
+        $request->validate([
+            'product_type' => 'required|string|in:VIP1,VIP2,VIP3,VIP4,VIP5,VIP6,VIP7,Lucky Order',
+            'commission_percentage' => 'required|numeric|min:0|max:100',
+        ]);
+
+        try {
+            $updatedCount = Product::where('type', $request->product_type)
+                ->update(['commission_percentage' => $request->commission_percentage]);
+
+            return redirect()->route('admin.products')
+                ->with('success', "Commission updated successfully for {$updatedCount} products of type {$request->product_type}!");
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Failed to update commission: ' . $e->getMessage());
         }
     }
 

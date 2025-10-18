@@ -50,7 +50,7 @@ const form = useForm({
                     </div>
 
                     <!-- Form -->
-                    <form @submit.prevent="form.patch(route('profile.update'))" class="space-y-5 flex-1">
+                    <form @submit.prevent="form.post(route('profile.update'))" class="space-y-5 flex-1">
                         <div>
                             <InputLabel for="name" :value="t('Name')" class="text-slate-700 font-medium drop-shadow-sm" />
                             <TextInput

@@ -66,12 +66,16 @@ const submit = async () => {
         <Head :title="t('login.title')" />
 
         <div class="bg-gradient-to-br from-white/95 via-blue-50/90 to-indigo-50/95 backdrop-blur-xl p-4 md:p-8 rounded-b-3xl rounded-t-none shadow-2xl max-w-md w-full border border-white/40 border-t-0 mx-auto">
+            <div class="text-center mb-4">
+                <h3 class="text-base font-semibold text-gray-800">{{ t('Welcome Back') }}</h3>
+                <p class="text-xs text-gray-600 mt-1">{{ t('Sign in to your account to continue') }}</p>
+            </div>
 
             <div v-if="status" class="mb-4 p-4 bg-green-50 border border-green-200 rounded-xl text-sm font-medium text-green-700 text-center">
                 {{ status }}
             </div>
 
-            <form @submit.prevent="submit" class="space-y-4">
+            <form @submit.prevent="submit" class="space-y-4 md:space-y-6">
                 <!-- Mobile Number -->
                 <div>
                     <InputLabel for="mobile_number" :value="t('Mobile Number')" class="text-xs font-medium text-gray-600" />

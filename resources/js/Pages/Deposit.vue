@@ -1,6 +1,6 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, router, usePage } from '@inertiajs/vue3';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { ref, watch, computed, onMounted, onUnmounted } from 'vue';
 import { ClipboardDocumentListIcon } from '@heroicons/vue/24/solid';
 
@@ -440,6 +440,10 @@ const submitDeposit = () => {
 <template>
     <Head :title="t('Deposit')" />
     <AuthenticatedLayout>
+        <!-- Floating Chat Icon -->
+        <Link :href="route('chat.index')" class="fixed bottom-20 right-0 w-14 h-14 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-full flex items-center justify-center transition-all duration-300 transform hover:scale-110 z-50 shadow-lg">
+            <i class="fas fa-headset text-lg"></i>
+        </Link>
         <div class="bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-sm p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-2xl border border-cyan-300/30 h-full overflow-y-auto">
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
                 <div class="bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-sm p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-lg border border-cyan-300/30 w-full flex flex-col justify-between">
