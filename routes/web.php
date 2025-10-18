@@ -43,6 +43,7 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->name('admin.')->group(fun
     Route::get('/users', [AdminController::class, 'users'])->name('users');
     Route::patch('/users/{id}', [AdminController::class, 'updateUser'])->name('users.update');
     Route::delete('/users/{id}', [AdminController::class, 'destroyUser'])->name('users.destroy');
+    Route::post('/users/bulk-update-percentage', [AdminController::class, 'bulkUpdateReferralPercentage'])->name('users.bulk-update-percentage');
     
     // Admin Chat Routes
     Route::get('/support', [\App\Http\Controllers\Admin\ChatController::class, 'index'])->name('support');

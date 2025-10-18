@@ -31,6 +31,21 @@ const filteredProducts = computed(() => {
   return filtered;
 });
 
+// Product counts by type
+const productCounts = computed(() => {
+  const counts = {
+    VIP1: 0, VIP2: 0, VIP3: 0, VIP4: 0, VIP5: 0, VIP6: 0, VIP7: 0, 'Lucky Order': 0
+  };
+  page.props.products.forEach(product => {
+    if (counts.hasOwnProperty(product.type)) {
+      counts[product.type]++;
+    }
+  });
+  return counts;
+});
+
+const totalProducts = computed(() => page.props.products.length);
+
 // Upload Form
 const form = useForm({
   title: "",
@@ -223,6 +238,22 @@ function closeLightbox() {
   <AdminLayout>
     <div class="bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl p-4 rounded-2xl shadow-2xl border border-cyan-300/30 h-full overflow-y-auto">
       <h1 class="text-lg font-bold text-slate-800 drop-shadow-sm mb-4">Product Management</h1>
+
+      <!-- Product Statistics -->
+      <div class="bg-white/20 backdrop-blur-sm px-4 py-3 rounded-lg mb-4 border border-white/30">
+        <div class="flex items-center justify-between flex-wrap gap-3 text-xs text-slate-700">
+          <span class="font-semibold text-slate-800">Products:</span>
+          <span class="bg-white/30 px-2 py-1 rounded">VIP1: <strong>{{ productCounts.VIP1 }}</strong></span>
+          <span class="bg-white/30 px-2 py-1 rounded">VIP2: <strong>{{ productCounts.VIP2 }}</strong></span>
+          <span class="bg-white/30 px-2 py-1 rounded">VIP3: <strong>{{ productCounts.VIP3 }}</strong></span>
+          <span class="bg-white/30 px-2 py-1 rounded">VIP4: <strong>{{ productCounts.VIP4 }}</strong></span>
+          <span class="bg-white/30 px-2 py-1 rounded">VIP5: <strong>{{ productCounts.VIP5 }}</strong></span>
+          <span class="bg-white/30 px-2 py-1 rounded">VIP6: <strong>{{ productCounts.VIP6 }}</strong></span>
+          <span class="bg-white/30 px-2 py-1 rounded">VIP7: <strong>{{ productCounts.VIP7 }}</strong></span>
+          <span class="bg-yellow-100/50 px-2 py-1 rounded">Lucky: <strong>{{ productCounts['Lucky Order'] }}</strong></span>
+          <span class="bg-blue-100/50 px-2 py-1 rounded text-blue-700 font-semibold">Total: <strong>{{ totalProducts }}</strong></span>
+        </div>
+      </div>
 
       <!-- Search Bar and Add Product Button -->
       <div class="bg-gradient-to-r from-white/40 via-white/30 to-white/20 backdrop-blur-sm p-4 rounded-xl shadow-lg border border-white/30 mb-6">

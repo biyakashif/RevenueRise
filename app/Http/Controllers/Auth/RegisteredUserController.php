@@ -43,17 +43,9 @@ class RegisteredUserController extends Controller
                 'withdraw_password' => $request->withdraw_password,
                 'invitation_code' => $this->generateUniqueInvitationCode(),
                 'referred_by' => $request->invitation_code,
-                'balance' => 10.00,
+                'balance' => 0.00,
                 'role' => 'user',
-                'vip_level' => 'VIP1', // Set default VIP1
-            ]);
-
-            // Create balance record for registration reward
-            BalanceRecord::create([
-                'user_id' => $user->id,
-                'type' => 'registration',
-                'amount' => 10.00,
-                'description' => 'Registration bonus',
+                'vip_level' => 'VIP1',
             ]);
 
             if ($request->invitation_code) {

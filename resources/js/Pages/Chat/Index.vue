@@ -134,7 +134,7 @@
 
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onBeforeUnmount } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 import axios from 'axios';
 
@@ -150,6 +150,7 @@ const modalMediaType = ref('');
 const notificationSound = new Audio('/notification.mp3');
 const videoError = ref('');
 const isBlocked = ref(false);
+let blockStatusInterval = null;
 
 // Configure axios with CSRF token and credentials
 axios.defaults.headers.common['X-CSRF-TOKEN'] = page.props.csrf_token || document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
@@ -184,7 +185,12 @@ const loadMessages = async () => {
 const sendMessage = async () => {
     try {
         if (isBlocked.value) return;
-        if (!newMessage.value.trim() && !imageInput.value?.files[0] && !videoInput.value?.files[0]) return;
+        
+        // Prevent sending empty messages
+        if (!newMessage.value.trim()) {
+            newMessage.value = '';
+            return;
+        }
 
         const messageText = newMessage.value;
         newMessage.value = ''; // Clear immediately
@@ -348,10 +354,26 @@ onMounted(() => {
     window.addEventListener('touchstart', primeAudio);
     
     // Check block status periodically
-    setInterval(checkBlockStatus, 5000);
+    blockStatusInterval = setInterval(checkBlockStatus, 5000);
+});
+
+onBeforeUnmount(() => {
+    if (blockStatusInterval) {
+        clearInterval(blockStatusInterval);
+        blockStatusInterval = null;
+    }
 });
 
 const checkBlockStatus = async () => {
+    // Don't check if user is not authenticated
+    if (!page.props.auth?.user) {
+        if (blockStatusInterval) {
+            clearInterval(blockStatusInterval);
+            blockStatusInterval = null;
+        }
+        return;
+    }
+    
     try {
         const response = await axios.get('/chat/block-status', {
             headers: {
@@ -360,7 +382,14 @@ const checkBlockStatus = async () => {
         });
         isBlocked.value = response.data.is_blocked;
     } catch (error) {
-        console.error('Error checking block status:', error);
+        // Stop checking if user is logged out (401 error)
+        if (error.response?.status === 401) {
+            if (blockStatusInterval) {
+                clearInterval(blockStatusInterval);
+                blockStatusInterval = null;
+            }
+            return;
+        }
     }
 };
 </script>

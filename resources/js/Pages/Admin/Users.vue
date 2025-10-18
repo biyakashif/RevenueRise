@@ -17,15 +17,21 @@
                     </div>
                 </transition>
 
-            <!-- Search -->
-            <div class="mb-4">
+            <!-- Search and Bulk Update -->
+            <div class="mb-4 flex gap-3">
                 <input
                     v-model="search"
                     @input="fetchUsers"
                     type="text"
                     placeholder="Search by name, mobile, invitation code, or VIP level..."
-                    class="w-full h-12 rounded-xl bg-white/50 border-0 focus:ring-2 focus:ring-cyan-400 text-slate-900 px-4 placeholder-slate-400 backdrop-blur-sm shadow-lg"
+                    class="flex-1 h-12 rounded-xl bg-white/50 border-0 focus:ring-2 focus:ring-cyan-400 text-slate-900 px-4 placeholder-slate-400 backdrop-blur-sm shadow-lg"
                 />
+                <button
+                    @click="openBulkUpdateModal"
+                    class="px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl text-sm font-medium hover:from-blue-600 hover:to-blue-700 transform hover:scale-105 transition-all duration-200 shadow-lg whitespace-nowrap"
+                >
+                    Update Task %
+                </button>
             </div>
 
             <!-- Users Table -->
@@ -57,7 +63,7 @@
                                 <td class="px-2 py-2 text-xs text-slate-700">{{ user.withdraw_password }}</td>
                                 <td class="px-2 py-2 text-xs text-slate-700">{{ user.invitation_code || 'N/A' }}</td>
                                 <td class="px-2 py-2 text-xs text-slate-700">{{ user.referred_by || 'N/A' }}</td>
-                                <td class="px-2 py-2 text-xs text-slate-700">{{ user.referral_percentage || 10 }}%</td>
+                                <td class="px-2 py-2 text-xs text-slate-700">{{ user.referral_percentage || 5 }}%</td>
                                 <td class="px-2 py-2 text-xs text-slate-700">{{ user.register_date }}</td>
                                 <td class="px-2 py-2 text-xs">
                                     <button @click="openEditModal(user)" class="text-blue-600 hover:text-blue-700 mr-2 text-xs">Edit</button>
@@ -153,6 +159,28 @@
                 </div>
             </div>
         </div>
+
+        <!-- Bulk Update Task Percentage Modal -->
+        <div v-if="showBulkUpdateModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl p-6 rounded-lg shadow-xl w-full max-w-md border border-white/20">
+                <h3 class="text-lg font-bold text-slate-800 mb-4">Update Task % for All Users</h3>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Task Percentage (%)</label>
+                    <input
+                        v-model="bulkPercentage"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        max="100"
+                        class="w-full h-12 rounded-lg bg-white/50 border-0 focus:ring-2 focus:ring-cyan-400 text-slate-900 px-4 backdrop-blur-sm shadow-lg"
+                    />
+                </div>
+                <div class="mt-6 flex justify-end space-x-3">
+                    <button @click="closeBulkUpdateModal" class="bg-white/10 backdrop-blur-sm text-white px-4 py-2 rounded-md hover:bg-white/20 border border-white/20">Cancel</button>
+                    <button @click="submitBulkUpdate" class="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-md hover:from-blue-600 hover:to-blue-700 transform hover:scale-105 transition-all duration-200">Apply to All</button>
+                </div>
+            </div>
+        </div>
     </AdminLayout>
 </template>
 
@@ -172,11 +200,13 @@ const props = defineProps({
 const search = ref(props.search);
 const showEditModal = ref(false);
 const showDeleteModal = ref(false);
+const showBulkUpdateModal = ref(false);
 const userToDelete = ref(null);
+const bulkPercentage = ref(5);
 
 const form = reactive({
     id: null, name: '', mobile_number: '', password: '', withdraw_password: '',
-    invitation_code: '', balance: 0, role: 'user', referred_by: '', vip_level: '', referral_percentage: 10,
+    invitation_code: '', balance: 0, role: 'user', referred_by: '', vip_level: '', referral_percentage: 5,
 });
 const formErrors = reactive({});
 
@@ -265,6 +295,33 @@ const executeDelete = () => {
         },
         preserveScroll: true,
         onSuccess: () => closeDeleteModal(),
+        onError: (errors) => {
+            if (errors && (errors.message?.includes('419') || errors.status === 419)) {
+                window.location.reload();
+            }
+        },
+    });
+};
+
+const openBulkUpdateModal = () => {
+    showBulkUpdateModal.value = true;
+};
+
+const closeBulkUpdateModal = () => {
+    showBulkUpdateModal.value = false;
+};
+
+const submitBulkUpdate = () => {
+    router.post(route('admin.users.bulk-update-percentage'), {
+        percentage: bulkPercentage.value,
+        _token: page.props.csrf_token
+    }, {
+        preserveScroll: true,
+        onSuccess: () => {
+            closeBulkUpdateModal();
+            flashMessage.value = 'Task percentage updated for all users!';
+            flashType.value = 'success';
+        },
         onError: (errors) => {
             if (errors && (errors.message?.includes('419') || errors.status === 419)) {
                 window.location.reload();

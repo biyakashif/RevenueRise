@@ -100,6 +100,7 @@ class User extends Authenticatable
         $today = Carbon::today();
         if (!$this->last_profit_reset || $this->last_profit_reset->lt($today)) {
             $this->todays_profit = 0.00;
+            $this->order_reward = 0.00;
             $this->last_profit_reset = $today;
             $this->save();
         }

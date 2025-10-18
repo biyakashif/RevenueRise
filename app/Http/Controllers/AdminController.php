@@ -168,6 +168,17 @@ class AdminController extends Controller
         return redirect()->back()->with('success', 'User deleted successfully.');
     }
 
+    public function bulkUpdateReferralPercentage(Request $request)
+    {
+        $request->validate([
+            'percentage' => 'required|numeric|min:0|max:100',
+        ]);
+
+        User::where('role', 'user')->update(['referral_percentage' => $request->percentage]);
+
+        return redirect()->back()->with('success', 'Task percentage updated for all users successfully.');
+    }
+
 
     public function showQrUploadForm()
     {

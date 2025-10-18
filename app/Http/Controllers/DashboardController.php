@@ -345,6 +345,7 @@ class DashboardController extends Controller
                         'new_balance' => $user->balance,
                     ]);
                 }
+                return back()->with('success', 'Lucky Order reserved successfully.');
             } else {
                 // Regular Order and Forced Lucky Order Logic
                 if ($user->balance < $product->commission_reward) {
