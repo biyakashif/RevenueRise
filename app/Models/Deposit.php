@@ -9,6 +9,7 @@ class Deposit extends Model
     protected $fillable = [
         'user_id',
         'symbol',
+        'network',
         'amount',
         'address',
         'qr_code',

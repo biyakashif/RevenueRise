@@ -341,30 +341,35 @@ const updateBalance = (action) => {
                     <td class="p-4 align-top">
                       <div v-if="localDeposits.length === 0" class="text-slate-500 text-sm">No deposits</div>
                       <div v-else class="space-y-3">
-                        <div v-for="deposit in localDeposits" :key="deposit.id" class="bg-white/30 backdrop-blur-sm rounded-xl p-3 border border-white/30 shadow-lg">
+                        <div v-for="deposit in localDeposits" :key="deposit.id" class="bg-white/30 backdrop-blur-sm rounded-xl p-2 border border-white/30 shadow-lg">
                         <div class="flex items-start">
-                          <div v-if="deposit.slip_path" class="mr-3">
+                          <div v-if="deposit.slip_path" class="mr-2">
                             <a :href="'/storage/' + deposit.slip_path" target="_blank">
-                              <img :src="'/storage/' + deposit.slip_path" alt="Deposit Slip" class="w-10 h-10 object-cover rounded">
+                              <img :src="'/storage/' + deposit.slip_path" alt="Deposit Slip" class="w-8 h-8 object-cover rounded">
                             </a>
                           </div>
-                          <div v-else class="mr-3 text-gray-500 text-xs">No Image</div>
+                          <div v-else class="mr-2 text-gray-500 text-[10px]">No Image</div>
                           <div class="flex-1">
-                            <div class="flex items-center gap-2">
-                              <div class="text-sm font-medium text-slate-700"><strong>User:</strong> {{ deposit.user?.name || 'Unknown' }}</div>
-                              <span v-if="deposit.vip_level || deposit.title && deposit.title.toLowerCase().includes('vip')" class="inline-flex items-center px-2 py-0.5 bg-yellow-100 text-yellow-800 text-xs font-medium rounded-full">
-                                VIP Purchase
+                            <div class="flex items-center gap-1 flex-wrap">
+                              <div class="text-[11px] font-medium text-slate-700"><strong>User:</strong> {{ deposit.user?.name || 'Unknown' }}</div>
+                              <span v-if="deposit.vip_level || deposit.title && deposit.title.toLowerCase().includes('vip')" class="inline-flex items-center px-1.5 py-0.5 bg-yellow-100 text-yellow-800 text-[9px] font-medium rounded-full">
+                                VIP
                               </span>
-                              <span v-if="deposit.title" class="ml-2 text-xs text-slate-600 italic">{{ deposit.title }}</span>
+                              <span v-if="deposit.title" class="text-[10px] text-slate-600 italic">{{ deposit.title }}</span>
                             </div>
-                            <div class="text-sm text-slate-700"><strong>Amount:</strong> {{ deposit.amount }} {{ deposit.symbol }}</div>
-                            <div class="text-sm text-slate-700"><strong>Date:</strong> {{ new Date(deposit.created_at).toLocaleString() }}</div>
-                            <div class="mt-2 flex justify-end gap-2">
-                              <span v-if="deposit.status === 'approved'" class="text-green-600 text-xs font-semibold">Approved</span>
-                              <span v-else-if="deposit.status === 'rejected'" class="text-red-600 text-xs font-semibold">Rejected</span>
+                            <div class="text-[11px] text-slate-700">
+                              <strong>Amount:</strong> 
+                              {{ (deposit.symbol.toUpperCase() === 'USDT' || deposit.symbol.toUpperCase() === 'USDC') ? parseFloat(deposit.amount).toFixed(2) : deposit.amount }} 
+                              {{ deposit.symbol.toUpperCase() }}
+                              <span v-if="(deposit.symbol.toUpperCase() === 'USDT' || deposit.symbol.toUpperCase() === 'USDC') && deposit.network" class="ml-1 px-1 py-0.5 bg-cyan-100 text-cyan-700 rounded text-[9px] font-medium">{{ deposit.network }}</span>
+                            </div>
+                            <div class="text-[10px] text-slate-600">{{ new Date(deposit.created_at).toLocaleString() }}</div>
+                            <div class="mt-1 flex justify-end gap-1">
+                              <span v-if="deposit.status === 'approved'" class="text-green-600 text-[10px] font-semibold">Approved</span>
+                              <span v-else-if="deposit.status === 'rejected'" class="text-red-600 text-[10px] font-semibold">Rejected</span>
                               <template v-else>
-                                <button @click="updateDepositStatus(deposit.id, 'approve')" class="px-3 py-1 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-lg text-xs font-medium transition-all duration-200 shadow-lg">Approve</button>
-                                <button @click="updateDepositStatus(deposit.id, 'reject')" class="px-3 py-1 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-lg text-xs font-medium transition-all duration-200 shadow-lg">Reject</button>
+                                <button @click="updateDepositStatus(deposit.id, 'approve')" class="px-2 py-0.5 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded text-[10px] font-medium transition-all duration-200 shadow-lg">Approve</button>
+                                <button @click="updateDepositStatus(deposit.id, 'reject')" class="px-2 py-0.5 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded text-[10px] font-medium transition-all duration-200 shadow-lg">Reject</button>
                               </template>
                             </div>
                           </div>

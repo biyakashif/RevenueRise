@@ -80,6 +80,7 @@ class DepositController extends Controller
         $data = [
             'user_id' => $user->id,
             'symbol' => strtolower($crypto->currency),
+            'network' => $crypto->network,
             'amount' => $request->amount,
             'address' => $crypto->address,
             'status' => 'pending',

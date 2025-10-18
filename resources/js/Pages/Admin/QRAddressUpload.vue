@@ -56,10 +56,27 @@ const networkMapping = {
     'LTC': 'Litecoin',
 };
 
+// Available networks for USDT and USDC
+const multiNetworkCryptos = ['USDT', 'USDC'];
+const availableNetworksForCrypto = {
+    'USDT': ['TRC20', 'ERC20', 'BEP20'],
+    'USDC': ['TRC20', 'ERC20', 'BEP20']
+};
+
 const form = useForm({
+    currency: '',
+    // TRC20
+    trc20_qr_code: null,
+    trc20_address: '',
+    // ERC20
+    erc20_qr_code: null,
+    erc20_address: '',
+    // BEP20
+    bep20_qr_code: null,
+    bep20_address: '',
+    // For other cryptos
     qr_code: null,
     address: '',
-    currency: '',
     network: '',
     _token: page.props.csrf_token,
 });
@@ -124,19 +141,19 @@ const resetToDefaultNetwork = () => {
     }
 };
 
-const onFileChange = (event) => {
-    form.qr_code = event.target.files[0];
+const onFileChange = (event, field) => {
+    form[field] = event.target.files[0];
 };
 
 const submit = () => {
-    // Ensure CSRF token is always fresh
     form._token = page.props.csrf_token;
     
+    const route_name = editingCrypto.value 
+        ? route('admin.qr-address-upload.update', editingCrypto.value.id)
+        : route('admin.qr-address-upload.store');
+    
     if (editingCrypto.value) {
-        form.transform((data) => ({
-            ...data,
-            _method: 'PUT'
-        })).post(route('admin.qr-address-upload.update', editingCrypto.value.id), {
+        form.transform((data) => ({...data, _method: 'PUT'})).post(route_name, {
             preserveState: true,
             preserveScroll: true,
             onSuccess: () => {
@@ -145,16 +162,10 @@ const submit = () => {
                 editingCrypto.value = null;
                 showForm.value = false;
                 networkManuallyModified.value = false;
-            },
-            onError: (errors) => {
-                // Handle 419 errors by refreshing CSRF token
-                if (errors && errors.message && errors.message.includes('419')) {
-                    window.location.reload();
-                }
             },
         });
     } else {
-        form.post(route('admin.qr-address-upload.store'), {
+        form.post(route_name, {
             preserveState: true,
             preserveScroll: true,
             onSuccess: () => {
@@ -163,28 +174,31 @@ const submit = () => {
                 editingCrypto.value = null;
                 showForm.value = false;
                 networkManuallyModified.value = false;
-            },
-            onError: (errors) => {
-                // Handle 419 errors by refreshing CSRF token
-                if (errors && errors.message && errors.message.includes('419')) {
-                    window.location.reload();
-                }
             },
         });
     }
 };
 
 const editCrypto = (crypto) => {
-    editingCrypto.value = crypto;
     form.currency = crypto.currency;
-    form.network = crypto.network;
-    form.address = crypto.address;
-    form.qr_code = null;
-    showForm.value = true;
     
-    if (crypto.network !== networkMapping[crypto.currency]) {
-        networkManuallyModified.value = true;
+    if (multiNetworkCryptos.includes(crypto.currency)) {
+        editingCrypto.value = null; // Don't set for multi-network, we'll create new entries
+        // Load all networks for this currency
+        const cryptosForCurrency = props.existingCryptos.filter(c => c.currency === crypto.currency);
+        cryptosForCurrency.forEach(c => {
+            const networkLower = c.network.toLowerCase();
+            form[`${networkLower}_address`] = c.address;
+        });
+    } else {
+        editingCrypto.value = crypto;
+        form.network = crypto.network;
+        form.address = crypto.address;
+        if (crypto.network !== networkMapping[crypto.currency]) {
+            networkManuallyModified.value = true;
+        }
     }
+    showForm.value = true;
 };
 
 const deleteCrypto = (crypto) => {
@@ -262,8 +276,13 @@ const cancelEdit = () => {
                                     {{ crypto.currency.substring(0, 2) }}
                                 </div>
                                 <div>
-                                    <div class="font-medium text-slate-800">{{ crypto.currency }}</div>
-                                    <div class="text-sm text-slate-600">{{ crypto.network }}</div>
+                                    <div class="font-medium text-slate-800 flex items-center">
+                                        {{ crypto.currency }}
+                                        <span v-if="crypto.currency === 'USDT' || crypto.currency === 'USDC'" class="ml-2 px-2 py-0.5 bg-cyan-100 text-cyan-700 rounded text-xs font-medium">
+                                            {{ crypto.network }}
+                                        </span>
+                                    </div>
+                                    <div v-if="crypto.currency !== 'USDT' && crypto.currency !== 'USDC'" class="text-sm text-slate-600">{{ crypto.network }}</div>
                                     <div class="text-xs text-slate-500 truncate max-w-[200px]">{{ crypto.address }}</div>
                                 </div>
                             </div>
@@ -307,57 +326,73 @@ const cancelEdit = () => {
                             <div v-if="form.errors.currency" class="mt-1 text-xs text-red-600 bg-red-50/80 p-2 rounded border border-red-200">{{ form.errors.currency }}</div>
                         </div>
 
-                        <div>
-                            <label for="network" class="block text-sm font-medium text-white mb-2 drop-shadow-sm">Network</label>
-                            <div class="flex gap-2">
-                                <input
-                                    v-model="form.network"
-                                    type="text"
-                                    id="network"
-                                    placeholder="e.g., TRC20, ERC20, BEP20, Bitcoin"
-                                    class="flex-1 h-12 rounded-xl bg-white/50 border-0 focus:ring-2 focus:ring-cyan-400 text-slate-900 px-4 placeholder-slate-400 backdrop-blur-sm shadow-lg"
-                                />
-                                <button
-                                    type="button"
-                                    @click="resetToDefaultNetwork"
-                                    class="px-4 py-2 bg-gradient-to-r from-white/60 to-white/40 hover:from-white/70 hover:to-white/50 text-slate-700 rounded-xl text-sm font-medium transition-all duration-200 shadow-lg backdrop-blur-sm border border-white/30"
-                                    :disabled="!form.currency"
-                                    title="Reset to default network for selected cryptocurrency"
-                                >
-                                    Reset
-                                </button>
+                        <!-- Multi-Network Fields for USDT/USDC -->
+                        <div v-if="multiNetworkCryptos.includes(form.currency)" class="space-y-4">
+                            <!-- TRC20 -->
+                            <div class="bg-white/20 p-4 rounded-xl">
+                                <h3 class="text-white font-semibold mb-3">TRC20 Network</h3>
+                                <div class="space-y-3">
+                                    <div>
+                                        <label class="block text-sm text-white mb-1">QR Code</label>
+                                        <input type="file" accept="image/*" @change="onFileChange($event, 'trc20_qr_code')" class="block w-full h-10 rounded-lg bg-white/50 border-0 text-slate-900 px-3 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-cyan-50 file:text-cyan-700" />
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm text-white mb-1">Address</label>
+                                        <input v-model="form.trc20_address" type="text" class="block w-full h-10 rounded-lg bg-white/50 border-0 text-slate-900 px-3" />
+                                    </div>
+                                </div>
                             </div>
-                            <div v-if="form.errors.network" class="mt-1 text-xs text-red-600 bg-red-50/80 p-2 rounded border border-red-200">{{ form.errors.network }}</div>
-                            <p class="text-xs text-white/70 mt-1">
-                                Network auto-updates when you select a currency. Use "Reset" to restore the default network.
-                                <span v-if="networkManuallyModified" class="text-orange-600 font-medium">(Modified)</span>
-                            </p>
-                        </div>
-
-                        <div>
-                            <label for="qr_code" class="block text-sm font-medium text-white mb-2 drop-shadow-sm">QR Code Image</label>
-                            <input
-                                type="file"
-                                id="qr_code"
-                                accept="image/png, image/jpeg, image/jpg"
-                                @change="onFileChange"
-                                class="block w-full h-12 rounded-xl bg-white/50 border-0 focus:ring-2 focus:ring-cyan-400 text-slate-900 px-4 backdrop-blur-sm shadow-lg file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-cyan-50 file:text-cyan-700 hover:file:bg-cyan-100"
-                            />
-                            <div v-if="form.errors.qr_code" class="mt-1 text-xs text-red-600 bg-red-50/80 p-2 rounded border border-red-200">{{ form.errors.qr_code }}</div>
-                            <div v-if="editingCrypto && editingCrypto.qr_code" class="mt-2">
-                                <img :src="'/storage/' + editingCrypto.qr_code" alt="Current QR Code" class="w-32 h-32 rounded-xl shadow-lg" />
+                            
+                            <!-- ERC20 -->
+                            <div class="bg-white/20 p-4 rounded-xl">
+                                <h3 class="text-white font-semibold mb-3">ERC20 Network</h3>
+                                <div class="space-y-3">
+                                    <div>
+                                        <label class="block text-sm text-white mb-1">QR Code</label>
+                                        <input type="file" accept="image/*" @change="onFileChange($event, 'erc20_qr_code')" class="block w-full h-10 rounded-lg bg-white/50 border-0 text-slate-900 px-3 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-cyan-50 file:text-cyan-700" />
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm text-white mb-1">Address</label>
+                                        <input v-model="form.erc20_address" type="text" class="block w-full h-10 rounded-lg bg-white/50 border-0 text-slate-900 px-3" />
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- BEP20 -->
+                            <div class="bg-white/20 p-4 rounded-xl">
+                                <h3 class="text-white font-semibold mb-3">BEP20 Network</h3>
+                                <div class="space-y-3">
+                                    <div>
+                                        <label class="block text-sm text-white mb-1">QR Code</label>
+                                        <input type="file" accept="image/*" @change="onFileChange($event, 'bep20_qr_code')" class="block w-full h-10 rounded-lg bg-white/50 border-0 text-slate-900 px-3 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-cyan-50 file:text-cyan-700" />
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm text-white mb-1">Address</label>
+                                        <input v-model="form.bep20_address" type="text" class="block w-full h-10 rounded-lg bg-white/50 border-0 text-slate-900 px-3" />
+                                    </div>
+                                </div>
                             </div>
                         </div>
+                        
+                        <!-- Single Network Fields for Other Cryptos -->
+                        <div v-else>
+                            <div>
+                                <label for="network" class="block text-sm font-medium text-white mb-2">Network</label>
+                                <div class="flex gap-2">
+                                    <input v-model="form.network" type="text" id="network" placeholder="e.g., Bitcoin, ERC20" class="flex-1 h-12 rounded-xl bg-white/50 border-0 text-slate-900 px-4" />
+                                    <button type="button" @click="resetToDefaultNetwork" class="px-4 py-2 bg-white/60 hover:bg-white/70 text-slate-700 rounded-xl text-sm" :disabled="!form.currency">Reset</button>
+                                </div>
+                            </div>
 
-                        <div>
-                            <label for="address" class="block text-sm font-medium text-white mb-2 drop-shadow-sm">Wallet Address</label>
-                            <input
-                                v-model="form.address"
-                                type="text"
-                                id="address"
-                                class="block w-full h-12 rounded-xl bg-white/50 border-0 focus:ring-2 focus:ring-cyan-400 text-slate-900 px-4 placeholder-slate-400 backdrop-blur-sm shadow-lg"
-                            />
-                            <div v-if="form.errors.address" class="mt-1 text-xs text-red-600 bg-red-50/80 p-2 rounded border border-red-200">{{ form.errors.address }}</div>
+                            <div>
+                                <label for="qr_code" class="block text-sm font-medium text-white mb-2">QR Code</label>
+                                <input type="file" id="qr_code" accept="image/*" @change="onFileChange($event, 'qr_code')" class="block w-full h-12 rounded-xl bg-white/50 border-0 text-slate-900 px-4 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-cyan-50 file:text-cyan-700" />
+                            </div>
+
+                            <div>
+                                <label for="address" class="block text-sm font-medium text-white mb-2">Address</label>
+                                <input v-model="form.address" type="text" id="address" class="block w-full h-12 rounded-xl bg-white/50 border-0 text-slate-900 px-4" />
+                            </div>
                         </div>
 
                         <div class="flex space-x-2 pt-2">
