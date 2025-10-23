@@ -156,7 +156,7 @@ onMounted(() => {
                                 <ApplicationLogo class="h-10 w-auto fill-current text-white group-hover:text-cyan-300 transition-colors duration-300" />
                                 <div class="absolute -inset-2 bg-gradient-to-r from-cyan-400/20 to-blue-500/20 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-sm"></div>
                             </div>
-                            <span class="ml-3 text-xs sm:text-xl font-bold text-white group-hover:text-cyan-300 transition-colors duration-300">Revenue Rise</span>
+                            <!-- <span class="ml-3 text-xs sm:text-xl font-bold text-white group-hover:text-cyan-300 transition-colors duration-300">Revenue Rise</span> -->
                         </Link>
                         
                         <!-- Desktop Navigation -->

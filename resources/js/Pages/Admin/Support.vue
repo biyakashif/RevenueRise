@@ -603,6 +603,12 @@ const handleImageUpload = async (event) => {
         const file = event.target.files[0];
         if (!file || selectedUser.value.is_blocked) return;
 
+        if (file.size > 5 * 1024 * 1024) {
+            alert('Image file size must not exceed 5MB.');
+            event.target.value = '';
+            return;
+        }
+
         const formData = new FormData();
         formData.append('image', file);
 

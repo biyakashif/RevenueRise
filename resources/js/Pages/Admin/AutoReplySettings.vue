@@ -1,7 +1,7 @@
 <script setup>
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 import { Head, useForm, Link, router, usePage } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { ref, onUnmounted } from 'vue';
 
 const page = usePage();
 
@@ -26,6 +26,13 @@ const addMessage = () => {
 
 const removeMessage = (index) => {
     if (form.messages.length > 1) {
+        const message = form.messages[index];
+        if (message.image_preview) {
+            URL.revokeObjectURL(message.image_preview);
+        }
+        if (message.video_preview) {
+            URL.revokeObjectURL(message.video_preview);
+        }
         form.messages.splice(index, 1);
     }
 };
@@ -36,9 +43,15 @@ const videoInputs = ref([]);
 const handleImageUpload = (index, event) => {
     const file = event.target.files[0];
     if (file) {
-        // Store the file temporarily for form submission
+        if (file.size > 5 * 1024 * 1024) {
+            alert('Image file size must not exceed 5MB.');
+            event.target.value = '';
+            return;
+        }
+        if (form.messages[index].image_preview) {
+            URL.revokeObjectURL(form.messages[index].image_preview);
+        }
         form.messages[index].image_file = file;
-        // Create a preview URL
         form.messages[index].image_preview = URL.createObjectURL(file);
     }
 };
@@ -51,14 +64,18 @@ const handleVideoUpload = (index, event) => {
             event.target.value = '';
             return;
         }
-        // Store the file temporarily for form submission
+        if (form.messages[index].video_preview) {
+            URL.revokeObjectURL(form.messages[index].video_preview);
+        }
         form.messages[index].video_file = file;
-        // Create a preview URL
         form.messages[index].video_preview = URL.createObjectURL(file);
     }
 };
 
 const removeImage = (index) => {
+    if (form.messages[index].image_preview) {
+        URL.revokeObjectURL(form.messages[index].image_preview);
+    }
     form.messages[index].image_file = null;
     form.messages[index].image_preview = null;
     if (imageInputs.value[index]) {
@@ -67,6 +84,9 @@ const removeImage = (index) => {
 };
 
 const removeVideo = (index) => {
+    if (form.messages[index].video_preview) {
+        URL.revokeObjectURL(form.messages[index].video_preview);
+    }
     form.messages[index].video_file = null;
     form.messages[index].video_preview = null;
     if (videoInputs.value[index]) {
@@ -118,6 +138,17 @@ const submit = () => {
         alert('Error saving settings. Please try again.');
     });
 };
+
+onUnmounted(() => {
+    form.messages.forEach(message => {
+        if (message.image_preview) {
+            URL.revokeObjectURL(message.image_preview);
+        }
+        if (message.video_preview) {
+            URL.revokeObjectURL(message.video_preview);
+        }
+    });
+});
 </script>
 
 <template>

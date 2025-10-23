@@ -3,6 +3,22 @@
         <div class="bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl p-4 rounded-2xl shadow-2xl border border-cyan-300/30 h-full overflow-y-auto">
             <h2 class="text-lg font-bold text-slate-800 drop-shadow-sm mb-4">User Management</h2>
 
+            <!-- User Statistics -->
+            <div class="bg-white/20 backdrop-blur-sm px-4 py-3 rounded-lg mb-4 border border-white/30">
+                <div class="flex items-center justify-between flex-wrap gap-3 text-xs text-slate-700">
+                    <span class="font-semibold text-slate-800">Users:</span>
+                    <span class="bg-white/30 px-2 py-1 rounded">VIP1: <strong>{{ userCounts.VIP1 }}</strong></span>
+                    <span class="bg-white/30 px-2 py-1 rounded">VIP2: <strong>{{ userCounts.VIP2 }}</strong></span>
+                    <span class="bg-white/30 px-2 py-1 rounded">VIP3: <strong>{{ userCounts.VIP3 }}</strong></span>
+                    <span class="bg-white/30 px-2 py-1 rounded">VIP4: <strong>{{ userCounts.VIP4 }}</strong></span>
+                    <span class="bg-white/30 px-2 py-1 rounded">VIP5: <strong>{{ userCounts.VIP5 }}</strong></span>
+                    <span class="bg-white/30 px-2 py-1 rounded">VIP6: <strong>{{ userCounts.VIP6 }}</strong></span>
+                    <span class="bg-white/30 px-2 py-1 rounded">VIP7: <strong>{{ userCounts.VIP7 }}</strong></span>
+                    <span class="bg-green-100/50 px-2 py-1 rounded text-green-700 font-semibold">Today: <strong>{{ props.dailyNewUsers }}</strong></span>
+                    <span class="bg-blue-100/50 px-2 py-1 rounded text-blue-700 font-semibold">Total: <strong>{{ totalUsers }}</strong></span>
+                </div>
+            </div>
+
                 <!-- Flash Messages -->
                 <transition
                     enter-active-class="transition ease-out duration-300"
@@ -55,7 +71,10 @@
                         </thead>
                         <tbody class="divide-y divide-white/10">
                             <tr v-for="user in props.users" :key="user.id" class="hover:bg-white/10 transition-all duration-200">
-                                <td class="px-2 py-2 text-xs font-medium text-slate-800">{{ user.name }}</td>
+                                <td class="px-2 py-2 text-xs font-medium text-slate-800">
+                                    {{ user.name }}
+                                    <span v-if="user.is_new" class="ml-1 px-1.5 py-0.5 bg-red-500 text-white text-[10px] font-bold rounded">NEW</span>
+                                </td>
                                 <td class="px-2 py-2 text-xs text-slate-700">{{ user.mobile_number }}</td>
                                 <td class="px-2 py-2 text-xs text-slate-700">{{ user.vip_level }}</td>
                                 <td class="px-2 py-2 text-xs text-slate-700">${{ user.balance.toFixed(2) }}</td>
@@ -185,7 +204,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, watch, computed } from 'vue';
+import { ref, reactive, watch, computed, onMounted, onUnmounted } from 'vue';
 import { router, usePage } from '@inertiajs/vue3';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 import { debounce } from 'lodash';
@@ -195,6 +214,7 @@ const page = usePage();
 const props = defineProps({
     users: Array,
     search: String,
+    dailyNewUsers: Number,
 });
 
 const search = ref(props.search);
@@ -218,6 +238,24 @@ const flashClass = computed(() => ({
     'bg-green-100 border-green-500 text-green-700': flashType.value === 'success',
     'bg-red-100 border-red-500 text-red-700': flashType.value === 'error',
 }));
+
+// User counts by VIP level
+const userCounts = computed(() => {
+    const counts = {
+        VIP1: 0, VIP2: 0, VIP3: 0, VIP4: 0, VIP5: 0, VIP6: 0, VIP7: 0
+    };
+    props.users.forEach(user => {
+        const vipLevel = user.vip_level;
+        if (counts.hasOwnProperty(vipLevel)) {
+            counts[vipLevel]++;
+        }
+    });
+    return counts;
+});
+
+const totalUsers = computed(() => props.users.length);
+
+
 
 watch(() => page.props.flash, (flash) => {
     if (flash.success) {
@@ -329,4 +367,20 @@ const submitBulkUpdate = () => {
         },
     });
 };
+
+onMounted(() => {
+    if (window.Echo) {
+        window.Echo.channel('users')
+            .listen('UserRegistered', (e) => {
+                console.log('New user registered:', e.user);
+                router.reload({ only: ['users', 'dailyNewUsers'] });
+            });
+    }
+});
+
+onUnmounted(() => {
+    if (window.Echo) {
+        window.Echo.leaveChannel('users');
+    }
+});
 </script>

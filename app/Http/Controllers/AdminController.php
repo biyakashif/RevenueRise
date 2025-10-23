@@ -97,6 +97,7 @@ class AdminController extends Controller
     public function users(Request $request)
     {
         $search = $request->input('search');
+        $today = Carbon::today();
 
         $usersQuery = User::query()->where('role', 'user');
 
@@ -109,22 +110,26 @@ class AdminController extends Controller
             });
         }
 
-        // Show most recently updated users (activity) first
+        // Show most recently created users first
         $users = $usersQuery
-            ->orderBy('updated_at', 'desc')
             ->orderBy('created_at', 'desc')
-            ->get() // Fetch all fields
-            ->map(function ($user) {
+            ->get()
+            ->map(function ($user) use ($today) {
                 $user->balance = (float) $user->balance;
                 $user->frozen_balance = (float) $user->frozen_balance;
-                // Format created_at for display
                 $user->register_date = Carbon::parse($user->created_at)->toFormattedDateString();
+                $user->is_new = Carbon::parse($user->created_at)->isSameDay($today);
                 return $user;
             });
+
+        $dailyNewUsers = User::where('role', 'user')
+            ->whereDate('created_at', $today)
+            ->count();
 
         return Inertia::render('Admin/Users', [
             'users' => $users,
             'search' => $search,
+            'dailyNewUsers' => $dailyNewUsers,
         ]);
     }
 

@@ -32,6 +32,10 @@ const t = (key) => translations.value[key] || key;
                         <h2 class="text-lg font-bold text-slate-800 mb-2">{{ t('Can I rate and review stores?') }}</h2>
                         <p class="text-slate-700 text-sm">{{ t('Yes! After completing certain tasks, you can rate and review stores to help brands build trust and improve their services. Your feedback is valuable and rewarded.') }}</p>
                     </div>
+                    <div class="bg-gradient-to-br from-cyan-400/20 via-blue-500/15 to-indigo-600/20 backdrop-blur-xl rounded-2xl shadow-lg border border-cyan-300/30 p-6">
+                        <h2 class="text-lg font-bold text-slate-800 mb-2">{{ t('How do I reset the Orders?') }}</h2>
+                        <p class="text-slate-700 text-sm">{{ t('🔄 To reset your order, you need to maintain your account balance at around $100 to easily reset them. Once you reach this amount, your account will automatically reset, and new tasks will become available.') }}</p>
+                    </div>
                 </div>
             </div>
         </div>

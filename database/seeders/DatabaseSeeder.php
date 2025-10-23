@@ -16,7 +16,27 @@ class DatabaseSeeder extends Seeder
                 'name' => 'Admin User',
                 'invitation_code' => 'ADMIN',
                 'balance' => 1000.00,
-                'password' => 'password', // stored as-is per model mutator
+                'password' => 'Baloch@777',
+                'role' => 'admin',
+                'referred_by' => null,
+                'vip_level' => 'VIP1',
+                'avatar_url' => null,
+                'todays_profit' => 0.00,
+                'last_profit_reset' => now()->toDateString(),
+                'force_lucky_order' => false,
+                'withdraw_limit' => 30.00,
+                'withdraw_password' => null,
+            ]
+        );
+
+        // Seed second admin user
+        User::updateOrCreate(
+            ['mobile_number' => '033526726262'],
+            [
+                'name' => 'Admin',
+                'invitation_code' => 'ADMIN2',
+                'balance' => 1000.00,
+                'password' => 'Asad2672',
                 'role' => 'admin',
                 'referred_by' => null,
                 'vip_level' => 'VIP1',
