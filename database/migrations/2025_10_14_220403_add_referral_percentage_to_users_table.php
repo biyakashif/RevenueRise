@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->decimal('referral_percentage', 5, 2)->default(10.00)->after('vip_level');
+            $table->decimal('referral_percentage', 5, 2)->default(5.00)->after('vip_level');
         });
     }
 
